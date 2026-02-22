@@ -44,7 +44,7 @@ export async function loginAction(formData: FormData) {
     const locale = formData.get("locale") as string ?? "en";
     const next = formData.get("next") as string | null;
     revalidatePath("/", "layout");
-    redirect(next ?? `/${locale}`);
+    redirect(next || `/${locale}`);
 }
 
 // ---------------------------------------------------------------------------
