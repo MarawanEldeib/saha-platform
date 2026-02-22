@@ -1,0 +1,344 @@
+{
+    "nav": {
+        "home": "Startseite",
+        "map": "Sportstätten finden",
+        "community": "Community",
+        "events": "Veranstaltungen",
+        "login": "Anmelden",
+        "register": "Registrieren",
+        "dashboard": "Dashboard",
+        "admin": "Admin",
+        "logout": "Abmelden",
+        "language": "Sprache"
+    },
+    "home": {
+        "hero": {
+            "badge": "Kostenlos für Studierende",
+            "title": "Sportstätten in deiner Nähe finden",
+            "subtitle": "Entdecke Sporthallen, Plätze und Vereine in Stuttgart und Baden-Württemberg. Suche nach Sportart, finde Studentenrabatte und vernetze dich mit anderen Spielern.",
+            "cta_primary": "Karte erkunden",
+            "cta_secondary": "Community beitreten",
+            "tagline": "Für Studierende gemacht. Von der Community angetrieben."
+        },
+        "features": {
+            "title": "Alles, was du für einen aktiven Lebensstil brauchst",
+            "map": {
+                "title": "Interaktive Karte",
+                "desc": "Finde Sportstätten in deiner Nähe mit einer leistungsstarken standortbasierten Suche."
+            },
+            "discounts": {
+                "title": "Studentenrabatte",
+                "desc": "Filtere nach Einrichtungen mit Sonderpreisen für Studierende. Dein Studentenausweis zahlt sich aus."
+            },
+            "community": {
+                "title": "Matchmaking-Board",
+                "desc": "Inseriere oder stöbere, um Trainingspartner, Mitspieler und Sportgruppen zu finden."
+            },
+            "reviews": {
+                "title": "Verifizierte Bewertungen",
+                "desc": "Lese ehrliche Bewertungen anderer Studierender, bevor du eine Sportstätte besuchst."
+            }
+        },
+        "stats": {
+            "facilities": "Sportstätten gelistet",
+            "sports": "Sportarten",
+            "students": "Studierende erreicht",
+            "cities": "Städte"
+        },
+        "cta_section": {
+            "title": "Betreibst du eine Sportstätte?",
+            "subtitle": "Liste deine Einrichtung kostenlos während unserer Gründungsphase. Erreiche tausende Studierende, die aktiv nach Sportstätten suchen.",
+            "button": "Unternehmen registrieren"
+        }
+    },
+    "map": {
+        "title": "Sportstätten finden",
+        "search_placeholder": "Suche nach Sportart, Name oder Ort...",
+        "filter_sport": "Alle Sportarten",
+        "filter_discount": "Nur mit Studentenrabatt",
+        "no_results": "Keine Sportstätten gefunden. Passe deine Filter an.",
+        "loading": "Sportstätten werden geladen...",
+        "details_button": "Details anzeigen",
+        "sidebar_title": "Sportstätten in der Nähe"
+    },
+    "facility": {
+        "hours": "Öffnungszeiten",
+        "sports": "Verfügbare Sportarten",
+        "discounts": "Studentenrabatte",
+        "discount_available": "Studentenrabatt verfügbar",
+        "no_discount": "Kein Studentenrabatt",
+        "reviews_title": "Bewertungen",
+        "no_reviews": "Noch keine Bewertungen. Sei der Erste!",
+        "write_review": "Bewertung schreiben",
+        "your_rating": "Deine Bewertung",
+        "your_comment": "Dein Kommentar",
+        "submit_review": "Bewertung absenden",
+        "events_title": "Bevorstehende Veranstaltungen",
+        "no_events": "Keine bevorstehenden Veranstaltungen.",
+        "status_active": "Aktiv",
+        "status_pending": "Prüfung ausstehend",
+        "status_suspended": "Gesperrt"
+    },
+    "community": {
+        "title": "Matchmaking-Board",
+        "subtitle": "Finde Trainingspartner, Mitspieler und Sportgruppen in deiner Nähe.",
+        "new_post": "Anfrage stellen",
+        "sport_label": "Sportart",
+        "date_label": "Datum",
+        "message_label": "Nachricht",
+        "level_label": "Leistungsniveau",
+        "level_beginner": "Anfänger",
+        "level_intermediate": "Fortgeschritten",
+        "level_advanced": "Profi",
+        "submit": "Veröffentlichen",
+        "login_prompt": "Melde dich an, um eine Anfrage zu stellen.",
+        "no_posts": "Noch keine Beiträge. Sei der Erste!"
+    },
+    "events": {
+        "title": "Sportveranstaltungen",
+        "subtitle": "Bevorstehende Veranstaltungen in deiner Nähe.",
+        "no_events": "Keine Veranstaltungen gefunden.",
+        "date": "Datum",
+        "venue": "Veranstaltungsort",
+        "organizer": "Veranstalter"
+    },
+    "auth": {
+        "login": {
+            "title": "Willkommen zurück",
+            "subtitle": "Melde dich in deinem Konto an",
+            "email": "E-Mail-Adresse",
+            "password": "Passwort",
+            "submit": "Anmelden",
+            "forgot_password": "Passwort vergessen?",
+            "no_account": "Noch kein Konto?",
+            "sign_up_link": "Registrieren",
+            "error_invalid": "Ungültige E-Mail oder Passwort.",
+            "loading": "Anmeldung läuft..."
+        },
+        "register": {
+            "title": "Konto erstellen",
+            "subtitle": "Trete der Saha-Community bei",
+            "name": "Vollständiger Name",
+            "email": "E-Mail-Adresse",
+            "password": "Passwort",
+            "confirm_password": "Passwort bestätigen",
+            "account_type": "Kontoart",
+            "type_user": "Studierende/r / Spieler",
+            "type_business": "Einrichtungsbetreiber / Unternehmen",
+            "submit": "Konto erstellen",
+            "already_account": "Bereits ein Konto?",
+            "login_link": "Anmelden",
+            "error_email_taken": "Diese E-Mail-Adresse ist bereits vergeben.",
+            "loading": "Konto wird erstellt...",
+            "success": "Konto erstellt! Bitte prüfe deine E-Mails zur Bestätigung."
+        },
+        "forgot_password": {
+            "title": "Passwort zurücksetzen",
+            "subtitle": "Wir senden dir einen Zurücksetz-Link",
+            "email": "E-Mail-Adresse",
+            "submit": "Link senden",
+            "back_to_login": "Zurück zur Anmeldung",
+            "success": "Prüfe deine E-Mails für den Zurücksetz-Link."
+        },
+        "reset_password": {
+            "title": "Neues Passwort setzen",
+            "new_password": "Neues Passwort",
+            "confirm_password": "Passwort bestätigen",
+            "submit": "Passwort aktualisieren",
+            "success": "Passwort aktualisiert. Du kannst dich jetzt anmelden."
+        },
+        "two_factor": {
+            "setup_title": "Zwei-Faktor-Authentifizierung einrichten",
+            "setup_subtitle": "Scanne den QR-Code mit deiner Authentifizierungs-App (z.B. Google Authenticator, Authy).",
+            "code_label": "6-stelligen Code eingeben",
+            "verify_title": "Zwei-Faktor-Authentifizierung",
+            "verify_subtitle": "Gib den Code aus deiner Authentifizierungs-App ein.",
+            "submit": "Bestätigen",
+            "loading": "Wird geprüft...",
+            "error": "Ungültiger Code. Bitte versuche es erneut.",
+            "success": "2FA erfolgreich aktiviert."
+        }
+    },
+    "dashboard": {
+        "nav": {
+            "overview": "Übersicht",
+            "facility": "Meine Sportstätte",
+            "events": "Veranstaltungen",
+            "settings": "Einstellungen"
+        },
+        "overview": {
+            "title": "Dashboard",
+            "welcome": "Willkommen zurück",
+            "status_label": "Inseratstatus",
+            "status_pending": "Prüfung ausstehend",
+            "status_active": "Aktiv",
+            "status_suspended": "Gesperrt",
+            "complete_onboarding": "Schließe das Business-Onboarding ab, um gelistet zu werden.",
+            "start_onboarding": "Onboarding starten"
+        },
+        "onboarding": {
+            "title": "Business-Onboarding",
+            "step1": "Unternehmensdetails",
+            "step2": "Sportstätteninformationen",
+            "step3": "Rechtliche Dokumente",
+            "step4": "Überprüfen & Einreichen",
+            "business_name": "Unternehmensname",
+            "business_email": "Geschäftliche E-Mail",
+            "phone": "Telefonnummer",
+            "address": "Adresse",
+            "city": "Stadt",
+            "postal_code": "Postleitzahl",
+            "facility_name": "Name der Sportstätte",
+            "facility_description": "Beschreibung",
+            "website": "Website (optional)",
+            "sports": "Verfügbare Sportarten",
+            "upload_doc": "Registrierungsdokument hochladen (Gewerbeanmeldung o.ä.)",
+            "upload_hint": "PDF oder Bild, max. 10 MB. Sicher gespeichert – nur von unserem Admin-Team einsehbar.",
+            "submit": "Zur Prüfung einreichen",
+            "loading": "Wird eingereicht...",
+            "success": "Eingereicht! Unser Team prüft deine Unterlagen und meldet sich innerhalb von 2 Werktagen.",
+            "step1_title": "Sportstättendetails",
+            "step2_title": "Angebotene Sportarten",
+            "success_title": "Antrag eingereicht!",
+            "success_desc": "Unser Team prüft deine Sportstätte innerhalb von 2 Werktagen und meldet sich bei dir.",
+            "go_dashboard": "Zum Dashboard",
+            "next": "Weiter",
+            "back": "Zurück"
+        },
+        "facility": {
+            "title": "Sportstätte verwalten",
+            "description": "Beschreibung",
+            "images": "Fotos",
+            "hours": "Öffnungszeiten",
+            "sports": "Sportarten",
+            "discounts": "Studentenrabatte",
+            "save": "Änderungen speichern",
+            "saving": "Wird gespeichert...",
+            "saved": "Änderungen gespeichert.",
+            "add_image": "Foto hinzufügen",
+            "remove_image": "Entfernen",
+            "add_discount": "Rabatt hinzufügen",
+            "discount_description": "Rabattdetails",
+            "discount_amount": "Betrag / Prozentsatz"
+        },
+        "events": {
+            "title": "Veranstaltung einreichen",
+            "event_name": "Veranstaltungsname",
+            "event_date": "Datum",
+            "event_description": "Beschreibung",
+            "submit": "Zur Genehmigung einreichen",
+            "status_pending": "Ausstehend",
+            "status_approved": "Genehmigt",
+            "status_rejected": "Abgelehnt",
+            "no_events": "Noch keine Veranstaltungen eingereicht."
+        },
+        "settings": {
+            "title": "Kontoeinstellungen",
+            "display_name": "Anzeigename",
+            "email": "E-Mail",
+            "two_fa_title": "Zwei-Faktor-Authentifizierung",
+            "two_fa_enabled": "2FA ist aktiviert",
+            "two_fa_disabled": "2FA ist nicht aktiviert",
+            "setup_2fa": "2FA einrichten",
+            "save": "Änderungen speichern"
+        }
+    },
+    "admin": {
+        "title": "Admin-Bereich",
+        "stat_pending_facilities": "Ausstehende Sportstätten",
+        "stat_pending_events": "Ausstehende Veranstaltungen",
+        "stat_users": "Benutzer gesamt",
+        "pending_facilities": "Ausstehende Sportstätten",
+        "pending_events": "Ausstehende Veranstaltungen",
+        "view_all": "Alle anzeigen",
+        "none": "Nichts ausstehend. Alles erledigt!",
+        "review_action": "Prüfungsentscheidung",
+        "nav": {
+            "overview": "Übersicht",
+            "verifications": "Verifizierungswarteschlange",
+            "events": "Veranstaltungswarteschlange",
+            "outreach": "E-Mail-Kontaktaufnahme",
+            "analytics": "Analytik"
+        },
+        "overview": {
+            "title": "Admin-Dashboard",
+            "total_businesses": "Unternehmen gesamt",
+            "pending_verifications": "Ausstehende Verifizierungen",
+            "pending_events": "Ausstehende Veranstaltungen",
+            "total_users": "Benutzer gesamt"
+        },
+        "verifications": {
+            "title": "Business-Verifizierungswarteschlange",
+            "no_pending": "Keine ausstehenden Verifizierungen.",
+            "approve": "Genehmigen",
+            "decline": "Ablehnen",
+            "view_doc": "Dokument anzeigen",
+            "business_name": "Unternehmensname",
+            "submitted_at": "Eingereicht",
+            "status": "Status",
+            "confirm_approve": "Dieses Unternehmen genehmigen?",
+            "confirm_decline": "Diesen Antrag ablehnen? Der Unternehmensinhaber wird benachrichtigt.",
+            "decline_reason": "Ablehnungsgrund (optional)"
+        },
+        "events": {
+            "title": "Veranstaltungsgenehmigungen",
+            "no_pending": "Keine ausstehenden Veranstaltungen.",
+            "approve": "Genehmigen",
+            "reject": "Ablehnen",
+            "event_name": "Veranstaltung",
+            "submitted_by": "Eingereicht von",
+            "event_date": "Datum"
+        },
+        "outreach": {
+            "title": "E-Mail-Kontaktaufnahme",
+            "upload_csv": "CSV hochladen",
+            "csv_hint": "CSV muss Spalten haben: name, email. Pro Zeile wird eine personalisierte Resend-Kampagne ausgelöst.",
+            "template_label": "E-Mail-Vorlage",
+            "send": "Kampagne senden",
+            "sending": "Wird gesendet...",
+            "success": "Kampagne erfolgreich gesendet.",
+            "rows_found": "Zeilen in CSV gefunden"
+        },
+        "analytics": {
+            "title": "Analytik",
+            "signups": "Neue Anmeldungen",
+            "active_businesses": "Aktive Unternehmen",
+            "page_views": "Seitenaufrufe",
+            "period": "Zeitraum",
+            "last_7": "Letzte 7 Tage",
+            "last_30": "Letzte 30 Tage",
+            "last_90": "Letzte 90 Tage"
+        }
+    },
+    "common": {
+        "loading": "Laden...",
+        "error": "Etwas ist schiefgelaufen. Bitte versuche es erneut.",
+        "save": "Speichern",
+        "cancel": "Abbrechen",
+        "delete": "Löschen",
+        "edit": "Bearbeiten",
+        "back": "Zurück",
+        "close": "Schließen",
+        "confirm": "Bestätigen",
+        "yes": "Ja",
+        "no": "Nein",
+        "search": "Suchen",
+        "filter": "Filtern",
+        "all": "Alle",
+        "none": "Keine",
+        "monday": "Montag",
+        "tuesday": "Dienstag",
+        "wednesday": "Mittwoch",
+        "thursday": "Donnerstag",
+        "friday": "Freitag",
+        "saturday": "Samstag",
+        "sunday": "Sonntag",
+        "closed": "Geschlossen",
+        "open": "Geöffnet",
+        "cookie_banner": {
+            "message": "Wir verwenden Cookies, um dein Erlebnis zu verbessern und die DSGVO einzuhalten. Wir verwenden keine Tracking-Cookies ohne deine Zustimmung.",
+            "accept": "Akzeptieren",
+            "reject": "Ablehnen"
+        }
+    }
+}

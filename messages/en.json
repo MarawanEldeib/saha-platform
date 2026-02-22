@@ -1,0 +1,344 @@
+{
+    "nav": {
+        "home": "Home",
+        "map": "Find Facilities",
+        "community": "Community",
+        "events": "Events",
+        "login": "Log In",
+        "register": "Sign Up",
+        "dashboard": "Dashboard",
+        "admin": "Admin",
+        "logout": "Log Out",
+        "language": "Language"
+    },
+    "home": {
+        "hero": {
+            "badge": "Free for Students",
+            "title": "Find Sports Facilities Near You",
+            "subtitle": "Discover sports halls, courts, and clubs in Stuttgart and Baden-Württemberg. Search by sport, find student discounts, and connect with other players.",
+            "cta_primary": "Explore the Map",
+            "cta_secondary": "Join the Community",
+            "tagline": "Built for students. Powered by community."
+        },
+        "features": {
+            "title": "Everything You Need to Stay Active",
+            "map": {
+                "title": "Interactive Map",
+                "desc": "Find facilities near you with a powerful location-based search powered by real geographic data."
+            },
+            "discounts": {
+                "title": "Student Discounts",
+                "desc": "Filter for facilities that offer special rates for students. Your student ID goes further."
+            },
+            "community": {
+                "title": "Matchmaking Board",
+                "desc": "Post a request or browse listings to find training partners, teammates, and sports groups."
+            },
+            "reviews": {
+                "title": "Verified Reviews",
+                "desc": "Read honest reviews from other students and athletes before you visit."
+            }
+        },
+        "stats": {
+            "facilities": "Facilities Listed",
+            "sports": "Sports Covered",
+            "students": "Students Served",
+            "cities": "Cities"
+        },
+        "cta_section": {
+            "title": "Own a Sports Facility?",
+            "subtitle": "List your facility for free during our founding member period. Reach thousands of students actively looking for places to play.",
+            "button": "Register Your Business"
+        }
+    },
+    "map": {
+        "title": "Find Sports Facilities",
+        "search_placeholder": "Search by sport, name, or location...",
+        "filter_sport": "All Sports",
+        "filter_discount": "Student Discounts Only",
+        "no_results": "No facilities found. Try adjusting your filters.",
+        "loading": "Loading facilities...",
+        "details_button": "View Details",
+        "sidebar_title": "Nearby Facilities"
+    },
+    "facility": {
+        "hours": "Opening Hours",
+        "sports": "Available Sports",
+        "discounts": "Student Discounts",
+        "discount_available": "Student discount available",
+        "no_discount": "No student discount",
+        "reviews_title": "Reviews",
+        "no_reviews": "No reviews yet. Be the first to leave one!",
+        "write_review": "Write a Review",
+        "your_rating": "Your Rating",
+        "your_comment": "Your Comment",
+        "submit_review": "Submit Review",
+        "events_title": "Upcoming Events",
+        "no_events": "No upcoming events.",
+        "status_active": "Active",
+        "status_pending": "Pending Approval",
+        "status_suspended": "Suspended"
+    },
+    "community": {
+        "title": "Matchmaking Board",
+        "subtitle": "Find training partners, teammates, and sports groups in your area.",
+        "new_post": "Post a Request",
+        "sport_label": "Sport",
+        "date_label": "Date",
+        "message_label": "Message",
+        "level_label": "Skill Level",
+        "level_beginner": "Beginner",
+        "level_intermediate": "Intermediate",
+        "level_advanced": "Advanced",
+        "submit": "Post",
+        "login_prompt": "Log in to post a matchmaking request.",
+        "no_posts": "No posts yet. Be the first!"
+    },
+    "events": {
+        "title": "Sports Events",
+        "subtitle": "Upcoming events in your area.",
+        "no_events": "No events found.",
+        "date": "Date",
+        "venue": "Venue",
+        "organizer": "Organizer"
+    },
+    "auth": {
+        "login": {
+            "title": "Welcome Back",
+            "subtitle": "Log in to your account",
+            "email": "Email Address",
+            "password": "Password",
+            "submit": "Log In",
+            "forgot_password": "Forgot password?",
+            "no_account": "Don't have an account?",
+            "sign_up_link": "Sign Up",
+            "error_invalid": "Invalid email or password.",
+            "loading": "Logging in..."
+        },
+        "register": {
+            "title": "Create an Account",
+            "subtitle": "Join the Saha community",
+            "name": "Full Name",
+            "email": "Email Address",
+            "password": "Password",
+            "confirm_password": "Confirm Password",
+            "account_type": "Account Type",
+            "type_user": "Student / Player",
+            "type_business": "Facility Owner / Business",
+            "submit": "Create Account",
+            "already_account": "Already have an account?",
+            "login_link": "Log In",
+            "error_email_taken": "This email is already in use.",
+            "loading": "Creating account...",
+            "success": "Account created! Please check your email to confirm."
+        },
+        "forgot_password": {
+            "title": "Reset Your Password",
+            "subtitle": "We'll send you a reset link",
+            "email": "Email Address",
+            "submit": "Send Reset Link",
+            "back_to_login": "Back to login",
+            "success": "Check your email for the reset link."
+        },
+        "reset_password": {
+            "title": "Set New Password",
+            "new_password": "New Password",
+            "confirm_password": "Confirm Password",
+            "submit": "Update Password",
+            "success": "Password updated. You can now log in."
+        },
+        "two_factor": {
+            "setup_title": "Set Up Two-Factor Authentication",
+            "setup_subtitle": "Scan the QR code with your authenticator app (e.g. Google Authenticator, Authy).",
+            "code_label": "Enter 6-digit code",
+            "verify_title": "Two-Factor Authentication",
+            "verify_subtitle": "Enter the code from your authenticator app.",
+            "submit": "Verify",
+            "loading": "Verifying...",
+            "error": "Invalid code. Please try again.",
+            "success": "2FA enabled successfully."
+        }
+    },
+    "dashboard": {
+        "nav": {
+            "overview": "Overview",
+            "facility": "My Facility",
+            "events": "Events",
+            "settings": "Settings"
+        },
+        "overview": {
+            "title": "Dashboard",
+            "welcome": "Welcome back",
+            "status_label": "Listing Status",
+            "status_pending": "Pending Approval",
+            "status_active": "Active",
+            "status_suspended": "Suspended",
+            "complete_onboarding": "Complete your business onboarding to get listed.",
+            "start_onboarding": "Start Onboarding"
+        },
+        "onboarding": {
+            "title": "Business Onboarding",
+            "step1": "Business Details",
+            "step2": "Facility Information",
+            "step3": "Legal Documents",
+            "step4": "Review & Submit",
+            "business_name": "Business Name",
+            "business_email": "Business Email",
+            "phone": "Phone Number",
+            "address": "Address",
+            "city": "City",
+            "postal_code": "Postal Code",
+            "facility_name": "Facility Name",
+            "facility_description": "Description",
+            "website": "Website (optional)",
+            "sports": "Sports Available",
+            "upload_doc": "Upload Registration Document (Gewerbeanmeldung or equivalent)",
+            "upload_hint": "PDF or image, max 10MB. Stored securely — only reviewable by our admin team.",
+            "submit": "Submit for Review",
+            "loading": "Submitting...",
+            "success": "Submitted! Our team will review your documents and get back to you within 2 business days.",
+            "step1_title": "Facility Details",
+            "step2_title": "Sports Offered",
+            "success_title": "Application Submitted!",
+            "success_desc": "Our team will review your facility within 2 business days and get in touch with you.",
+            "go_dashboard": "Go to Dashboard",
+            "next": "Next",
+            "back": "Back"
+        },
+        "facility": {
+            "title": "Manage Facility",
+            "description": "Description",
+            "images": "Photos",
+            "hours": "Opening Hours",
+            "sports": "Sports",
+            "discounts": "Student Discounts",
+            "save": "Save Changes",
+            "saving": "Saving...",
+            "saved": "Changes saved.",
+            "add_image": "Add Photo",
+            "remove_image": "Remove",
+            "add_discount": "Add Discount",
+            "discount_description": "Discount Details",
+            "discount_amount": "Amount / Percentage"
+        },
+        "events": {
+            "title": "Submit an Event",
+            "event_name": "Event Name",
+            "event_date": "Date",
+            "event_description": "Description",
+            "submit": "Submit for Approval",
+            "status_pending": "Pending",
+            "status_approved": "Approved",
+            "status_rejected": "Rejected",
+            "no_events": "No events submitted yet."
+        },
+        "settings": {
+            "title": "Account Settings",
+            "display_name": "Display Name",
+            "email": "Email",
+            "two_fa_title": "Two-Factor Authentication",
+            "two_fa_enabled": "2FA is enabled",
+            "two_fa_disabled": "2FA is not enabled",
+            "setup_2fa": "Set Up 2FA",
+            "save": "Save Changes"
+        }
+    },
+    "admin": {
+        "title": "Admin Panel",
+        "stat_pending_facilities": "Pending Facilities",
+        "stat_pending_events": "Pending Events",
+        "stat_users": "Total Users",
+        "pending_facilities": "Pending Facilities",
+        "pending_events": "Pending Events",
+        "view_all": "View All",
+        "none": "Nothing pending. All clear!",
+        "review_action": "Review Decision",
+        "nav": {
+            "overview": "Overview",
+            "verifications": "Verification Queue",
+            "events": "Event Queue",
+            "outreach": "Email Outreach",
+            "analytics": "Analytics"
+        },
+        "overview": {
+            "title": "Admin Dashboard",
+            "total_businesses": "Total Businesses",
+            "pending_verifications": "Pending Verifications",
+            "pending_events": "Pending Events",
+            "total_users": "Total Users"
+        },
+        "verifications": {
+            "title": "Business Verification Queue",
+            "no_pending": "No pending verifications.",
+            "approve": "Approve",
+            "decline": "Decline",
+            "view_doc": "View Document",
+            "business_name": "Business Name",
+            "submitted_at": "Submitted",
+            "status": "Status",
+            "confirm_approve": "Approve this business listing?",
+            "confirm_decline": "Decline this application? This will notify the business owner.",
+            "decline_reason": "Reason for Decline (optional)"
+        },
+        "events": {
+            "title": "Event Approval Queue",
+            "no_pending": "No pending events.",
+            "approve": "Approve",
+            "reject": "Reject",
+            "event_name": "Event",
+            "submitted_by": "Submitted By",
+            "event_date": "Date"
+        },
+        "outreach": {
+            "title": "Email Outreach",
+            "upload_csv": "Upload CSV",
+            "csv_hint": "CSV must have columns: name, email. A personalised Resend campaign will be triggered for each row.",
+            "template_label": "Email Template",
+            "send": "Send Campaign",
+            "sending": "Sending...",
+            "success": "Campaign sent successfully.",
+            "rows_found": "rows found in CSV"
+        },
+        "analytics": {
+            "title": "Analytics",
+            "signups": "New Signups",
+            "active_businesses": "Active Businesses",
+            "page_views": "Page Views",
+            "period": "Period",
+            "last_7": "Last 7 Days",
+            "last_30": "Last 30 Days",
+            "last_90": "Last 90 Days"
+        }
+    },
+    "common": {
+        "loading": "Loading...",
+        "error": "Something went wrong. Please try again.",
+        "save": "Save",
+        "cancel": "Cancel",
+        "delete": "Delete",
+        "edit": "Edit",
+        "back": "Back",
+        "close": "Close",
+        "confirm": "Confirm",
+        "yes": "Yes",
+        "no": "No",
+        "search": "Search",
+        "filter": "Filter",
+        "all": "All",
+        "none": "None",
+        "monday": "Monday",
+        "tuesday": "Tuesday",
+        "wednesday": "Wednesday",
+        "thursday": "Thursday",
+        "friday": "Friday",
+        "saturday": "Saturday",
+        "sunday": "Sunday",
+        "closed": "Closed",
+        "open": "Open",
+        "cookie_banner": {
+            "message": "We use cookies to improve your experience and comply with GDPR. We do not use tracking cookies without your consent.",
+            "accept": "Accept",
+            "reject": "Reject"
+        }
+    }
+}
