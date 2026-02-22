@@ -1,8 +1,8 @@
 import Link from "next/link";
 import { useLocale, useTranslations } from "next-intl";
-import { MapPin, Github, Mail } from "lucide-react";
+import { MapPin, Mail } from "lucide-react";
 
-export function Footer() {
+export function Footer({ isLoggedIn = false }: { isLoggedIn?: boolean }) {
     const t = useTranslations("nav");
     const locale = useLocale();
 
@@ -37,8 +37,8 @@ export function Footer() {
                     <div>
                         <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3">Business</h3>
                         <ul className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
-                            <li><Link href={`/${locale}/register`} className="hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors">List Your Facility</Link></li>
-                            <li><Link href={`/${locale}/dashboard`} className="hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors">Business Dashboard</Link></li>
+                            <li><Link href={isLoggedIn ? `/${locale}/dashboard` : `/${locale}/register?role=business`} className="hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors">List Your Facility</Link></li>
+                            <li><Link href={isLoggedIn ? `/${locale}/dashboard` : `/${locale}/login`} className="hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors">Business Dashboard</Link></li>
                         </ul>
                     </div>
 
@@ -59,10 +59,6 @@ export function Footer() {
                         <a href="mailto:hello@saha.app" className="flex items-center gap-1 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors">
                             <Mail className="h-3.5 w-3.5" />
                             Contact
-                        </a>
-                        <a href="https://github.com" target="_blank" rel="noreferrer" className="flex items-center gap-1 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors">
-                            <Github className="h-3.5 w-3.5" />
-                            GitHub
                         </a>
                     </div>
                 </div>
