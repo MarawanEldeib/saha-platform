@@ -14,11 +14,13 @@ export default async function DashboardPage() {
 
     const { data: { user } } = await supabase.auth.getUser();
     const { data: profile } = await supabase.from("profiles").select("display_name").eq("id", user!.id).single();
-    const { data: facility } = await supabase
+    const { data: facilityRows } = await supabase
         .from("facilities")
         .select("id, name, status")
         .eq("owner_id", user!.id)
-        .maybeSingle();
+        .order("created_at", { ascending: false })
+        .limit(1);
+    const facility = facilityRows?.[0] ?? null;
 
     return (
         <div className="max-w-3xl space-y-8">

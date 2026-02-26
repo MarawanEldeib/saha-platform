@@ -1,6 +1,6 @@
 import { getTranslations, getLocale } from "next-intl/server";
 import Link from "next/link";
-import { MapPin, Search, Users, Star, ChevronRight, Zap } from "lucide-react";
+import { MapPin, Users, Star, ChevronRight, Zap } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 
 export const metadata = {
@@ -23,10 +23,10 @@ export default async function HomePage() {
     // Fetch real counts + current user session in parallel
     const supabase = await createClient();
     const [facilitiesRes, sportsRes, usersRes, citiesRes, { data: { user } }] = await Promise.all([
-        supabase.from("facilities").select("*", { count: "exact", head: true }).eq("status", "approved"),
+        supabase.from("facilities").select("*", { count: "exact", head: true }).eq("status", "active"),
         supabase.from("sports").select("*", { count: "exact", head: true }),
         supabase.from("profiles").select("*", { count: "exact", head: true }),
-        supabase.from("facilities").select("city").eq("status", "approved"),
+        supabase.from("facilities").select("city").eq("status", "active"),
         supabase.auth.getUser(),
     ]);
 

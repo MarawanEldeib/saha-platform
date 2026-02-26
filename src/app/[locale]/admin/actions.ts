@@ -48,7 +48,7 @@ export async function rejectFacilityAction(facilityId: string, reason: string) {
         const { adminClient } = await assertAdmin();
         const result = await adminClient
             .from("facilities")
-            .update({ status: "rejected", rejection_reason: reason } as never)
+            .update({ status: "suspended", rejection_reason: reason } as never)
             .eq("id", facilityId);
         if (result.error) return { error: result.error.message };
         revalidatePath("/", "layout");

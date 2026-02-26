@@ -25,7 +25,7 @@ export async function updateFacilityAction(formData: FormData) {
     };
 
     const parsed = facilityUpdateSchema.safeParse(raw);
-    if (!parsed.success) return { error: parsed.error.errors[0].message };
+    if (!parsed.success) return { error: parsed.error.issues[0].message };
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { error } = await (supabase as any)

@@ -12,11 +12,13 @@ export default async function FacilityPage() {
     if (!user) redirect(`/${locale}/login`);
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: facility } = await (supabase as any)
+    const { data: facilityRows } = await (supabase as any)
         .from("facilities")
         .select("id, name, description, address, city, postal_code, phone, website")
         .eq("owner_id", user.id)
-        .maybeSingle();
+        .order("created_at", { ascending: false })
+        .limit(1);
+    const facility = facilityRows?.[0] ?? null;
 
     if (!facility) {
         redirect(`/${locale}/dashboard/onboarding`);

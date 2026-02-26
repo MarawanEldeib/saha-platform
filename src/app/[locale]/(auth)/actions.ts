@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { createAdminClient } from "@/lib/supabase/admin";
+import { getLocale } from "next-intl/server";
 import {
     loginSchema,
     registerSchema,
@@ -22,7 +22,7 @@ export async function loginAction(formData: FormData) {
 
     const parsed = loginSchema.safeParse(raw);
     if (!parsed.success) {
-        return { error: parsed.error.errors[0].message };
+        return { error: parsed.error.issues[0].message };
     }
 
     const supabase = await createClient();
@@ -61,7 +61,7 @@ export async function registerAction(formData: FormData) {
 
     const parsed = registerSchema.safeParse(raw);
     if (!parsed.success) {
-        return { error: parsed.error.errors[0].message };
+        return { error: parsed.error.issues[0].message };
     }
 
     const supabase = await createClient();
@@ -103,7 +103,7 @@ export async function forgotPasswordAction(formData: FormData) {
     const raw = { email: formData.get("email") as string };
     const parsed = forgotPasswordSchema.safeParse(raw);
     if (!parsed.success) {
-        return { error: parsed.error.errors[0].message };
+        return { error: parsed.error.issues[0].message };
     }
 
     const locale = formData.get("locale") as string ?? "en";
@@ -130,7 +130,7 @@ export async function resetPasswordAction(formData: FormData) {
 
     const parsed = resetPasswordSchema.safeParse(raw);
     if (!parsed.success) {
-        return { error: parsed.error.errors[0].message };
+        return { error: parsed.error.issues[0].message };
     }
 
     const supabase = await createClient();
@@ -149,9 +149,10 @@ export async function resetPasswordAction(formData: FormData) {
 // ---------------------------------------------------------------------------
 export async function logoutAction() {
     const supabase = await createClient();
+    const locale = await getLocale();
     await supabase.auth.signOut();
     revalidatePath("/", "layout");
-    redirect("/en");
+    redirect(`/${locale}`);
 }
 
 // ---------------------------------------------------------------------------

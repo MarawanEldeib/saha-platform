@@ -3,10 +3,8 @@
 import React from "react";
 import { sendEmailCampaignAction } from "../actions";
 import { Button } from "@/components/ui/Button";
-import { Input, Textarea } from "@/components/ui/Input";
+import { Input } from "@/components/ui/Input";
 import { CheckCircle, Mail } from "lucide-react";
-
-export const metadata = { title: "Email Outreach" };
 
 export default function AdminOutreachPage() {
     const [subject, setSubject] = React.useState("");

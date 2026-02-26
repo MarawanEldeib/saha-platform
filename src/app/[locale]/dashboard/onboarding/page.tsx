@@ -11,11 +11,6 @@ import { Button } from "@/components/ui/Button";
 import { useRouter } from "next/navigation";
 import { CheckCircle, Building2 } from "lucide-react";
 
-export const metadata = { title: "Onboarding" };
-
-
-const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
-
 export default function OnboardingPage() {
     const t = useTranslations("dashboard.onboarding");
     const locale = useLocale();
@@ -41,7 +36,6 @@ export default function OnboardingPage() {
     const {
         register,
         handleSubmit,
-        getValues,
         formState: { errors, isSubmitting },
     } = useForm<FacilityInput>({
         resolver: zodResolver(facilitySchema),
@@ -106,9 +100,10 @@ export default function OnboardingPage() {
         setStep(3);
     };
 
-    // Step 3: Done
+    // Step 3: Done — hard navigation bypasses Next.js Router Cache so the server
+    // re-reads the newly inserted facility (router.push would serve stale RSC payload)
     const finish = () => {
-        router.push(`/${locale}/dashboard`);
+        window.location.href = `/${locale}/dashboard`;
     };
 
     return (

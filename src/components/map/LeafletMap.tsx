@@ -4,7 +4,6 @@ import React from "react";
 import { MapContainer as LeafletMap, TileLayer, Marker, Popup, useMap } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-import Link from "next/link";
 import { useLocale } from "next-intl";
 
 // Fix Leaflet's default marker icon path issue in Next.js
@@ -39,7 +38,9 @@ interface Facility {
     name: string;
     city: string;
     address: string;
+    description: string | null;
     location: unknown;
+    status: string;
     distance_m: number;
 }
 

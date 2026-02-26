@@ -6,7 +6,6 @@ export type DocumentStatus = "pending" | "approved" | "rejected";
 
 export interface Database {
     public: {
-        PostgrestVersion: "12";
         Tables: {
             profiles: {
                 Row: {
@@ -31,11 +30,13 @@ export interface Database {
                     avatar_url?: string | null;
                     updated_at?: string;
                 };
+                Relationships: [];
             };
             sports: {
                 Row: { id: number; name: string; icon: string | null };
                 Insert: { name: string; icon?: string | null };
                 Update: { name?: string; icon?: string | null };
+                Relationships: [];
             };
             facilities: {
                 Row: {
@@ -45,12 +46,13 @@ export interface Database {
                     description: string | null;
                     address: string;
                     city: string;
-                    postal_code: string;
+                    postal_code: string | null;
                     country: string;
                     phone: string | null;
                     website: string | null;
-                    location: unknown | null; // PostGIS geography
+                    location: unknown | null;
                     status: FacilityStatus;
+                    rejection_reason: string | null;
                     created_at: string;
                     updated_at: string;
                 };
@@ -66,7 +68,7 @@ export interface Database {
                     phone?: string | null;
                     website?: string | null;
                     location?: unknown | null;
-                    status?: FacilityStatus | string;
+                    status?: FacilityStatus;
                 };
                 Update: {
                     name?: string;
@@ -78,15 +80,40 @@ export interface Database {
                     phone?: string | null;
                     website?: string | null;
                     location?: unknown | null;
-                    status?: FacilityStatus | string;
-                    updated_at?: string;
+                    status?: FacilityStatus;
                     rejection_reason?: string | null;
+                    updated_at?: string;
                 };
+                Relationships: [
+                    {
+                        foreignKeyName: "facilities_owner_id_fkey";
+                        columns: ["owner_id"];
+                        isOneToOne: false;
+                        referencedRelation: "profiles";
+                        referencedColumns: ["id"];
+                    }
+                ];
             };
             facility_sports: {
                 Row: { facility_id: string; sport_id: number };
                 Insert: { facility_id: string; sport_id: number };
                 Update: never;
+                Relationships: [
+                    {
+                        foreignKeyName: "facility_sports_facility_id_fkey";
+                        columns: ["facility_id"];
+                        isOneToOne: false;
+                        referencedRelation: "facilities";
+                        referencedColumns: ["id"];
+                    },
+                    {
+                        foreignKeyName: "facility_sports_sport_id_fkey";
+                        columns: ["sport_id"];
+                        isOneToOne: false;
+                        referencedRelation: "sports";
+                        referencedColumns: ["id"];
+                    }
+                ];
             };
             facility_hours: {
                 Row: {
@@ -110,6 +137,15 @@ export interface Database {
                     close_time?: string | null;
                     is_closed?: boolean;
                 };
+                Relationships: [
+                    {
+                        foreignKeyName: "facility_hours_facility_id_fkey";
+                        columns: ["facility_id"];
+                        isOneToOne: false;
+                        referencedRelation: "facilities";
+                        referencedColumns: ["id"];
+                    }
+                ];
             };
             facility_images: {
                 Row: {
@@ -129,6 +165,15 @@ export interface Database {
                     storage_path?: string;
                     display_order?: number;
                 };
+                Relationships: [
+                    {
+                        foreignKeyName: "facility_images_facility_id_fkey";
+                        columns: ["facility_id"];
+                        isOneToOne: false;
+                        referencedRelation: "facilities";
+                        referencedColumns: ["id"];
+                    }
+                ];
             };
             student_discounts: {
                 Row: {
@@ -151,6 +196,15 @@ export interface Database {
                     amount?: string | null;
                     valid_until?: string | null;
                 };
+                Relationships: [
+                    {
+                        foreignKeyName: "student_discounts_facility_id_fkey";
+                        columns: ["facility_id"];
+                        isOneToOne: false;
+                        referencedRelation: "facilities";
+                        referencedColumns: ["id"];
+                    }
+                ];
             };
             reviews: {
                 Row: {
@@ -174,6 +228,22 @@ export interface Database {
                     comment?: string | null;
                     updated_at?: string;
                 };
+                Relationships: [
+                    {
+                        foreignKeyName: "reviews_facility_id_fkey";
+                        columns: ["facility_id"];
+                        isOneToOne: false;
+                        referencedRelation: "facilities";
+                        referencedColumns: ["id"];
+                    },
+                    {
+                        foreignKeyName: "reviews_user_id_fkey";
+                        columns: ["user_id"];
+                        isOneToOne: false;
+                        referencedRelation: "profiles";
+                        referencedColumns: ["id"];
+                    }
+                ];
             };
             events: {
                 Row: {
@@ -203,6 +273,22 @@ export interface Database {
                     status?: EventStatus;
                     updated_at?: string;
                 };
+                Relationships: [
+                    {
+                        foreignKeyName: "events_facility_id_fkey";
+                        columns: ["facility_id"];
+                        isOneToOne: false;
+                        referencedRelation: "facilities";
+                        referencedColumns: ["id"];
+                    },
+                    {
+                        foreignKeyName: "events_submitted_by_fkey";
+                        columns: ["submitted_by"];
+                        isOneToOne: false;
+                        referencedRelation: "profiles";
+                        referencedColumns: ["id"];
+                    }
+                ];
             };
             legal_documents: {
                 Row: {
@@ -228,6 +314,22 @@ export interface Database {
                     admin_notes?: string | null;
                     reviewed_at?: string | null;
                 };
+                Relationships: [
+                    {
+                        foreignKeyName: "legal_documents_facility_id_fkey";
+                        columns: ["facility_id"];
+                        isOneToOne: false;
+                        referencedRelation: "facilities";
+                        referencedColumns: ["id"];
+                    },
+                    {
+                        foreignKeyName: "legal_documents_owner_id_fkey";
+                        columns: ["owner_id"];
+                        isOneToOne: false;
+                        referencedRelation: "profiles";
+                        referencedColumns: ["id"];
+                    }
+                ];
             };
             matchmaking_posts: {
                 Row: {
@@ -258,6 +360,22 @@ export interface Database {
                     location_text?: string | null;
                     is_active?: boolean;
                 };
+                Relationships: [
+                    {
+                        foreignKeyName: "matchmaking_posts_user_id_fkey";
+                        columns: ["user_id"];
+                        isOneToOne: false;
+                        referencedRelation: "profiles";
+                        referencedColumns: ["id"];
+                    },
+                    {
+                        foreignKeyName: "matchmaking_posts_sport_id_fkey";
+                        columns: ["sport_id"];
+                        isOneToOne: false;
+                        referencedRelation: "sports";
+                        referencedColumns: ["id"];
+                    }
+                ];
             };
             email_campaigns: {
                 Row: {
@@ -274,6 +392,15 @@ export interface Database {
                     recipient_count?: number;
                 };
                 Update: never;
+                Relationships: [
+                    {
+                        foreignKeyName: "email_campaigns_admin_id_fkey";
+                        columns: ["admin_id"];
+                        isOneToOne: false;
+                        referencedRelation: "profiles";
+                        referencedColumns: ["id"];
+                    }
+                ];
             };
         };
         Views: Record<string, never>;
@@ -297,8 +424,8 @@ export interface Database {
                     distance_m: number;
                 }>;
             };
-            is_admin: { Args: Record<string, never>; Returns: boolean };
-            get_user_role: { Args: Record<string, never>; Returns: string };
+            is_admin: { Args: Record<PropertyKey, never>; Returns: boolean };
+            get_user_role: { Args: Record<PropertyKey, never>; Returns: string };
         };
         Enums: {
             user_role: UserRole;
@@ -307,6 +434,7 @@ export interface Database {
             skill_level: SkillLevel;
             document_status: DocumentStatus;
         };
+        CompositeTypes: Record<string, never>;
     };
 }
 

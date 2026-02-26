@@ -5,7 +5,6 @@ import { useTranslations } from "next-intl";
 import dynamic from "next/dynamic";
 import { createClient } from "@/lib/supabase/client";
 import { Search, SlidersHorizontal, Loader2 } from "lucide-react";
-import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import type { Sport } from "@/types/database";

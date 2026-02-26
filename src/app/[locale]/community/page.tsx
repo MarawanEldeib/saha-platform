@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/Input";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { matchmakingSchema, type MatchmakingInput } from "@/lib/validations";
-import { Users, Calendar, MessageSquare, Plus, X } from "lucide-react";
+import { Calendar, MessageSquare, Plus, X } from "lucide-react";
 import { Badge } from "@/components/ui/Badge";
 import { format } from "date-fns";
 import type { Sport } from "@/types/database";

@@ -9,7 +9,6 @@ import { enrollTotpAction, verifyTotpAction } from "../../actions";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import { ShieldCheck, AlertCircle } from "lucide-react";
-import Image from "next/image";
 import { useSearchParams } from "next/navigation";
 
 export default function TwoFASetupPage() {
@@ -76,12 +75,12 @@ export default function TwoFASetupPage() {
                         <div className="flex justify-center mb-6">
                             <div className="p-3 bg-white rounded-xl border border-gray-200 shadow-sm">
                                 {/* QR code is a data URI SVG from Supabase */}
-                                <Image
+                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                <img
                                     src={qrCode}
                                     alt="2FA QR Code"
                                     width={180}
                                     height={180}
-                                    unoptimized
                                 />
                             </div>
                         </div>

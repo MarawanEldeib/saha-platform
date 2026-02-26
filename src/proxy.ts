@@ -39,7 +39,7 @@ export async function proxy(request: NextRequest) {
     }
 
     // Create Supabase SSR client to read session from cookies
-    let response = intlResponse ?? NextResponse.next({ request });
+    const response = intlResponse ?? NextResponse.next({ request });
 
     const supabase = createServerClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
