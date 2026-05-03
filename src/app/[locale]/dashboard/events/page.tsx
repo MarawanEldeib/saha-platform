@@ -14,8 +14,7 @@ export default async function EventsPage() {
     if (!user) redirect(`/${locale}/login`);
 
     // Get facility ID for the user (most recent, tolerates duplicates from testing)
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: facilityRows } = await (supabase as any)
+    const { data: facilityRows } = await supabase
         .from("facilities")
         .select("id")
         .eq("owner_id", user.id)
@@ -33,8 +32,7 @@ export default async function EventsPage() {
     }
 
     // Get existing events
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: events } = await (supabase as any)
+    const { data: events } = await supabase
         .from("events")
         .select("*")
         .eq("facility_id", facility.id)
@@ -65,8 +63,7 @@ export default async function EventsPage() {
                         </div>
                     ) : (
                         <div className="space-y-4">
-                            {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-                            {events.map((event: any) => (
+                            {events.map((event) => (
                                 <div key={event.id} className="p-4 rounded-xl border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-950/50">
                                     <div className="flex justify-between items-start mb-2">
                                         <h3 className="font-semibold text-gray-900 dark:text-white">{event.name}</h3>
