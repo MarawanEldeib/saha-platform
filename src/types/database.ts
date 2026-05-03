@@ -402,6 +402,28 @@ export interface Database {
                     }
                 ];
             };
+            sport_suggestions: {
+                Row: {
+                    id: string;
+                    facility_id: string | null;
+                    suggested_by: string | null;
+                    name: string;
+                    created_at: string;
+                };
+                Insert: {
+                    id?: string;
+                    facility_id?: string | null;
+                    suggested_by?: string | null;
+                    name: string;
+                    created_at?: string;
+                };
+                Update: {
+                    facility_id?: string | null;
+                    suggested_by?: string | null;
+                    name?: string;
+                };
+                Relationships: [];
+            };
         };
         Views: Record<string, never>;
         Functions: {
@@ -450,6 +472,7 @@ export type Event = Database["public"]["Tables"]["events"]["Row"];
 export type LegalDocument = Database["public"]["Tables"]["legal_documents"]["Row"];
 export type MatchmakingPost = Database["public"]["Tables"]["matchmaking_posts"]["Row"];
 export type EmailCampaign = Database["public"]["Tables"]["email_campaigns"]["Row"];
+export type SportSuggestion = Database["public"]["Tables"]["sport_suggestions"]["Row"];
 
 // Rich joined types used in the UI
 export type FacilityWithDetails = Facility & {
