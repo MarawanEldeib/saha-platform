@@ -8,7 +8,6 @@ import { updateFacilityAction, updateFacilitySportsAction } from "../actions";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import { CheckCircle } from "lucide-react";
-import { LAUNCH_COUNTRIES, type LaunchCountry } from "@/lib/platform-config";
 
 interface Sport { id: number; name: string }
 
@@ -20,7 +19,6 @@ interface Props {
         address: string;
         city: string;
         postal_code: string | null;
-        country: string;
         phone: string | null;
         website: string | null;
     };
@@ -34,9 +32,6 @@ export function FacilityEditForm({ facility, allSports, currentSportIds }: Props
     const [sportIds, setSportIds] = React.useState<number[]>(currentSportIds);
     const [sportsError, setSportsError] = React.useState<string | null>(null);
     const [sportsSaved, setSportsSaved] = React.useState(false);
-    const initialCountry = LAUNCH_COUNTRIES.includes(facility.country as LaunchCountry)
-        ? (facility.country as LaunchCountry)
-        : LAUNCH_COUNTRIES[0];
 
     const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<FacilityUpdateInput>({
         resolver: zodResolver(facilityUpdateSchema),
@@ -46,7 +41,6 @@ export function FacilityEditForm({ facility, allSports, currentSportIds }: Props
             address: facility.address,
             city: facility.city,
             postal_code: facility.postal_code ?? "",
-            country: initialCountry,
             phone: facility.phone ?? "",
             website: facility.website ?? "",
         },
@@ -85,20 +79,6 @@ export function FacilityEditForm({ facility, allSports, currentSportIds }: Props
                         <Input label="Postal code" error={errors.postal_code?.message} {...register("postal_code")} />
                         <Input label="Phone" error={errors.phone?.message} {...register("phone")} />
                         <Input label="Website" placeholder="https://" error={errors.website?.message} {...register("website")} />
-                    </div>
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Country</label>
-                        <select
-                            {...register("country")}
-                            className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                        >
-                            {LAUNCH_COUNTRIES.map((country) => (
-                                <option key={country} value={country}>
-                                    {country}
-                                </option>
-                            ))}
-                        </select>
-                        {errors.country && <p className="text-xs text-red-500 mt-1">{errors.country.message}</p>}
                     </div>
                     <div>
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Description</label>

@@ -10,7 +10,6 @@ import { Input, Textarea } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import { useRouter } from "next/navigation";
 import { CheckCircle, Building2 } from "lucide-react";
-import { FOCUS_SPORTS, LAUNCH_COUNTRIES } from "@/lib/platform-config";
 
 export default function OnboardingPage() {
     const t = useTranslations("dashboard.onboarding");
@@ -19,6 +18,8 @@ export default function OnboardingPage() {
     const [step, setStep] = React.useState(1);
     const [sportIds, setSportIds] = React.useState<number[]>([]);
     const [dbSports, setDbSports] = React.useState<{ id: number; name: string }[]>([]);
+    const [otherSelected, setOtherSelected] = React.useState(false);
+    const [otherText, setOtherText] = React.useState("");
     const [serverError, setServerError] = React.useState<string | null>(null);
     const [facilityId, setFacilityId] = React.useState<string | null>(null);
 
@@ -29,10 +30,7 @@ export default function OnboardingPage() {
             .from("sports")
             .select("id, name")
             .order("name")
-            .then(({ data }) => {
-                const sports = (data as { id: number; name: string }[]) ?? [];
-                setDbSports(sports.filter((sport) => FOCUS_SPORTS.includes(sport.name as (typeof FOCUS_SPORTS)[number])));
-            });
+            .then(({ data }) => setDbSports((data as { id: number; name: string }[]) ?? []));
     }, [step, dbSports.length]);
 
     const {
@@ -42,7 +40,7 @@ export default function OnboardingPage() {
     } = useForm<FacilityInput>({
         resolver: zodResolver(facilitySchema),
         defaultValues: {
-            name: "", address: "", city: "", country: LAUNCH_COUNTRIES[0],
+            name: "", address: "", city: "", country: "DE",
             description: "", phone: "", website: "",
         },
     });
@@ -65,25 +63,39 @@ export default function OnboardingPage() {
         setStep(2);
     };
 
-    // Step 2: Sports selection
+    // Step 2: Sports selection + optional Other suggestion
     const submitStep2 = async () => {
         if (!facilityId) {
             setServerError("Missing facility context. Please restart onboarding.");
             return;
         }
-        if (sportIds.length === 0) {
+        if (sportIds.length === 0 && !otherSelected) {
             setServerError("Please select at least one sport.");
+            return;
+        }
+        if (otherSelected && !otherText.trim()) {
+            setServerError("Please describe the sport you'd like to suggest.");
             return;
         }
         setServerError(null);
 
         const supabase = createClient();
+        const { data: { user } } = await supabase.auth.getUser();
 
         // Insert selected known sports
         if (sportIds.length > 0) {
             const rows = sportIds.map((id) => ({ facility_id: facilityId, sport_id: id }));
             const { error } = await supabase.from("facility_sports").insert(rows);
             if (error) { setServerError(error.message); return; }
+        }
+
+        // Log the "Other" suggestion so admins can review demand
+        if (otherSelected && otherText.trim()) {
+            await supabase.from("sport_suggestions").insert({
+                facility_id: facilityId,
+                suggested_by: user?.id,
+                name: otherText.trim(),
+            });
         }
 
         setStep(3);
@@ -128,20 +140,6 @@ export default function OnboardingPage() {
                             <Input label="City *" error={errors.city?.message} {...register("city")} />
                             <Input label="Postal Code" {...register("postal_code")} />
                         </div>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Country *</label>
-                            <select
-                                {...register("country")}
-                                className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                            >
-                                {LAUNCH_COUNTRIES.map((country) => (
-                                    <option key={country} value={country}>
-                                        {country}
-                                    </option>
-                                ))}
-                            </select>
-                            {errors.country && <p className="text-xs text-red-500 mt-1">{errors.country.message}</p>}
-                        </div>
                         <Textarea label="Description" rows={3} {...register("description")} />
                         <div className="grid grid-cols-2 gap-4">
                             <Input label="Phone" type="tel" {...register("phone")} />
@@ -159,9 +157,7 @@ export default function OnboardingPage() {
             {step === 2 && (
                 <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-6">
                     <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2">{t("step2_title")}</h2>
-                    <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
-                        Select all that apply. We currently support padel, badminton, squash, and tennis.
-                    </p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">Select all that apply. Don&apos;t see your sport? Use &quot;Other&quot; to suggest it.</p>
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mb-4">
                         {dbSports.map((sport) => (
                             <button
@@ -178,7 +174,31 @@ export default function OnboardingPage() {
                                 {sport.name}
                             </button>
                         ))}
+                        {/* Other button */}
+                        <button
+                            type="button"
+                            onClick={() => setOtherSelected((v) => !v)}
+                            className={`px-3 py-2 rounded-xl text-sm font-medium border-2 transition-all text-left ${otherSelected
+                                ? "border-emerald-500 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400"
+                                : "border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:border-gray-300"
+                                }`}
+                        >
+                            + Other
+                        </button>
                     </div>
+                    {/* Free-text input for Other */}
+                    {otherSelected && (
+                        <div className="mb-4">
+                            <input
+                                type="text"
+                                placeholder="e.g. Padel Tennis"
+                                value={otherText}
+                                onChange={(e) => setOtherText(e.target.value)}
+                                className="w-full rounded-xl border-2 border-emerald-300 dark:border-emerald-700 bg-white dark:bg-gray-900 px-4 py-2.5 text-sm text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:border-emerald-500"
+                            />
+                            <p className="mt-1.5 text-xs text-gray-400">Your suggestion will be reviewed by our team. If requested by others too, we&apos;ll add it as an official category.</p>
+                        </div>
+                    )}
                     {serverError && <p className="text-sm text-red-500 mb-3" role="alert">{serverError}</p>}
                     <div className="flex gap-3">
                         <Button variant="outline" onClick={() => setStep(1)}>{t("back")}</Button>
