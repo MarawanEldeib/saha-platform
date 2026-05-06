@@ -13,7 +13,7 @@ export default async function FacilityPage() {
 
     const { data: facilityRows } = await supabase
         .from("facilities")
-        .select("id, name, description, address, city, postal_code, phone, website")
+        .select("id, name, description, address, city, postal_code, country, phone, website")
         .eq("owner_id", user.id)
         .order("created_at", { ascending: false })
         .limit(1);
