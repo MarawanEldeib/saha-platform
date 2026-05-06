@@ -11,7 +11,8 @@ export default async function FacilityPage() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) redirect(`/${locale}/login`);
 
-    const { data: facilityRows } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: facilityRows } = await (supabase as any)
         .from("facilities")
         .select("id, name, description, address, city, postal_code, phone, website")
         .eq("owner_id", user.id)
@@ -24,8 +25,10 @@ export default async function FacilityPage() {
     }
 
     const [{ data: allSports }, { data: facilitySpots }] = await Promise.all([
-        supabase.from("sports").select("id, name").order("name"),
-        supabase.from("facility_sports").select("sport_id").eq("facility_id", facility.id),
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (supabase as any).from("sports").select("id, name").order("name"),
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (supabase as any).from("facility_sports").select("sport_id").eq("facility_id", facility.id),
     ]);
 
     const currentSportIds: number[] = (facilitySpots ?? []).map((r: { sport_id: number }) => r.sport_id);

@@ -1,6 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
 import { getLocale, getTranslations } from "next-intl/server";
-import { redirect } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/Button";
 import { FacilityStatusBadge } from "@/components/ui/Badge";
@@ -14,17 +13,11 @@ export default async function DashboardPage() {
     const supabase = await createClient();
 
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) redirect(`/${locale}/login`);
-
-    const { data: profile } = await supabase
-        .from("profiles")
-        .select("display_name")
-        .eq("id", user.id)
-        .single();
+    const { data: profile } = await supabase.from("profiles").select("display_name").eq("id", user!.id).single();
     const { data: facilityRows } = await supabase
         .from("facilities")
         .select("id, name, status")
-        .eq("owner_id", user.id)
+        .eq("owner_id", user!.id)
         .order("created_at", { ascending: false })
         .limit(1);
     const facility = facilityRows?.[0] ?? null;
