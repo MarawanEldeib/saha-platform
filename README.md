@@ -1,12 +1,12 @@
 # Saha Platform
 
-Saha is a multilingual racquet-sports facility platform for players and facility operators in Egypt, Malaysia, Qatar, and the United Arab Emirates.
+Saha is a multilingual sports facility platform for students and facility operators in Stuttgart/Baden-Württemberg.
 
 ## Product scope
 
-1. **Players** discover facilities and compare available offers.
-2. **Business users** onboard a facility and manage listing details.
-3. **Admins** review facility submissions and send outreach campaigns.
+1. **Students** discover facilities, discounts, events, and community matchmaking posts.
+2. **Business users** onboard a facility, manage listing details, and submit events.
+3. **Admins** review facility/event submissions and send outreach campaigns.
 
 ## Tech stack
 
@@ -57,7 +57,6 @@ SQL migrations are under `supabase/migrations/`.
 - `001_initial_schema.sql` — full schema + RLS policies + helper functions
 - `003_add_rejection_reason.sql` — facility review metadata
 - `20260222_sport_suggestions.sql` — onboarding sport suggestions
-- `20260506_launch_scope.sql` — launch-country and focused-sports restrictions
 
 ## Key app structure
 

@@ -13,12 +13,12 @@
     },
     "home": {
         "hero": {
-            "badge": "Focused on Racquet Sports",
+            "badge": "Free for Students",
             "title": "Find Sports Facilities Near You",
-            "subtitle": "Discover padel, badminton, squash, and tennis facilities in Egypt, Malaysia, Qatar, and the United Arab Emirates.",
+            "subtitle": "Discover sports halls, courts, and clubs in Stuttgart and Baden-Württemberg. Search by sport, find student discounts, and connect with other players.",
             "cta_primary": "Explore the Map",
-            "cta_secondary": "List Your Facility",
-            "tagline": "Built for players. Designed for focused discovery."
+            "cta_secondary": "Join the Community",
+            "tagline": "Built for students. Powered by community."
         },
         "features": {
             "title": "Everything You Need to Stay Active",
@@ -27,31 +27,35 @@
                 "desc": "Find facilities near you with a powerful location-based search powered by real geographic data."
             },
             "discounts": {
-                "title": "Special Offers",
-                "desc": "Filter facilities with active offers and promotions."
+                "title": "Student Discounts",
+                "desc": "Filter for facilities that offer special rates for students. Your student ID goes further."
+            },
+            "community": {
+                "title": "Matchmaking Board",
+                "desc": "Post a request or browse listings to find training partners, teammates, and sports groups."
             },
             "reviews": {
                 "title": "Verified Reviews",
-                "desc": "Read honest reviews from other players before you visit."
+                "desc": "Read honest reviews from other students and athletes before you visit."
             }
         },
         "stats": {
             "facilities": "Facilities Listed",
             "sports": "Sports Covered",
-            "members": "Members",
+            "students": "Students Served",
             "cities": "Cities"
         },
         "cta_section": {
             "title": "Own a Sports Facility?",
-            "subtitle": "List your facility and reach players actively looking for courts and clubs.",
+            "subtitle": "List your facility for free during our founding member period. Reach thousands of students actively looking for places to play.",
             "button": "Register Your Business"
         }
     },
     "map": {
         "title": "Find Sports Facilities",
         "search_placeholder": "Search by sport, name, or location...",
-        "filter_sport": "All Focus Sports",
-        "filter_discount": "Offers Only",
+        "filter_sport": "All Sports",
+        "filter_discount": "Student Discounts Only",
         "no_results": "No facilities found. Try adjusting your filters.",
         "loading": "Loading facilities...",
         "details_button": "View Details",
@@ -60,9 +64,9 @@
     "facility": {
         "hours": "Opening Hours",
         "sports": "Available Sports",
-        "discounts": "Special Offers",
-        "discount_available": "Special offer available",
-        "no_discount": "No active offers",
+        "discounts": "Student Discounts",
+        "discount_available": "Student discount available",
+        "no_discount": "No student discount",
         "reviews_title": "Reviews",
         "no_reviews": "No reviews yet. Be the first to leave one!",
         "write_review": "Write a Review",
@@ -113,13 +117,13 @@
         },
         "register": {
             "title": "Create an Account",
-            "subtitle": "Join Saha",
+            "subtitle": "Join the Saha community",
             "name": "Full Name",
             "email": "Email Address",
             "password": "Password",
             "confirm_password": "Confirm Password",
             "account_type": "Account Type",
-            "type_user": "Player",
+            "type_user": "Student / Player",
             "type_business": "Facility Owner / Business",
             "submit": "Create Account",
             "already_account": "Already have an account?",
@@ -159,6 +163,7 @@
         "nav": {
             "overview": "Overview",
             "facility": "My Facility",
+            "events": "Events",
             "settings": "Settings"
         },
         "overview": {
@@ -206,7 +211,7 @@
             "images": "Photos",
             "hours": "Opening Hours",
             "sports": "Sports",
-            "discounts": "Special Offers",
+            "discounts": "Student Discounts",
             "save": "Save Changes",
             "saving": "Saving...",
             "saved": "Changes saved.",
