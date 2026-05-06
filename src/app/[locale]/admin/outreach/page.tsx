@@ -9,8 +9,8 @@ import { CheckCircle, Mail } from "lucide-react";
 export default function AdminOutreachPage() {
     const [subject, setSubject] = React.useState("");
     const [body, setBody] = React.useState(`<p>Dear Facility Owner,</p>
-<p>We would like to invite you to list your sports facility on <strong>Saha</strong>, the student-focused sports directory for Stuttgart and Baden-Württemberg.</p>
-<p>Listing is free. Connect with student athletes at your facility today.</p>
+<p>We would like to invite you to list your sports facility on <strong>Saha</strong>, the racquet-sports directory for Egypt, Malaysia, Qatar, and the United Arab Emirates.</p>
+<p>Listing is free. Connect with players actively searching for padel, badminton, squash, and tennis facilities.</p>
 <p>Visit <a href="https://saha.app">saha.app</a> to get started.</p>`);
     const [emails, setEmails] = React.useState("");
     const [loading, setLoading] = React.useState(false);
