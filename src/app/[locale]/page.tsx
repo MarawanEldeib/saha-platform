@@ -1,12 +1,12 @@
 import { getTranslations, getLocale } from "next-intl/server";
 import Link from "next/link";
-import { MapPin, Users, Star, ChevronRight, Zap } from "lucide-react";
+import { MapPin, Star, ChevronRight, Zap } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 
 export const metadata = {
-    title: "Saha – Sports Facility Directory for Students",
+    title: "Saha – Racquet Sports Facility Directory",
     description:
-        "Find sports facilities in Stuttgart and Baden-Württemberg. Search by sport, find student discounts, and connect with other players.",
+        "Find racquet sports facilities across Egypt, Malaysia, Qatar, and the United Arab Emirates. Focused on padel, badminton, squash, and tennis.",
 };
 
 export default async function HomePage() {
@@ -16,7 +16,6 @@ export default async function HomePage() {
     const features = [
         { key: "map", icon: MapPin },
         { key: "discounts", icon: Zap },
-        { key: "community", icon: Users },
         { key: "reviews", icon: Star },
     ] as const;
 
@@ -40,7 +39,7 @@ export default async function HomePage() {
     const stats = [
         { key: "facilities", value: formatCount(facilityCount) },
         { key: "sports", value: formatCount(sportCount) },
-        { key: "students", value: formatCount(userCount) },
+        { key: "members", value: formatCount(userCount) },
         { key: "cities", value: formatCount(cityCount) },
     ];
 
@@ -86,10 +85,9 @@ export default async function HomePage() {
                             {t("hero.cta_primary")}
                         </Link>
                         <Link
-                            href={`/${locale}/community`}
+                            href={`/${locale}/register?role=business`}
                             className="inline-flex items-center gap-2 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-800 font-medium px-8 py-3 rounded-xl text-base transition-colors"
                         >
-                            <Users className="h-5 w-5" />
                             {t("hero.cta_secondary")}
                         </Link>
                     </div>
@@ -118,7 +116,7 @@ export default async function HomePage() {
                             {t("features.title")}
                         </h2>
                     </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
                         {features.map(({ key, icon: Icon }) => (
                             <div
                                 key={key}
@@ -139,7 +137,7 @@ export default async function HomePage() {
                 </div>
             </section>
 
-            {/* ── Business CTA — hidden for students, smart for business/guest ── */}
+            {/* ── Business CTA ─────────────────────────────────────────────────── */}
             {userRole !== "user" && (
                 <section className="py-20 bg-gray-50 dark:bg-gray-900">
                     <div className="max-w-3xl mx-auto px-4 sm:px-6 text-center">

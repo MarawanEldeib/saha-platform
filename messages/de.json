@@ -13,49 +13,45 @@
     },
     "home": {
         "hero": {
-            "badge": "Kostenlos für Studierende",
+            "badge": "Fokussiert auf Racketsport",
             "title": "Sportstätten in deiner Nähe finden",
-            "subtitle": "Entdecke Sporthallen, Plätze und Vereine in Stuttgart und Baden-Württemberg. Suche nach Sportart, finde Studentenrabatte und vernetze dich mit anderen Spielern.",
+            "subtitle": "Entdecke Padel-, Badminton-, Squash- und Tennisanlagen in Ägypten, Malaysia, Katar und den Vereinigten Arabischen Emiraten.",
             "cta_primary": "Karte erkunden",
-            "cta_secondary": "Community beitreten",
-            "tagline": "Für Studierende gemacht. Von der Community angetrieben."
+            "cta_secondary": "Sportstätte eintragen",
+            "tagline": "Für Spieler und Betreiber gebaut. Auf fokussierte Entdeckung ausgelegt."
         },
         "features": {
-            "title": "Alles, was du für einen aktiven Lebensstil brauchst",
+            "title": "Alles, was du für Racketsport brauchst",
             "map": {
                 "title": "Interaktive Karte",
                 "desc": "Finde Sportstätten in deiner Nähe mit einer leistungsstarken standortbasierten Suche."
             },
             "discounts": {
-                "title": "Studentenrabatte",
-                "desc": "Filtere nach Einrichtungen mit Sonderpreisen für Studierende. Dein Studentenausweis zahlt sich aus."
-            },
-            "community": {
-                "title": "Matchmaking-Board",
-                "desc": "Inseriere oder stöbere, um Trainingspartner, Mitspieler und Sportgruppen zu finden."
+                "title": "Sonderangebote",
+                "desc": "Filtere nach Einrichtungen mit aktiven Angeboten und Aktionen."
             },
             "reviews": {
                 "title": "Verifizierte Bewertungen",
-                "desc": "Lese ehrliche Bewertungen anderer Studierender, bevor du eine Sportstätte besuchst."
+                "desc": "Lies ehrliche Bewertungen anderer Spieler, bevor du eine Sportstätte besuchst."
             }
         },
         "stats": {
             "facilities": "Sportstätten gelistet",
             "sports": "Sportarten",
-            "students": "Studierende erreicht",
+            "members": "Mitglieder",
             "cities": "Städte"
         },
         "cta_section": {
             "title": "Betreibst du eine Sportstätte?",
-            "subtitle": "Liste deine Einrichtung kostenlos während unserer Gründungsphase. Erreiche tausende Studierende, die aktiv nach Sportstätten suchen.",
+            "subtitle": "Trage deine Einrichtung ein und erreiche Spieler, die aktiv nach Courts und Clubs suchen.",
             "button": "Unternehmen registrieren"
         }
     },
     "map": {
         "title": "Sportstätten finden",
         "search_placeholder": "Suche nach Sportart, Name oder Ort...",
-        "filter_sport": "Alle Sportarten",
-        "filter_discount": "Nur mit Studentenrabatt",
+        "filter_sport": "Alle Fokus-Sportarten",
+        "filter_discount": "Nur Angebote",
         "no_results": "Keine Sportstätten gefunden. Passe deine Filter an.",
         "loading": "Sportstätten werden geladen...",
         "details_button": "Details anzeigen",
@@ -64,9 +60,9 @@
     "facility": {
         "hours": "Öffnungszeiten",
         "sports": "Verfügbare Sportarten",
-        "discounts": "Studentenrabatte",
-        "discount_available": "Studentenrabatt verfügbar",
-        "no_discount": "Kein Studentenrabatt",
+        "discounts": "Sonderangebote",
+        "discount_available": "Sonderangebot verfügbar",
+        "no_discount": "Keine aktiven Angebote",
         "reviews_title": "Bewertungen",
         "no_reviews": "Noch keine Bewertungen. Sei der Erste!",
         "write_review": "Bewertung schreiben",
@@ -117,13 +113,13 @@
         },
         "register": {
             "title": "Konto erstellen",
-            "subtitle": "Trete der Saha-Community bei",
+            "subtitle": "Bei Saha registrieren",
             "name": "Vollständiger Name",
             "email": "E-Mail-Adresse",
             "password": "Passwort",
             "confirm_password": "Passwort bestätigen",
             "account_type": "Kontoart",
-            "type_user": "Studierende/r / Spieler",
+            "type_user": "Spieler",
             "type_business": "Einrichtungsbetreiber / Unternehmen",
             "submit": "Konto erstellen",
             "already_account": "Bereits ein Konto?",
@@ -163,7 +159,6 @@
         "nav": {
             "overview": "Übersicht",
             "facility": "Meine Sportstätte",
-            "events": "Veranstaltungen",
             "settings": "Einstellungen"
         },
         "overview": {
@@ -211,7 +206,7 @@
             "images": "Fotos",
             "hours": "Öffnungszeiten",
             "sports": "Sportarten",
-            "discounts": "Studentenrabatte",
+            "discounts": "Sonderangebote",
             "save": "Änderungen speichern",
             "saving": "Wird gespeichert...",
             "saved": "Änderungen gespeichert.",
