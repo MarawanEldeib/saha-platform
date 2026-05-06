@@ -4,7 +4,7 @@ import React, { Suspense } from "react";
 import { useTranslations, useLocale } from "next-intl";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { useForm, useWatch } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { registerSchema, type RegisterInput } from "@/lib/validations";
 import { registerAction } from "../actions";
@@ -24,7 +24,7 @@ function RegisterForm() {
     const {
         register,
         handleSubmit,
-        control,
+        watch,
         setValue,
         formState: { errors, isSubmitting },
     } = useForm<RegisterInput>({
@@ -32,7 +32,7 @@ function RegisterForm() {
         defaultValues: { role: initialRole },
     });
 
-    const selectedRole = useWatch({ control, name: "role" });
+    const selectedRole = watch("role");
 
     const onSubmit = async (data: RegisterInput) => {
         setServerError(null);
