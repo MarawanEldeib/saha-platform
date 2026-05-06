@@ -4,7 +4,7 @@ import * as React from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
-import { MapPin, Menu, X, Globe, LogOut, LayoutDashboard, ShieldCheck } from "lucide-react";
+import { MapPin, Menu, X, LogOut, LayoutDashboard, ShieldCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
 import type { Profile } from "@/types/database";
@@ -25,9 +25,6 @@ export function Navbar({ profile }: NavbarProps) {
     const pathname = usePathname();
     const router = useRouter();
     const [menuOpen, setMenuOpen] = React.useState(false);
-
-    const otherLocale = locale === "en" ? "de" : "en";
-    const switchLocalePath = pathname.replace(`/${locale}`, `/${otherLocale}`);
 
     const navLinks = [
         { href: `/${locale}/map`, label: t("map") },
@@ -75,16 +72,6 @@ export function Navbar({ profile }: NavbarProps) {
 
                     {/* Right Actions */}
                     <div className="hidden md:flex items-center gap-2">
-                        {/* Language switcher */}
-                        <Link
-                            href={switchLocalePath}
-                            className={ghostBtn}
-                            aria-label={t("language")}
-                        >
-                            <Globe className="h-4 w-4" />
-                            {otherLocale.toUpperCase()}
-                        </Link>
-
                         {profile ? (
                             <>
                                 {profile.role === "admin" && (
@@ -150,13 +137,6 @@ export function Navbar({ profile }: NavbarProps) {
                         </Link>
                     ))}
                     <div className="pt-2 flex flex-col gap-2">
-                        <Link
-                            href={switchLocalePath}
-                            className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-gray-700 dark:text-gray-300"
-                        >
-                            <Globe className="h-4 w-4" />
-                            {otherLocale === "en" ? "English" : "Deutsch"}
-                        </Link>
                         {profile ? (
                             <button
                                 onClick={() => { handleLogout(); setMenuOpen(false); }}
