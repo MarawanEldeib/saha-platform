@@ -1,69 +1,36 @@
-# Saha Platform
+This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
-Saha is a multilingual sports facility platform for students and facility operators in Stuttgart/Baden-Württemberg.
+## Getting Started
 
-## Product scope
-
-1. **Students** discover facilities, discounts, events, and community matchmaking posts.
-2. **Business users** onboard a facility, manage listing details, and submit events.
-3. **Admins** review facility/event submissions and send outreach campaigns.
-
-## Tech stack
-
-- Next.js 16 (App Router) + React 19 + TypeScript
-- Supabase (PostgreSQL, Auth, Storage, RLS)
-- next-intl (English/German)
-- Tailwind CSS + Radix UI
-
-## Restore locally
-
-1. Install Node.js 20+.
-2. Install dependencies:
-
-```bash
-npm ci
-```
-
-3. Create a local env file from the template:
-
-```bash
-cp .env.example .env.local
-```
-
-4. Fill environment variables in `.env.local`.
-5. Start development server:
+First, run the development server:
 
 ```bash
 npm run dev
+# or
+yarn dev
+# or
+pnpm dev
+# or
+bun dev
 ```
 
-App runs at `http://localhost:3000` and redirects to locale routes (`/en`, `/de`).
+Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-## Environment variables
+You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
-See `.env.example` for required keys.
+This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
-## Scripts
+## Learn More
 
-- `npm run dev` — start dev server
-- `npm run lint` — run ESLint
-- `npm run build` — production build
-- `npm run start` — run production server
+To learn more about Next.js, take a look at the following resources:
 
-## Database
+- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
+- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
 
-SQL migrations are under `supabase/migrations/`.
+You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
 
-- `001_initial_schema.sql` — full schema + RLS policies + helper functions
-- `003_add_rejection_reason.sql` — facility review metadata
-- `20260222_sport_suggestions.sql` — onboarding sport suggestions
+## Deploy on Vercel
 
-## Key app structure
+The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
-- `src/app/[locale]/` — locale-prefixed routes
-- `src/app/[locale]/(auth)/` — login/register/reset/2FA
-- `src/app/[locale]/dashboard/` — business dashboard
-- `src/app/[locale]/admin/` — admin panel
-- `src/lib/supabase/` — typed Supabase clients
-- `src/lib/validations.ts` — shared Zod schemas
-- `messages/` — i18n dictionaries
+Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
