@@ -4,23 +4,28 @@ import { revalidatePath } from "next/cache";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { Resend } from "resend";
+import type { Database } from "@/types/database";
+
+type FacilityUpdate = Database["public"]["Tables"]["facilities"]["Update"];
+type EventUpdate = Database["public"]["Tables"]["events"]["Update"];
 
 // ---------------------------------------------------------------------------
-// Guard: Only admin can call these actions
+// Guard: only admin may call these actions
 // ---------------------------------------------------------------------------
 async function assertAdmin() {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error("Unauthorized");
 
-    const profileResult = await supabase
+    const { data: profile } = await supabase
         .from("profiles")
         .select("role")
         .eq("id", user.id)
         .single();
 
-    const profile = profileResult.data as { role: string } | null;
-    if (profile?.role !== "admin") throw new Error("Forbidden");
+    if ((profile as { role: string } | null)?.role !== "admin") {
+        throw new Error("Forbidden");
+    }
 
     return { supabase, adminClient: createAdminClient() };
 }
@@ -31,11 +36,12 @@ async function assertAdmin() {
 export async function approveFacilityAction(facilityId: string) {
     try {
         const { adminClient } = await assertAdmin();
-        const result = await adminClient
+        const update: FacilityUpdate = { status: "active" };
+        const { error } = await adminClient
             .from("facilities")
-            .update({ status: "active" } as never)
+            .update(update)
             .eq("id", facilityId);
-        if (result.error) return { error: result.error.message };
+        if (error) return { error: error.message };
         revalidatePath("/", "layout");
         return { success: true };
     } catch (e: unknown) {
@@ -46,11 +52,12 @@ export async function approveFacilityAction(facilityId: string) {
 export async function rejectFacilityAction(facilityId: string, reason: string) {
     try {
         const { adminClient } = await assertAdmin();
-        const result = await adminClient
+        const update: FacilityUpdate = { status: "suspended", rejection_reason: reason || null };
+        const { error } = await adminClient
             .from("facilities")
-            .update({ status: "suspended", rejection_reason: reason } as never)
+            .update(update)
             .eq("id", facilityId);
-        if (result.error) return { error: result.error.message };
+        if (error) return { error: error.message };
         revalidatePath("/", "layout");
         return { success: true };
     } catch (e: unknown) {
@@ -64,11 +71,12 @@ export async function rejectFacilityAction(facilityId: string, reason: string) {
 export async function approveEventAction(eventId: string) {
     try {
         const { adminClient } = await assertAdmin();
-        const result = await adminClient
+        const update: EventUpdate = { status: "approved" };
+        const { error } = await adminClient
             .from("events")
-            .update({ status: "approved" } as never)
+            .update(update)
             .eq("id", eventId);
-        if (result.error) return { error: result.error.message };
+        if (error) return { error: error.message };
         revalidatePath("/", "layout");
         return { success: true };
     } catch (e: unknown) {
@@ -79,11 +87,12 @@ export async function approveEventAction(eventId: string) {
 export async function rejectEventAction(eventId: string) {
     try {
         const { adminClient } = await assertAdmin();
-        const result = await adminClient
+        const update: EventUpdate = { status: "rejected" };
+        const { error } = await adminClient
             .from("events")
-            .update({ status: "rejected" } as never)
+            .update(update)
             .eq("id", eventId);
-        if (result.error) return { error: result.error.message };
+        if (error) return { error: error.message };
         revalidatePath("/", "layout");
         return { success: true };
     } catch (e: unknown) {
@@ -92,7 +101,7 @@ export async function rejectEventAction(eventId: string) {
 }
 
 // ---------------------------------------------------------------------------
-// Email Campaign — send to uploaded list via Resend
+// Email Campaign – send via Resend
 // ---------------------------------------------------------------------------
 export async function sendEmailCampaignAction(formData: FormData) {
     try {
@@ -109,35 +118,35 @@ export async function sendEmailCampaignAction(formData: FormData) {
         return { error: "Subject, body, and email list are required." };
     }
 
+    // Basic RFC-5322 pattern — more robust than a bare .includes("@")
+    const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     const emails = emailsRaw
         .split(/[\n,]+/)
         .map((e) => e.trim())
-        .filter((e) => e.includes("@"));
+        .filter((e) => EMAIL_PATTERN.test(e));
 
-    if (emails.length === 0) return { error: "No valid emails found." };
+    if (emails.length === 0) return { error: "No valid email addresses found." };
 
     const resend = new Resend(process.env.RESEND_API_KEY!);
-
     let sent = 0;
     let failed = 0;
 
-    // Send in batches of 50 (Resend batch limit)
     for (let i = 0; i < emails.length; i += 50) {
         const batch = emails.slice(i, i + 50);
-        const result = await resend.emails.send({
-            from: "Saha Platform <noreply@saha.app>",
+        const { error } = await resend.emails.send({
+            from: "Saha <noreply@saha.app>",
             to: batch,
             subject,
             html: `<div style="font-family:sans-serif;max-width:600px;margin:0 auto;">
         ${body}
         <hr style="margin:24px 0;border:none;border-top:1px solid #eee;" />
         <p style="font-size:12px;color:#999;">
-          You received this email because you are listed as a sports facility operator in our database.
+          You received this email because your facility is listed on Saha.
           To unsubscribe, reply with "unsubscribe".
         </p>
       </div>`,
         });
-        if (result.error) failed += batch.length;
+        if (error) failed += batch.length;
         else sent += batch.length;
     }
 

@@ -1,7 +1,7 @@
 {
     "nav": {
         "home": "Startseite",
-        "map": "Sportstätten finden",
+        "map": "Courts finden",
         "community": "Community",
         "events": "Veranstaltungen",
         "login": "Anmelden",
@@ -13,49 +13,48 @@
     },
     "home": {
         "hero": {
-            "badge": "Kostenlos für Studierende",
-            "title": "Sportstätten in deiner Nähe finden",
-            "subtitle": "Entdecke Sporthallen, Plätze und Vereine in Stuttgart und Baden-Württemberg. Suche nach Sportart, finde Studentenrabatte und vernetze dich mit anderen Spielern.",
+            "badge": "Padel · Tennis · Squash · Badminton",
+            "title": "Racket-Sport-Courts in deiner Nähe finden",
+            "subtitle": "Entdecke Padel-Courts, Tennisclubs, Squash-Anlagen und Badminton-Hallen. Lies Bewertungen, prüfe Verfügbarkeit und vernetze dich mit anderen Spielern.",
             "cta_primary": "Karte erkunden",
-            "cta_secondary": "Community beitreten",
-            "tagline": "Für Studierende gemacht. Von der Community angetrieben."
+            "cta_secondary": "Partner finden",
+            "tagline": "Deine Racket-Sports-Community."
         },
         "features": {
-            "title": "Alles, was du für einen aktiven Lebensstil brauchst",
+            "title": "Alles, was du zum Spielen brauchst",
             "map": {
                 "title": "Interaktive Karte",
-                "desc": "Finde Sportstätten in deiner Nähe mit einer leistungsstarken standortbasierten Suche."
-            },
-            "discounts": {
-                "title": "Studentenrabatte",
-                "desc": "Filtere nach Einrichtungen mit Sonderpreisen für Studierende. Dein Studentenausweis zahlt sich aus."
+                "desc": "Finde Courts und Clubs in deiner Nähe mit standortbasierter Suche und echten geografischen Daten."
             },
             "community": {
-                "title": "Matchmaking-Board",
-                "desc": "Inseriere oder stöbere, um Trainingspartner, Mitspieler und Sportgruppen zu finden."
+                "title": "Spieler-Matchmaking",
+                "desc": "Inseriere oder stöbere, um Trainingspartner, Hitting-Partner und Doppel-Teams zu finden."
+            },
+            "events": {
+                "title": "Lokale Veranstaltungen",
+                "desc": "Entdecke Turniere, offene Tage und soziale Sessions in Anlagen in deiner Nähe."
             },
             "reviews": {
                 "title": "Verifizierte Bewertungen",
-                "desc": "Lese ehrliche Bewertungen anderer Studierender, bevor du eine Sportstätte besuchst."
+                "desc": "Lies ehrliche Bewertungen echter Spieler, bevor du einen Court buchst oder einem Club beitrittst."
             }
         },
         "stats": {
             "facilities": "Sportstätten gelistet",
             "sports": "Sportarten",
-            "students": "Studierende erreicht",
+            "players": "Spieler registriert",
             "cities": "Städte"
         },
         "cta_section": {
-            "title": "Betreibst du eine Sportstätte?",
-            "subtitle": "Liste deine Einrichtung kostenlos während unserer Gründungsphase. Erreiche tausende Studierende, die aktiv nach Sportstätten suchen.",
-            "button": "Unternehmen registrieren"
+            "title": "Betreibst du eine Racket-Sport-Anlage?",
+            "subtitle": "Liste deine Courts kostenlos. Erreiche Spieler, die aktiv nach Spielmöglichkeiten in deiner Nähe suchen.",
+            "button": "Anlage eintragen"
         }
     },
     "map": {
-        "title": "Sportstätten finden",
-        "search_placeholder": "Suche nach Sportart, Name oder Ort...",
+        "title": "Courts & Clubs finden",
+        "search_placeholder": "Suche nach Name, Sportart oder Ort...",
         "filter_sport": "Alle Sportarten",
-        "filter_discount": "Nur mit Studentenrabatt",
         "no_results": "Keine Sportstätten gefunden. Passe deine Filter an.",
         "loading": "Sportstätten werden geladen...",
         "details_button": "Details anzeigen",
@@ -64,9 +63,6 @@
     "facility": {
         "hours": "Öffnungszeiten",
         "sports": "Verfügbare Sportarten",
-        "discounts": "Studentenrabatte",
-        "discount_available": "Studentenrabatt verfügbar",
-        "no_discount": "Kein Studentenrabatt",
         "reviews_title": "Bewertungen",
         "no_reviews": "Noch keine Bewertungen. Sei der Erste!",
         "write_review": "Bewertung schreiben",
@@ -77,11 +73,12 @@
         "no_events": "Keine bevorstehenden Veranstaltungen.",
         "status_active": "Aktiv",
         "status_pending": "Prüfung ausstehend",
-        "status_suspended": "Gesperrt"
+        "status_suspended": "Gesperrt",
+        "closed": "Geschlossen"
     },
     "community": {
-        "title": "Matchmaking-Board",
-        "subtitle": "Finde Trainingspartner, Mitspieler und Sportgruppen in deiner Nähe.",
+        "title": "Spieler-Matchmaking",
+        "subtitle": "Finde Trainingspartner, Hitting-Partner und Doppel-Teams in deiner Nähe.",
         "new_post": "Anfrage stellen",
         "sport_label": "Sportart",
         "date_label": "Datum",
@@ -95,9 +92,9 @@
         "no_posts": "Noch keine Beiträge. Sei der Erste!"
     },
     "events": {
-        "title": "Sportveranstaltungen",
-        "subtitle": "Bevorstehende Veranstaltungen in deiner Nähe.",
-        "no_events": "Keine Veranstaltungen gefunden.",
+        "title": "Bevorstehende Veranstaltungen",
+        "subtitle": "Turniere, offene Tage und soziale Sessions in deiner Nähe.",
+        "no_events": "Keine bevorstehenden Veranstaltungen.",
         "date": "Datum",
         "venue": "Veranstaltungsort",
         "organizer": "Veranstalter"
@@ -123,8 +120,8 @@
             "password": "Passwort",
             "confirm_password": "Passwort bestätigen",
             "account_type": "Kontoart",
-            "type_user": "Studierende/r / Spieler",
-            "type_business": "Einrichtungsbetreiber / Unternehmen",
+            "type_user": "Spieler",
+            "type_business": "Anlagenbetreiber / Unternehmen",
             "submit": "Konto erstellen",
             "already_account": "Bereits ein Konto?",
             "login_link": "Anmelden",
@@ -173,53 +170,30 @@
             "status_pending": "Prüfung ausstehend",
             "status_active": "Aktiv",
             "status_suspended": "Gesperrt",
-            "complete_onboarding": "Schließe das Business-Onboarding ab, um gelistet zu werden.",
+            "complete_onboarding": "Schließe das Onboarding ab, um deine Anlage zu listen.",
             "start_onboarding": "Onboarding starten"
         },
         "onboarding": {
-            "title": "Business-Onboarding",
-            "step1": "Unternehmensdetails",
-            "step2": "Sportstätteninformationen",
-            "step3": "Rechtliche Dokumente",
-            "step4": "Überprüfen & Einreichen",
-            "business_name": "Unternehmensname",
-            "business_email": "Geschäftliche E-Mail",
-            "phone": "Telefonnummer",
-            "address": "Adresse",
-            "city": "Stadt",
-            "postal_code": "Postleitzahl",
-            "facility_name": "Name der Sportstätte",
-            "facility_description": "Beschreibung",
-            "website": "Website (optional)",
-            "sports": "Verfügbare Sportarten",
-            "upload_doc": "Registrierungsdokument hochladen (Gewerbeanmeldung o.ä.)",
-            "upload_hint": "PDF oder Bild, max. 10 MB. Sicher gespeichert – nur von unserem Admin-Team einsehbar.",
-            "submit": "Zur Prüfung einreichen",
-            "loading": "Wird eingereicht...",
-            "success": "Eingereicht! Unser Team prüft deine Unterlagen und meldet sich innerhalb von 2 Werktagen.",
-            "step1_title": "Sportstättendetails",
+            "title": "Anlage registrieren",
+            "step1_title": "Anlagendetails",
             "step2_title": "Angebotene Sportarten",
             "success_title": "Antrag eingereicht!",
-            "success_desc": "Unser Team prüft deine Sportstätte innerhalb von 2 Werktagen und meldet sich bei dir.",
+            "success_desc": "Unser Team prüft deine Anlage innerhalb von 2 Werktagen und meldet sich bei dir.",
             "go_dashboard": "Zum Dashboard",
             "next": "Weiter",
             "back": "Zurück"
         },
         "facility": {
-            "title": "Sportstätte verwalten",
+            "title": "Anlage verwalten",
             "description": "Beschreibung",
             "images": "Fotos",
             "hours": "Öffnungszeiten",
             "sports": "Sportarten",
-            "discounts": "Studentenrabatte",
             "save": "Änderungen speichern",
             "saving": "Wird gespeichert...",
             "saved": "Änderungen gespeichert.",
             "add_image": "Foto hinzufügen",
-            "remove_image": "Entfernen",
-            "add_discount": "Rabatt hinzufügen",
-            "discount_description": "Rabattdetails",
-            "discount_amount": "Betrag / Prozentsatz"
+            "remove_image": "Entfernen"
         },
         "events": {
             "title": "Veranstaltung einreichen",
@@ -257,27 +231,19 @@
             "overview": "Übersicht",
             "verifications": "Verifizierungswarteschlange",
             "events": "Veranstaltungswarteschlange",
-            "outreach": "E-Mail-Kontaktaufnahme",
-            "analytics": "Analytik"
-        },
-        "overview": {
-            "title": "Admin-Dashboard",
-            "total_businesses": "Unternehmen gesamt",
-            "pending_verifications": "Ausstehende Verifizierungen",
-            "pending_events": "Ausstehende Veranstaltungen",
-            "total_users": "Benutzer gesamt"
+            "outreach": "E-Mail-Kontaktaufnahme"
         },
         "verifications": {
-            "title": "Business-Verifizierungswarteschlange",
+            "title": "Anlagen-Verifizierungswarteschlange",
             "no_pending": "Keine ausstehenden Verifizierungen.",
             "approve": "Genehmigen",
             "decline": "Ablehnen",
             "view_doc": "Dokument anzeigen",
-            "business_name": "Unternehmensname",
+            "business_name": "Anlagenname",
             "submitted_at": "Eingereicht",
             "status": "Status",
-            "confirm_approve": "Dieses Unternehmen genehmigen?",
-            "confirm_decline": "Diesen Antrag ablehnen? Der Unternehmensinhaber wird benachrichtigt.",
+            "confirm_approve": "Diese Anlage genehmigen?",
+            "confirm_decline": "Diesen Antrag ablehnen?",
             "decline_reason": "Ablehnungsgrund (optional)"
         },
         "events": {
@@ -291,23 +257,10 @@
         },
         "outreach": {
             "title": "E-Mail-Kontaktaufnahme",
-            "upload_csv": "CSV hochladen",
-            "csv_hint": "CSV muss Spalten haben: name, email. Pro Zeile wird eine personalisierte Resend-Kampagne ausgelöst.",
             "template_label": "E-Mail-Vorlage",
             "send": "Kampagne senden",
             "sending": "Wird gesendet...",
-            "success": "Kampagne erfolgreich gesendet.",
-            "rows_found": "Zeilen in CSV gefunden"
-        },
-        "analytics": {
-            "title": "Analytik",
-            "signups": "Neue Anmeldungen",
-            "active_businesses": "Aktive Unternehmen",
-            "page_views": "Seitenaufrufe",
-            "period": "Zeitraum",
-            "last_7": "Letzte 7 Tage",
-            "last_30": "Letzte 30 Tage",
-            "last_90": "Letzte 90 Tage"
+            "success": "Kampagne erfolgreich gesendet."
         }
     },
     "common": {
@@ -336,7 +289,7 @@
         "closed": "Geschlossen",
         "open": "Geöffnet",
         "cookie_banner": {
-            "message": "Wir verwenden Cookies, um dein Erlebnis zu verbessern und die DSGVO einzuhalten. Wir verwenden keine Tracking-Cookies ohne deine Zustimmung.",
+            "message": "Wir verwenden Cookies, um dein Erlebnis zu verbessern. Wir verwenden keine Tracking-Cookies ohne deine Zustimmung.",
             "accept": "Akzeptieren",
             "reject": "Ablehnen"
         }

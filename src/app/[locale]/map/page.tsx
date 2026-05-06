@@ -4,9 +4,7 @@ import React from "react";
 import { useTranslations } from "next-intl";
 import dynamic from "next/dynamic";
 import { createClient } from "@/lib/supabase/client";
-import { Search, SlidersHorizontal, Loader2 } from "lucide-react";
-import { Button } from "@/components/ui/Button";
-import { Badge } from "@/components/ui/Badge";
+import { Search, Loader2 } from "lucide-react";
 import type { Sport } from "@/types/database";
 
 // Dynamically import Leaflet components to avoid SSR issues
@@ -35,7 +33,6 @@ export default function MapPage() {
     const [facilities, setFacilities] = React.useState<FacilityResult[]>([]);
     const [loading, setLoading] = React.useState(false);
     const [selectedSport, setSelectedSport] = React.useState<number | null>(null);
-    const [discountOnly, setDiscountOnly] = React.useState(false);
     const [searchQuery, setSearchQuery] = React.useState("");
     const [userLat, setUserLat] = React.useState(48.7758); // Default: Stuttgart
     const [userLng, setUserLng] = React.useState(9.1829);
@@ -70,22 +67,17 @@ export default function MapPage() {
                 lng: userLng,
                 radius_km: 15,
                 sport_filter: selectedSport,
-                discount_only: discountOnly,
+                discount_only: false,
             });
 
             if (!error && data) {
-                // Parse lat/lng from PostGIS geography text
-                const withCoords = data.map((f: FacilityResult) => {
-                    // location comes as GeoJSON or text — we store raw and parse in the map component
-                    return f;
-                });
-                setFacilities(withCoords);
+                setFacilities(data);
             }
             setLoading(false);
         };
 
         fetchFacilities();
-    }, [userLat, userLng, selectedSport, discountOnly]);
+    }, [userLat, userLng, selectedSport]);
 
     const filteredFacilities = searchQuery
         ? facilities.filter(
@@ -114,37 +106,19 @@ export default function MapPage() {
                         />
                     </div>
 
-                    {/* Filters */}
-                    <div className="flex gap-2">
-                        <select
-                            value={selectedSport ?? ""}
-                            onChange={(e) => setSelectedSport(e.target.value ? Number(e.target.value) : null)}
-                            className="flex-1 min-w-0 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                        >
-                            <option value="">{t("filter_sport")}</option>
-                            {sports.map((s) => (
-                                <option key={s.id} value={s.id}>
-                                    {s.name}
-                                </option>
-                            ))}
-                        </select>
-
-                        <Button
-                            variant={discountOnly ? "primary" : "outline"}
-                            size="sm"
-                            onClick={() => setDiscountOnly(!discountOnly)}
-                            className="shrink-0 text-xs"
-                            title={t("filter_discount")}
-                        >
-                            <SlidersHorizontal className="h-4 w-4" />
-                        </Button>
-                    </div>
-
-                    {discountOnly && (
-                        <Badge variant="success" className="text-xs">
-                            {t("filter_discount")}
-                        </Badge>
-                    )}
+                    {/* Sport filter */}
+                    <select
+                        value={selectedSport ?? ""}
+                        onChange={(e) => setSelectedSport(e.target.value ? Number(e.target.value) : null)}
+                        className="w-full text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    >
+                        <option value="">{t("filter_sport")}</option>
+                        {sports.map((s) => (
+                            <option key={s.id} value={s.id}>
+                                {s.name}
+                            </option>
+                        ))}
+                    </select>
                 </div>
 
                 {/* Facility List */}

@@ -7,7 +7,7 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 /** Format a date string to localised display */
-export function formatDate(date: string | Date, locale = "en-DE"): string {
+export function formatDate(date: string | Date, locale = "en"): string {
     return new Intl.DateTimeFormat(locale, {
         day: "numeric",
         month: "long",
