@@ -31,8 +31,6 @@ export function Navbar({ profile }: NavbarProps) {
 
     const navLinks = [
         { href: `/${locale}/map`, label: t("map") },
-        { href: `/${locale}/community`, label: t("community") },
-        { href: `/${locale}/events`, label: t("events") },
     ];
 
     const handleLogout = async () => {
