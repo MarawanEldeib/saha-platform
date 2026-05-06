@@ -19,7 +19,7 @@ export function Footer({ isLoggedIn = false }: { isLoggedIn?: boolean }) {
                             Saha
                         </Link>
                         <p className="mt-3 text-sm text-gray-500 dark:text-gray-400">
-                            The racquet sports facility directory for Egypt, Malaysia, Qatar, and the United Arab Emirates.
+                            The sports facility directory for students in Stuttgart and Baden-Württemberg.
                         </p>
                     </div>
 
@@ -28,6 +28,8 @@ export function Footer({ isLoggedIn = false }: { isLoggedIn?: boolean }) {
                         <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3">Explore</h3>
                         <ul className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
                             <li><Link href={`/${locale}/map`} className="hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors">{t("map")}</Link></li>
+                            <li><Link href={`/${locale}/community`} className="hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors">{t("community")}</Link></li>
+                            <li><Link href={`/${locale}/events`} className="hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors">{t("events")}</Link></li>
                         </ul>
                     </div>
 

@@ -10,8 +10,8 @@ export const metadata: Metadata = {
     default: "Saha – Sports Facility Directory",
   },
   description:
-    "Find racquet sports facilities in Egypt, Malaysia, Qatar, and the United Arab Emirates. Focused on padel, badminton, squash, and tennis.",
-  keywords: ["padel", "badminton", "squash", "tennis", "facility", "Egypt", "Malaysia", "Qatar", "United Arab Emirates"],
+    "Find sports facilities near you in Stuttgart and Baden-Württemberg. Search by sport, find student discounts, and connect with other players.",
+  keywords: ["sports", "facility", "Stuttgart", "students", "discount", "Sportstätte"],
   authors: [{ name: "Saha Platform" }],
   openGraph: {
     siteName: "Saha",
