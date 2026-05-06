@@ -1,7 +1,7 @@
 {
     "nav": {
         "home": "Home",
-        "map": "Find Facilities",
+        "map": "Find Courts",
         "community": "Community",
         "events": "Events",
         "login": "Log In",
@@ -13,49 +13,48 @@
     },
     "home": {
         "hero": {
-            "badge": "Free for Students",
-            "title": "Find Sports Facilities Near You",
-            "subtitle": "Discover sports halls, courts, and clubs in Stuttgart and Baden-Württemberg. Search by sport, find student discounts, and connect with other players.",
+            "badge": "Padel · Tennis · Squash · Badminton",
+            "title": "Find Racket Sport Courts Near You",
+            "subtitle": "Discover padel courts, tennis clubs, squash facilities, and badminton halls. Read reviews, check availability, and connect with other players.",
             "cta_primary": "Explore the Map",
-            "cta_secondary": "Join the Community",
-            "tagline": "Built for students. Powered by community."
+            "cta_secondary": "Find a Partner",
+            "tagline": "Your racket sports community."
         },
         "features": {
-            "title": "Everything You Need to Stay Active",
+            "title": "Everything You Need to Play More",
             "map": {
                 "title": "Interactive Map",
-                "desc": "Find facilities near you with a powerful location-based search powered by real geographic data."
-            },
-            "discounts": {
-                "title": "Student Discounts",
-                "desc": "Filter for facilities that offer special rates for students. Your student ID goes further."
+                "desc": "Find courts and clubs near you with location-based search powered by real geographic data."
             },
             "community": {
-                "title": "Matchmaking Board",
-                "desc": "Post a request or browse listings to find training partners, teammates, and sports groups."
+                "title": "Player Matchmaking",
+                "desc": "Post a request or browse listings to find training partners, hitting partners, and doubles teams."
+            },
+            "events": {
+                "title": "Local Events",
+                "desc": "Discover tournaments, open days, and social sessions at facilities near you."
             },
             "reviews": {
                 "title": "Verified Reviews",
-                "desc": "Read honest reviews from other students and athletes before you visit."
+                "desc": "Read honest reviews from real players before you book a court or join a club."
             }
         },
         "stats": {
             "facilities": "Facilities Listed",
             "sports": "Sports Covered",
-            "students": "Students Served",
+            "players": "Players Joined",
             "cities": "Cities"
         },
         "cta_section": {
-            "title": "Own a Sports Facility?",
-            "subtitle": "List your facility for free during our founding member period. Reach thousands of students actively looking for places to play.",
-            "button": "Register Your Business"
+            "title": "Own a Racket Sports Facility?",
+            "subtitle": "List your courts for free. Reach players actively searching for places to play in your area.",
+            "button": "List Your Facility"
         }
     },
     "map": {
-        "title": "Find Sports Facilities",
-        "search_placeholder": "Search by sport, name, or location...",
+        "title": "Find Courts & Clubs",
+        "search_placeholder": "Search by name, sport, or location...",
         "filter_sport": "All Sports",
-        "filter_discount": "Student Discounts Only",
         "no_results": "No facilities found. Try adjusting your filters.",
         "loading": "Loading facilities...",
         "details_button": "View Details",
@@ -64,9 +63,6 @@
     "facility": {
         "hours": "Opening Hours",
         "sports": "Available Sports",
-        "discounts": "Student Discounts",
-        "discount_available": "Student discount available",
-        "no_discount": "No student discount",
         "reviews_title": "Reviews",
         "no_reviews": "No reviews yet. Be the first to leave one!",
         "write_review": "Write a Review",
@@ -77,11 +73,12 @@
         "no_events": "No upcoming events.",
         "status_active": "Active",
         "status_pending": "Pending Approval",
-        "status_suspended": "Suspended"
+        "status_suspended": "Suspended",
+        "closed": "Closed"
     },
     "community": {
-        "title": "Matchmaking Board",
-        "subtitle": "Find training partners, teammates, and sports groups in your area.",
+        "title": "Player Matchmaking",
+        "subtitle": "Find training partners, hitting partners, and doubles teams in your area.",
         "new_post": "Post a Request",
         "sport_label": "Sport",
         "date_label": "Date",
@@ -95,9 +92,9 @@
         "no_posts": "No posts yet. Be the first!"
     },
     "events": {
-        "title": "Sports Events",
-        "subtitle": "Upcoming events in your area.",
-        "no_events": "No events found.",
+        "title": "Upcoming Events",
+        "subtitle": "Tournaments, open days, and social sessions near you.",
+        "no_events": "No upcoming events.",
         "date": "Date",
         "venue": "Venue",
         "organizer": "Organizer"
@@ -123,7 +120,7 @@
             "password": "Password",
             "confirm_password": "Confirm Password",
             "account_type": "Account Type",
-            "type_user": "Student / Player",
+            "type_user": "Player",
             "type_business": "Facility Owner / Business",
             "submit": "Create Account",
             "already_account": "Already have an account?",
@@ -173,30 +170,11 @@
             "status_pending": "Pending Approval",
             "status_active": "Active",
             "status_suspended": "Suspended",
-            "complete_onboarding": "Complete your business onboarding to get listed.",
+            "complete_onboarding": "Complete your facility onboarding to get listed.",
             "start_onboarding": "Start Onboarding"
         },
         "onboarding": {
-            "title": "Business Onboarding",
-            "step1": "Business Details",
-            "step2": "Facility Information",
-            "step3": "Legal Documents",
-            "step4": "Review & Submit",
-            "business_name": "Business Name",
-            "business_email": "Business Email",
-            "phone": "Phone Number",
-            "address": "Address",
-            "city": "City",
-            "postal_code": "Postal Code",
-            "facility_name": "Facility Name",
-            "facility_description": "Description",
-            "website": "Website (optional)",
-            "sports": "Sports Available",
-            "upload_doc": "Upload Registration Document (Gewerbeanmeldung or equivalent)",
-            "upload_hint": "PDF or image, max 10MB. Stored securely — only reviewable by our admin team.",
-            "submit": "Submit for Review",
-            "loading": "Submitting...",
-            "success": "Submitted! Our team will review your documents and get back to you within 2 business days.",
+            "title": "Facility Onboarding",
             "step1_title": "Facility Details",
             "step2_title": "Sports Offered",
             "success_title": "Application Submitted!",
@@ -211,15 +189,11 @@
             "images": "Photos",
             "hours": "Opening Hours",
             "sports": "Sports",
-            "discounts": "Student Discounts",
             "save": "Save Changes",
             "saving": "Saving...",
             "saved": "Changes saved.",
             "add_image": "Add Photo",
-            "remove_image": "Remove",
-            "add_discount": "Add Discount",
-            "discount_description": "Discount Details",
-            "discount_amount": "Amount / Percentage"
+            "remove_image": "Remove"
         },
         "events": {
             "title": "Submit an Event",
@@ -257,27 +231,19 @@
             "overview": "Overview",
             "verifications": "Verification Queue",
             "events": "Event Queue",
-            "outreach": "Email Outreach",
-            "analytics": "Analytics"
-        },
-        "overview": {
-            "title": "Admin Dashboard",
-            "total_businesses": "Total Businesses",
-            "pending_verifications": "Pending Verifications",
-            "pending_events": "Pending Events",
-            "total_users": "Total Users"
+            "outreach": "Email Outreach"
         },
         "verifications": {
-            "title": "Business Verification Queue",
+            "title": "Facility Verification Queue",
             "no_pending": "No pending verifications.",
             "approve": "Approve",
             "decline": "Decline",
             "view_doc": "View Document",
-            "business_name": "Business Name",
+            "business_name": "Facility Name",
             "submitted_at": "Submitted",
             "status": "Status",
-            "confirm_approve": "Approve this business listing?",
-            "confirm_decline": "Decline this application? This will notify the business owner.",
+            "confirm_approve": "Approve this facility listing?",
+            "confirm_decline": "Decline this application?",
             "decline_reason": "Reason for Decline (optional)"
         },
         "events": {
@@ -291,23 +257,10 @@
         },
         "outreach": {
             "title": "Email Outreach",
-            "upload_csv": "Upload CSV",
-            "csv_hint": "CSV must have columns: name, email. A personalised Resend campaign will be triggered for each row.",
             "template_label": "Email Template",
             "send": "Send Campaign",
             "sending": "Sending...",
-            "success": "Campaign sent successfully.",
-            "rows_found": "rows found in CSV"
-        },
-        "analytics": {
-            "title": "Analytics",
-            "signups": "New Signups",
-            "active_businesses": "Active Businesses",
-            "page_views": "Page Views",
-            "period": "Period",
-            "last_7": "Last 7 Days",
-            "last_30": "Last 30 Days",
-            "last_90": "Last 90 Days"
+            "success": "Campaign sent successfully."
         }
     },
     "common": {
@@ -336,7 +289,7 @@
         "closed": "Closed",
         "open": "Open",
         "cookie_banner": {
-            "message": "We use cookies to improve your experience and comply with GDPR. We do not use tracking cookies without your consent.",
+            "message": "We use cookies to improve your experience. We do not use tracking cookies without your consent.",
             "accept": "Accept",
             "reject": "Reject"
         }

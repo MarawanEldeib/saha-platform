@@ -4,9 +4,9 @@ import { MapPin, Users, Star, ChevronRight, Zap } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 
 export const metadata = {
-    title: "Saha – Sports Facility Directory for Students",
+    title: "Saha – Racket Sports Facility Directory",
     description:
-        "Find sports facilities in Stuttgart and Baden-Württemberg. Search by sport, find student discounts, and connect with other players.",
+        "Discover padel, tennis, squash, and badminton courts near you. Read reviews, find available slots, and connect with other players.",
 };
 
 export default async function HomePage() {
@@ -15,8 +15,8 @@ export default async function HomePage() {
 
     const features = [
         { key: "map", icon: MapPin },
-        { key: "discounts", icon: Zap },
         { key: "community", icon: Users },
+        { key: "events", icon: Zap },
         { key: "reviews", icon: Star },
     ] as const;
 
@@ -40,7 +40,7 @@ export default async function HomePage() {
     const stats = [
         { key: "facilities", value: formatCount(facilityCount) },
         { key: "sports", value: formatCount(sportCount) },
-        { key: "students", value: formatCount(userCount) },
+        { key: "players", value: formatCount(userCount) },
         { key: "cities", value: formatCount(cityCount) },
     ];
 

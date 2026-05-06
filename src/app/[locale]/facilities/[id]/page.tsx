@@ -37,11 +37,10 @@ export default async function FacilityDetailPage({
     const { data: facility, error } = await supabase
         .from("facilities")
         .select(
-            `*, 
-       facility_sports(sport_id, sports(id, name)), 
-       facility_hours(*), 
+            `*,
+       facility_sports(sport_id, sports(id, name)),
+       facility_hours(*),
        facility_images(*),
-       student_discounts(*),
        reviews(*, profiles(display_name, avatar_url)),
        events(id, name, event_date, status)`
         )
@@ -75,11 +74,6 @@ export default async function FacilityDetailPage({
                     </div>
                     <div className="flex items-center gap-3 mt-3">
                         <FacilityStatusBadge status={facility.status} />
-                        {facility.student_discounts?.length > 0 && (
-                            <span className="inline-flex items-center gap-1.5 text-xs text-emerald-700 bg-emerald-100 dark:bg-emerald-900/30 dark:text-emerald-400 px-2.5 py-0.5 rounded-full font-medium">
-                                {t("discount_available")}
-                            </span>
-                        )}
                     </div>
                 </div>
                 <div className="flex items-center gap-2">
@@ -221,18 +215,6 @@ export default async function FacilityDetailPage({
                         </div>
                     )}
 
-                    {/* Discounts */}
-                    {facility.student_discounts?.length > 0 && (
-                        <div className="bg-emerald-50 dark:bg-emerald-900/20 rounded-xl p-4 border border-emerald-200 dark:border-emerald-800">
-                            <h3 className="font-semibold text-emerald-800 dark:text-emerald-300 mb-2">{t("discounts")}</h3>
-                            {facility.student_discounts.map((d: { id: string; description: string; amount: string | null }) => (
-                                <div key={d.id} className="text-sm text-emerald-700 dark:text-emerald-400">
-                                    <p>{d.description}</p>
-                                    {d.amount && <p className="font-bold">{d.amount}</p>}
-                                </div>
-                            ))}
-                        </div>
-                    )}
                 </aside>
             </div>
         </div>
