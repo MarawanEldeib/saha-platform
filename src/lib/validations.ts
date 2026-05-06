@@ -1,5 +1,4 @@
 import { z } from "zod";
-import { LAUNCH_COUNTRIES } from "@/lib/platform-config";
 
 // ---------------------------------------------------------------------------
 // Auth Schemas
@@ -72,7 +71,7 @@ export const facilitySchema = z.object({
     address: z.string().min(5, "Address is required"),
     city: z.string().min(2, "City is required"),
     postal_code: z.string().optional(),
-    country: z.enum(LAUNCH_COUNTRIES, { message: "Please select a launch country" }),
+    country: z.string().min(1, "Country is required"),
     phone: z.string().optional(),
     website: z.string().url("Invalid URL").optional().or(z.literal("")),
 });
@@ -84,7 +83,6 @@ export const facilityUpdateSchema = z.object({
     address: z.string().min(5),
     city: z.string().min(2),
     postal_code: z.string().min(4),
-    country: z.enum(LAUNCH_COUNTRIES, { message: "Please select a launch country" }),
     phone: z.string().optional(),
     website: z.string().url().optional().or(z.literal("")),
 });
@@ -117,6 +115,28 @@ export const reviewSchema = z.object({
     comment: z.string().min(10, "Comment must be at least 10 characters").optional(),
 });
 export type ReviewInput = z.infer<typeof reviewSchema>;
+
+// ---------------------------------------------------------------------------
+// Event Schema
+// ---------------------------------------------------------------------------
+export const eventSchema = z.object({
+    name: z.string().min(3, "Event name is required"),
+    description: z.string().min(10, "Provide a description"),
+    event_date: z.string().min(1, "Date is required"),
+});
+export type EventInput = z.infer<typeof eventSchema>;
+
+// ---------------------------------------------------------------------------
+// Matchmaking Schema
+// ---------------------------------------------------------------------------
+export const matchmakingSchema = z.object({
+    sport_id: z.number().nullable(),
+    skill_level: z.enum(["beginner", "intermediate", "advanced"]),
+    post_date: z.string().min(1, "Date is required"),
+    message: z.string().min(10, "Message must be at least 10 characters"),
+    location_text: z.string().optional(),
+});
+export type MatchmakingInput = z.infer<typeof matchmakingSchema>;
 
 // ---------------------------------------------------------------------------
 // Admin Schemas

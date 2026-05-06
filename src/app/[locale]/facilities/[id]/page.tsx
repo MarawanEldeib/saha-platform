@@ -4,7 +4,7 @@ import { getLocale, getTranslations } from "next-intl/server";
 import { FacilityStatusBadge } from "@/components/ui/Badge";
 import { StarRating } from "@/components/ui/StarRating";
 import { ReviewForm } from "@/components/facility/ReviewForm";
-import { MapPin, Globe, Phone, Clock } from "lucide-react";
+import { MapPin, Globe, Phone, Clock, Calendar } from "lucide-react";
 import { format } from "date-fns";
 import { DAY_KEYS, formatTime } from "@/lib/utils";
 import Image from "next/image";
@@ -39,10 +39,11 @@ export default async function FacilityDetailPage({
         .select(
             `*, 
        facility_sports(sport_id, sports(id, name)), 
-        facility_hours(*), 
-        facility_images(*),
-        student_discounts(*),
-        reviews(*, profiles(display_name, avatar_url))`
+       facility_hours(*), 
+       facility_images(*),
+       student_discounts(*),
+       reviews(*, profiles(display_name, avatar_url)),
+       events(id, name, event_date, status)`
         )
         .eq("id", id)
         .eq("status", "active")
@@ -69,7 +70,7 @@ export default async function FacilityDetailPage({
                     <div className="flex items-center gap-2 mt-2 text-gray-500 dark:text-gray-400">
                         <MapPin className="h-4 w-4" />
                         <span className="text-sm">
-                            {facility.address}, {facility.city}, {facility.postal_code}, {facility.country}
+                            {facility.address}, {facility.city}, {facility.postal_code}
                         </span>
                     </div>
                     <div className="flex items-center gap-3 mt-3">
@@ -125,6 +126,26 @@ export default async function FacilityDetailPage({
                                         {fs.sports.name}
                                     </span>
                                 ))}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Upcoming Events */}
+                    {facility.events?.filter((e: { status: string }) => e.status === "approved").length > 0 && (
+                        <div>
+                            <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-3">{t("events_title")}</h2>
+                            <div className="space-y-3">
+                                {facility.events
+                                    .filter((e: { status: string }) => e.status === "approved")
+                                    .map((ev: { id: string; name: string; event_date: string }) => (
+                                        <div key={ev.id} className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                                            <Calendar className="h-5 w-5 text-emerald-500 shrink-0" />
+                                            <div>
+                                                <p className="font-medium text-sm text-gray-900 dark:text-white">{ev.name}</p>
+                                                <p className="text-xs text-gray-500 dark:text-gray-400">{format(new Date(ev.event_date), "PPP")}</p>
+                                            </div>
+                                        </div>
+                                    ))}
                             </div>
                         </div>
                     )}

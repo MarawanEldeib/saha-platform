@@ -8,7 +8,6 @@ import { Search, SlidersHorizontal, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import type { Sport } from "@/types/database";
-import { FOCUS_SPORTS } from "@/lib/platform-config";
 
 // Dynamically import Leaflet components to avoid SSR issues
 const MapContainer = dynamic(
@@ -38,8 +37,8 @@ export default function MapPage() {
     const [selectedSport, setSelectedSport] = React.useState<number | null>(null);
     const [discountOnly, setDiscountOnly] = React.useState(false);
     const [searchQuery, setSearchQuery] = React.useState("");
-    const [userLat, setUserLat] = React.useState(25.2048); // Default: Dubai
-    const [userLng, setUserLng] = React.useState(55.2708);
+    const [userLat, setUserLat] = React.useState(48.7758); // Default: Stuttgart
+    const [userLng, setUserLng] = React.useState(9.1829);
     const [selectedFacility, setSelectedFacility] = React.useState<FacilityResult | null>(null);
 
     // Fetch sports for filter
@@ -47,13 +46,7 @@ export default function MapPage() {
         const fetchSports = async () => {
             const supabase = createClient();
             const { data } = await supabase.from("sports").select("*").order("name");
-            if (data) {
-                setSports(
-                    data.filter((sport) =>
-                        FOCUS_SPORTS.includes(sport.name as (typeof FOCUS_SPORTS)[number])
-                    )
-                );
-            }
+            if (data) setSports(data);
         };
         fetchSports();
 
@@ -63,7 +56,7 @@ export default function MapPage() {
                 setUserLat(pos.coords.latitude);
                 setUserLng(pos.coords.longitude);
             },
-            () => { } // Fail silently — keep default location
+            () => { } // Fail silently — default to Stuttgart
         );
     }, []);
 
