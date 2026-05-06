@@ -1,36 +1,91 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Saha Platform
 
-## Getting Started
+Saha is a racket sports facility discovery and booking platform built for the UAE market. Players find and book Padel, Tennis, Squash, and Badminton courts. Facility owners list and manage their venues.
 
-First, run the development server:
+## Stack
+
+| Layer | Technology |
+| --- | --- |
+| Framework | Next.js (App Router, React 19, TypeScript 5 strict) |
+| Database | Supabase (PostgreSQL + PostGIS + Auth) |
+| Styling | Tailwind CSS v4 |
+| Forms | React Hook Form + Zod |
+| Maps | Leaflet + React Leaflet |
+| Email | Resend |
+| i18n | next-intl (English — Arabic coming in Phase 3) |
+| Hosting | Vercel |
+
+## Local Development
+
+### Prerequisites
+
+- Node.js 20+
+- A Supabase project
+
+### Setup
 
 ```bash
+git clone https://github.com/MarawanEldeib/saha-platform.git
+cd saha-platform
+npm install
+cp .env.example .env.local
+# Fill in .env.local with your Supabase and Resend credentials
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000/en](http://localhost:3000/en).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Environment Variables
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+See [.env.example](.env.example) for the full list. Required:
 
-## Learn More
+- `NEXT_PUBLIC_SUPABASE_URL`
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+- `SUPABASE_SERVICE_ROLE_KEY`
+- `NEXT_PUBLIC_APP_URL`
+- `RESEND_API_KEY`
 
-To learn more about Next.js, take a look at the following resources:
+### Database
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Run migrations in order from `supabase/migrations/`. Enable PostGIS and pg_trgm extensions in your Supabase project (Settings → Extensions).
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+To make yourself an admin:
 
-## Deploy on Vercel
+```sql
+UPDATE public.profiles SET role = 'admin' WHERE id = '<your-user-uuid>';
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Project Structure
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```text
+src/
+├── app/[locale]/           # All routes (i18n prefix)
+│   ├── (auth)/             # Login, register, forgot/reset password
+│   ├── map/                # Court discovery map
+│   ├── facilities/[id]/    # Facility detail pages
+│   ├── community/          # Player matchmaking board
+│   ├── events/             # Public events listing
+│   ├── dashboard/          # Facility owner portal
+│   └── admin/              # Admin panel
+├── components/             # Shared UI components
+├── lib/supabase/           # Supabase client factories (server/client/admin)
+└── types/database.ts       # TypeScript types for all DB tables
+```
+
+## User Roles
+
+| Role | Access |
+| --- | --- |
+| `user` | Browse facilities, book courts, matchmaking board |
+| `business` | Everything + facility management dashboard |
+| `admin` | Everything + approval queues, platform admin |
+
+## Docs
+
+- [Architecture](docs/architecture.md)
+- [Database Schema](docs/database.md)
+- [Deployment Guide](docs/deployment.md)
+
+## Task Tracking
+
+All tasks are tracked in [Linear](https://linear.app/saha-platform).
