@@ -70,19 +70,14 @@ interface LeafletMapProps {
  * Supabase returns geography as { type: 'Point', coordinates: [lng, lat] }
  */
 function parseLocation(location: unknown): [number, number] | null {
-    if (!location || typeof location !== "object") return null;
-
-    const geo = location as { type?: unknown; coordinates?: unknown };
-    if (geo.type !== "Point" || !Array.isArray(geo.coordinates) || geo.coordinates.length !== 2) {
-        return null;
-    }
-
-    const [lng, lat] = geo.coordinates;
-    if (typeof lat !== "number" || typeof lng !== "number") {
-        return null;
-    }
-
-    return [lat, lng]; // [lat, lng]
+    if (!location) return null;
+    try {
+        const geo = location as { type: string; coordinates: [number, number] };
+        if (geo.type === "Point" && Array.isArray(geo.coordinates)) {
+            return [geo.coordinates[1], geo.coordinates[0]]; // [lat, lng]
+        }
+    } catch { }
+    return null;
 }
 
 export default function LeafletMapComponent({

@@ -10,7 +10,6 @@ import {
     forgotPasswordSchema,
     resetPasswordSchema,
 } from "@/lib/validations";
-import { getSafeRedirectPath } from "@/lib/auth/safe-redirect";
 
 // ---------------------------------------------------------------------------
 // Login
@@ -42,11 +41,10 @@ export async function loginAction(formData: FormData) {
         redirect(`/${locale}/2fa/verify`);
     }
 
-    const locale = (formData.get("locale") as string) ?? "en";
+    const locale = formData.get("locale") as string ?? "en";
     const next = formData.get("next") as string | null;
-    const safeRedirectPath = getSafeRedirectPath(next, locale);
     revalidatePath("/", "layout");
-    redirect(safeRedirectPath);
+    redirect(next || `/${locale}`);
 }
 
 // ---------------------------------------------------------------------------
@@ -196,11 +194,10 @@ export async function verifyTotpAction(formData: FormData) {
 
     if (verifyError) return { error: "Invalid code. Please try again." };
 
-    const locale = (formData.get("locale") as string) ?? "en";
+    const locale = formData.get("locale") as string ?? "en";
     const next = formData.get("next") as string | null;
-    const safeRedirectPath = getSafeRedirectPath(next, locale);
     revalidatePath("/", "layout");
-    redirect(safeRedirectPath);
+    redirect(next ?? `/${locale}`);
 }
 
 // ---------------------------------------------------------------------------
