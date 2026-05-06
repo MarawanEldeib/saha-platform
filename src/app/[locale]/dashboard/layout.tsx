@@ -6,12 +6,14 @@ import { cn } from "@/lib/utils";
 import {
     LayoutDashboard,
     Building2,
+    CalendarPlus,
     Settings,
 } from "lucide-react";
 
 const navItems = [
     { href: "dashboard", label: "Overview", icon: LayoutDashboard },
     { href: "dashboard/facility", label: "My Facility", icon: Building2 },
+    { href: "dashboard/events", label: "Events", icon: CalendarPlus },
     { href: "dashboard/settings", label: "Settings", icon: Settings },
 ];
 
