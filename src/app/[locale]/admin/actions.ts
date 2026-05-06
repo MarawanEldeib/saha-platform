@@ -59,6 +59,39 @@ export async function rejectFacilityAction(facilityId: string, reason: string) {
 }
 
 // ---------------------------------------------------------------------------
+// Events – approve / reject
+// ---------------------------------------------------------------------------
+export async function approveEventAction(eventId: string) {
+    try {
+        const { adminClient } = await assertAdmin();
+        const result = await adminClient
+            .from("events")
+            .update({ status: "approved" } as never)
+            .eq("id", eventId);
+        if (result.error) return { error: result.error.message };
+        revalidatePath("/", "layout");
+        return { success: true };
+    } catch (e: unknown) {
+        return { error: e instanceof Error ? e.message : "Unexpected error" };
+    }
+}
+
+export async function rejectEventAction(eventId: string) {
+    try {
+        const { adminClient } = await assertAdmin();
+        const result = await adminClient
+            .from("events")
+            .update({ status: "rejected" } as never)
+            .eq("id", eventId);
+        if (result.error) return { error: result.error.message };
+        revalidatePath("/", "layout");
+        return { success: true };
+    } catch (e: unknown) {
+        return { error: e instanceof Error ? e.message : "Unexpected error" };
+    }
+}
+
+// ---------------------------------------------------------------------------
 // Email Campaign — send to uploaded list via Resend
 // ---------------------------------------------------------------------------
 export async function sendEmailCampaignAction(formData: FormData) {
