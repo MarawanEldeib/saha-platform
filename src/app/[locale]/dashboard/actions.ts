@@ -6,7 +6,7 @@ import { getLocale } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import { facilityUpdateSchema, profileUpdateSchema, courtSchema, type CourtInput, availabilitySlotSchema, facilityHoursSchema } from "@/lib/validations";
 import type { Database } from "@/types/database";
-import { stripe, PLATFORM_FEE_PERCENT } from "@/lib/stripe";
+import { getStripe, PLATFORM_FEE_PERCENT } from "@/lib/stripe";
 
 type FacilityUpdate = Database["public"]["Tables"]["facilities"]["Update"];
 type FacilityInsert = Database["public"]["Tables"]["facility_sports"]["Insert"];
@@ -512,7 +512,7 @@ export async function createBookingAndCheckoutAction(
     const facilityData = (court as any).facilities;
     const stripeAccountId = facilityData?.stripe_account_id as string | null;
 
-    const sessionParams: Parameters<typeof stripe.checkout.sessions.create>[0] = {
+    const sessionParams: Parameters<typeof getStripe().checkout.sessions.create>[0] = {
         mode: "payment",
         line_items: [{
             quantity: 1,
@@ -540,7 +540,7 @@ export async function createBookingAndCheckoutAction(
         };
     }
 
-    const session = await stripe.checkout.sessions.create(sessionParams);
+    const session = await getStripe().checkout.sessions.create(sessionParams);
 
     return { checkoutUrl: session.url };
 }
@@ -603,7 +603,7 @@ export async function retryPaymentAction(bookingId: string) {
     if (!payment?.stripe_checkout_session_id) return { error: "Payment record not found" };
 
     // Retrieve the Stripe session — if still open, return its URL
-    const session = await stripe.checkout.sessions.retrieve(payment.stripe_checkout_session_id);
+    const session = await getStripe().checkout.sessions.retrieve(payment.stripe_checkout_session_id);
     if (session.status === "open" && session.url) return { checkoutUrl: session.url };
 
     return { error: "Your payment session has expired. The slot has been released — please book again." };

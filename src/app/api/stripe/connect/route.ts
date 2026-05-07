@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { stripe } from "@/lib/stripe";
+import { getStripe } from "@/lib/stripe";
 
 export async function POST() {
     const supabase = await createClient();
@@ -21,7 +21,7 @@ export async function POST() {
 
     // Create a new Express connected account if not already connected
     if (!accountId) {
-        const account = await stripe.accounts.create({
+        const account = await getStripe().accounts.create({
             type: "express",
             business_profile: { name: facility.name },
         });
@@ -33,7 +33,7 @@ export async function POST() {
     }
 
     const appUrl = process.env.NEXT_PUBLIC_APP_URL!;
-    const link = await stripe.accountLinks.create({
+    const link = await getStripe().accountLinks.create({
         account: accountId,
         refresh_url: `${appUrl}/en/dashboard/facility?stripe=refresh`,
         return_url: `${appUrl}/en/dashboard/facility?stripe=success`,
