@@ -35,7 +35,7 @@ export default async function LocaleLayout({
 }) {
     const { locale } = await params;
 
-    if (!routing.locales.includes(locale as "en" | "de")) {
+    if (!routing.locales.includes(locale as (typeof routing.locales)[number])) {
         notFound();
     }
 

@@ -143,17 +143,6 @@
             "confirm_password": "Confirm Password",
             "submit": "Update Password",
             "success": "Password updated. You can now log in."
-        },
-        "two_factor": {
-            "setup_title": "Set Up Two-Factor Authentication",
-            "setup_subtitle": "Scan the QR code with your authenticator app (e.g. Google Authenticator, Authy).",
-            "code_label": "Enter 6-digit code",
-            "verify_title": "Two-Factor Authentication",
-            "verify_subtitle": "Enter the code from your authenticator app.",
-            "submit": "Verify",
-            "loading": "Verifying...",
-            "error": "Invalid code. Please try again.",
-            "success": "2FA enabled successfully."
         }
     },
     "dashboard": {
@@ -210,10 +199,6 @@
             "title": "Account Settings",
             "display_name": "Display Name",
             "email": "Email",
-            "two_fa_title": "Two-Factor Authentication",
-            "two_fa_enabled": "2FA is enabled",
-            "two_fa_disabled": "2FA is not enabled",
-            "setup_2fa": "Set Up 2FA",
             "save": "Save Changes"
         }
     },
