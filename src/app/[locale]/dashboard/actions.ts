@@ -6,6 +6,7 @@ import { getLocale } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import { facilityUpdateSchema, profileUpdateSchema, courtSchema, type CourtInput, availabilitySlotSchema, facilityHoursSchema } from "@/lib/validations";
 import type { Database } from "@/types/database";
+import type Stripe from "stripe";
 import { getStripe, PLATFORM_FEE_PERCENT } from "@/lib/stripe";
 
 type FacilityUpdate = Database["public"]["Tables"]["facilities"]["Update"];
@@ -512,7 +513,7 @@ export async function createBookingAndCheckoutAction(
     const facilityData = (court as any).facilities;
     const stripeAccountId = facilityData?.stripe_account_id as string | null;
 
-    const sessionParams: Parameters<typeof getStripe().checkout.sessions.create>[0] = {
+    const sessionParams: Stripe.Checkout.SessionCreateParams = {
         mode: "payment",
         line_items: [{
             quantity: 1,
