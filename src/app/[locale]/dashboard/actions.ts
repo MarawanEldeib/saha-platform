@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { getLocale } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
-import { facilityUpdateSchema, profileUpdateSchema, courtSchema, type CourtInput, availabilitySlotSchema } from "@/lib/validations";
+import { facilityUpdateSchema, profileUpdateSchema, courtSchema, type CourtInput, availabilitySlotSchema, facilityHoursSchema } from "@/lib/validations";
 import type { Database } from "@/types/database";
 
 type FacilityUpdate = Database["public"]["Tables"]["facilities"]["Update"];
@@ -374,6 +374,46 @@ export async function deleteCourtAction(courtId: string) {
 
     if (error) return { error: error.message };
     revalidatePath(`/${locale}/dashboard/courts`);
+    return { success: true };
+}
+
+// ---------------------------------------------------------------------------
+// Facility: save opening hours (upsert all 7 days)
+// ---------------------------------------------------------------------------
+export async function saveFacilityHoursAction(
+    facilityId: string,
+    hours: Array<{ day_of_week: number; is_closed: boolean; open_time: string | null; close_time: string | null }>,
+) {
+    const supabase = await createClient();
+    const locale = await getLocale();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { error: "Not authenticated" };
+
+    const { data: facility } = await supabase
+        .from("facilities")
+        .select("id")
+        .eq("id", facilityId)
+        .eq("owner_id", user.id)
+        .single();
+    if (!facility) return { error: "Access denied" };
+
+    const parsed = facilityHoursSchema.safeParse({ hours });
+    if (!parsed.success) return { error: parsed.error.issues[0].message };
+
+    const rows = parsed.data.hours.map((h) => ({
+        facility_id: facilityId,
+        day_of_week: h.day_of_week,
+        is_closed: h.is_closed,
+        open_time: h.is_closed ? null : h.open_time,
+        close_time: h.is_closed ? null : h.close_time,
+    }));
+
+    const { error } = await supabase
+        .from("facility_hours")
+        .upsert(rows, { onConflict: "facility_id,day_of_week" });
+
+    if (error) return { error: error.message };
+    revalidatePath(`/${locale}/dashboard/facility`);
     return { success: true };
 }
 
