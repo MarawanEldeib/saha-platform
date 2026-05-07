@@ -177,37 +177,6 @@ export interface Database {
                     }
                 ];
             };
-            student_discounts: {
-                Row: {
-                    id: string;
-                    facility_id: string;
-                    description: string;
-                    amount: string | null;
-                    valid_until: string | null;
-                    created_at: string;
-                };
-                Insert: {
-                    id?: string;
-                    facility_id: string;
-                    description: string;
-                    amount?: string | null;
-                    valid_until?: string | null;
-                };
-                Update: {
-                    description?: string;
-                    amount?: string | null;
-                    valid_until?: string | null;
-                };
-                Relationships: [
-                    {
-                        foreignKeyName: "student_discounts_facility_id_fkey";
-                        columns: ["facility_id"];
-                        isOneToOne: false;
-                        referencedRelation: "facilities";
-                        referencedColumns: ["id"];
-                    }
-                ];
-            };
             reviews: {
                 Row: {
                     id: string;
@@ -591,7 +560,6 @@ export type Sport = Database["public"]["Tables"]["sports"]["Row"];
 export type Facility = Database["public"]["Tables"]["facilities"]["Row"];
 export type FacilityHours = Database["public"]["Tables"]["facility_hours"]["Row"];
 export type FacilityImage = Database["public"]["Tables"]["facility_images"]["Row"];
-export type StudentDiscount = Database["public"]["Tables"]["student_discounts"]["Row"];
 export type Review = Database["public"]["Tables"]["reviews"]["Row"];
 export type Event = Database["public"]["Tables"]["events"]["Row"];
 export type MatchmakingPost = Database["public"]["Tables"]["matchmaking_posts"]["Row"];
@@ -606,7 +574,6 @@ export type FacilityWithDetails = Facility & {
     facility_sports: Array<{ sport_id: number; sports: Sport }>;
     facility_hours: FacilityHours[];
     facility_images: FacilityImage[];
-    student_discounts: StudentDiscount[];
     reviews: Array<Review & { profiles: Pick<Profile, "display_name" | "avatar_url"> }>;
 };
 
