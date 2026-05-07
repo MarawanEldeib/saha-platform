@@ -21,7 +21,7 @@ export async function generateMetadata({
     return {
         alternates: {
             canonical: `/${locale}`,
-            languages: { en: "/en", de: "/de" },
+            languages: { en: "/en" },
         },
     };
 }
@@ -35,7 +35,7 @@ export default async function LocaleLayout({
 }) {
     const { locale } = await params;
 
-    if (!routing.locales.includes(locale as "en" | "de")) {
+    if (!routing.locales.includes(locale as "en")) {
         notFound();
     }
 
