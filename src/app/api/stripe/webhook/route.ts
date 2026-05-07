@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { stripe } from "@/lib/stripe";
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { sendWhatsApp } from "@/lib/twilio";
+import { format } from "date-fns";
 import Stripe from "stripe";
 
 export async function POST(req: NextRequest) {
@@ -16,30 +18,60 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
     }
 
-    const supabase = await createClient();
+    const supabase = createAdminClient();
 
     if (event.type === "checkout.session.completed") {
         const session = event.data.object as Stripe.Checkout.Session;
         const bookingId = session.metadata?.booking_id;
         if (!bookingId) return NextResponse.json({ received: true });
 
-        // Mark booking as confirmed
         await supabase
             .from("bookings")
             .update({ status: "confirmed" } as never)
             .eq("id", bookingId);
 
-        // Mark availability slot as booked
         await supabase
             .from("court_availability")
             .update({ is_booked: true } as never)
             .eq("id", session.metadata?.availability_id ?? "");
 
-        // Update payment record
         await supabase
             .from("payments")
             .update({ status: "succeeded", stripe_checkout_session_id: session.id } as never)
             .eq("booking_id", bookingId);
+
+        // Send WhatsApp confirmation
+        const { data: booking } = await supabase
+            .from("bookings")
+            .select(`
+                id, date, start_time, end_time, qr_code_token,
+                courts(name, facilities(name, address, city)),
+                profiles(display_name, phone)
+            `)
+            .eq("id", bookingId)
+            .single();
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const court = (booking as any)?.courts;
+        const facility = court?.facilities;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const profile = (booking as any)?.profiles;
+
+        if (booking && profile?.phone) {
+            const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "";
+            const bookingUrl = `${appUrl}/en/bookings/${booking.id}`;
+            const readableDate = format(new Date(booking.date), "EEEE, MMMM d, yyyy");
+
+            await sendWhatsApp(
+                profile.phone,
+                `✅ Booking confirmed!\n\n` +
+                `🏟 ${court?.name} at ${facility?.name}\n` +
+                `📅 ${readableDate}\n` +
+                `⏰ ${booking.start_time.slice(0, 5)} – ${booking.end_time.slice(0, 5)}\n` +
+                `📍 ${facility?.address}, ${facility?.city}\n\n` +
+                `View your booking & QR code:\n${bookingUrl}`
+            ).catch(() => {/* WhatsApp not blocking — fire and forget */});
+        }
     }
 
     if (event.type === "checkout.session.expired") {
@@ -48,13 +80,11 @@ export async function POST(req: NextRequest) {
         const availabilityId = session.metadata?.availability_id;
         if (!bookingId) return NextResponse.json({ received: true });
 
-        // Release the slot
         await supabase
             .from("court_availability")
             .update({ is_booked: false } as never)
             .eq("id", availabilityId ?? "");
 
-        // Cancel the booking
         await supabase
             .from("bookings")
             .update({ status: "cancelled" } as never)
