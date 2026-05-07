@@ -39,11 +39,6 @@ export const resetPasswordSchema = z
     });
 export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>;
 
-export const totpCodeSchema = z.object({
-    code: z.string().length(6, "Code must be exactly 6 digits").regex(/^\d+$/, "Code must be numeric"),
-});
-export type TotpCodeInput = z.infer<typeof totpCodeSchema>;
-
 // ---------------------------------------------------------------------------
 // Onboarding / Facility Schemas
 // ---------------------------------------------------------------------------

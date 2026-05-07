@@ -46,7 +46,7 @@ The platform is focused on the **Stuttgart and Baden-Württemberg region of Germ
 |---|---|
 | **Framework** | [Next.js 16](https://nextjs.org) (App Router, React 19, TypeScript 5) |
 | **Database** | [Supabase](https://supabase.com) (PostgreSQL 15 with PostGIS + pg_trgm extensions) |
-| **Auth** | Supabase Auth (email/password + TOTP-based 2FA via Supabase MFA) |
+| **Auth** | Supabase Auth (email/password) |
 | **Styling** | Tailwind CSS v4 |
 | **UI Components** | Radix UI primitives (Dialog, Dropdown, Avatar, Select, Tabs, Toast, Label, Separator, Slot) |
 | **Icons** | Lucide React |
@@ -79,7 +79,7 @@ The platform is focused on the **Stuttgart and Baden-Württemberg region of Germ
 │                         Supabase                                │
 │  ┌────────────────┐  ┌────────────┐  ┌────────────────────┐    │
 │  │  Auth (JWT)    │  │  PostgreSQL│  │  Storage           │    │
-│  │  + MFA (TOTP)  │  │  +PostGIS  │  │  (facility-images, │    │
+│  │               │  │  +PostGIS  │  │  (facility-images, │    │
 │  └────────────────┘  └────────────┘  │   legal-documents) │    │
 │                                      └────────────────────┘    │
 └─────────────────────────────────────────────────────────────────┘
@@ -227,15 +227,12 @@ Located at `/[locale]/(auth)/`:
 | `/register` | Account creation with role selection (Student or Business) |
 | `/forgot-password` | Password reset request — sends email via Supabase |
 | `/reset-password` | Set new password from reset link |
-| `/2fa/setup` | TOTP 2FA setup — shows QR code to scan with Google Authenticator / Authy |
-| `/2fa/verify` | Enter 6-digit TOTP code on login when 2FA is active |
 
 **Key details:**
 - All auth actions use **Next.js Server Actions** (`actions.ts`)
 - Registration flow automatically creates a `profiles` row via PostgreSQL trigger
 - Role is passed at registration as user metadata and stored in the `profiles.role` column
 - Supabase session cookies are managed via `@supabase/ssr` middleware
-- 2FA uses **Supabase MFA** (TOTP-based)
 
 ---
 
@@ -276,7 +273,6 @@ On successful submission, the facility is created with `status = 'pending'` and 
 #### Account Settings (`/dashboard/settings`)
 - Update display name
 - View email (read-only)
-- **Two-Factor Authentication section**: see 2FA status, set up or manage 2FA
 
 ---
 
@@ -370,7 +366,6 @@ Two `SECURITY DEFINER` PostgreSQL functions enable safe, non-leaking role checks
 ### Authentication Security
 - Passwords hashed by Supabase Auth (bcrypt)
 - JWT session tokens with short expiry, refreshed via `@supabase/ssr` middleware
-- Optional **TOTP-based Two-Factor Authentication** for all accounts
 - Route-level auth guards using server-side session checks with automatic redirect
 
 ### GDPR Compliance
@@ -402,7 +397,6 @@ The platform uses **[Resend](https://resend.com)** for all outgoing email:
 |---|---|---|
 | Email Verification | On registration | Sent by Supabase Auth |
 | Password Reset | Forgot password request | Sent by Supabase Auth |
-| 2FA Codes | On login with 2FA enabled | Handled by Supabase MFA |
 | Outreach Campaigns | Admin-triggered via CSV upload | Personalised bulk email via Resend API; logged in `email_campaigns` table |
 
 Email templates are built using **`@react-email/components`** for type-safe, React-rendered HTML email templates.
@@ -429,7 +423,6 @@ saha-app/
 │   │       │   ├── register/
 │   │       │   ├── forgot-password/
 │   │       │   ├── reset-password/
-│   │       │   └── 2fa/     # Setup + verify
 │   │       ├── map/         # Interactive map
 │   │       ├── facilities/  # Facility detail pages
 │   │       ├── community/   # Matchmaking board
@@ -555,7 +548,6 @@ Saha is a **production-ready, full-stack sports facility platform** with:
 - ✅ Community matchmaking board
 - ✅ Student discount discovery
 - ✅ Verified user reviews (1 per user per facility)
-- ✅ Two-factor authentication (TOTP)
 - ✅ Email outreach campaigns with CSV upload
 - ✅ Analytics dashboard (charts)
 - ✅ Full English + German localisation
