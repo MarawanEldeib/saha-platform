@@ -15,10 +15,10 @@
         "hero": {
             "badge": "Padel · Tennis · Squash · Badminton",
             "title": "Find Racket Sport Courts Near You",
-            "subtitle": "Discover padel courts, tennis clubs, squash facilities, and badminton halls. Read reviews, check availability, and connect with other players.",
-            "cta_primary": "Explore the Map",
+            "subtitle": "The easiest way to find and book padel, tennis, squash, and badminton courts in Dubai and across the UAE.",
+            "cta_primary": "Find Courts",
             "cta_secondary": "Find a Partner",
-            "tagline": "Your racket sports community."
+            "tagline": "Dubai · Abu Dhabi · UAE"
         },
         "features": {
             "title": "Everything You Need to Play More",
@@ -47,7 +47,7 @@
         },
         "cta_section": {
             "title": "Own a Racket Sports Facility?",
-            "subtitle": "List your courts for free. Reach players actively searching for places to play in your area.",
+            "subtitle": "List your courts for free. Reach thousands of players searching for courts across Dubai and the UAE.",
             "button": "List Your Facility"
         }
     },
