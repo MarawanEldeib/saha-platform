@@ -139,7 +139,7 @@ export default async function HomePage() {
                 </div>
             </section>
 
-            {/* ── Business CTA — hidden for students, smart for business/guest ── */}
+            {/* ── Business CTA — shown to guests and facility owners, hidden for regular players ── */}
             {userRole !== "user" && (
                 <section className="py-20 bg-gray-50 dark:bg-gray-900">
                     <div className="max-w-3xl mx-auto px-4 sm:px-6 text-center">
