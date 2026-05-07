@@ -159,6 +159,29 @@ export type ProfileUpdateInput = z.infer<typeof profileUpdateSchema>;
 // ---------------------------------------------------------------------------
 // Court Schema
 // ---------------------------------------------------------------------------
+// ---------------------------------------------------------------------------
+// Availability Schemas
+// ---------------------------------------------------------------------------
+export const availabilitySlotSchema = z.object({
+    court_id: z.string().uuid("Invalid court"),
+    date: z.string().min(1, "Date is required"),
+    start_time: z.string().min(1, "Start time is required"),
+    end_time: z.string().min(1, "End time is required"),
+});
+export type AvailabilitySlotInput = z.infer<typeof availabilitySlotSchema>;
+
+export const generateSlotsSchema = z.object({
+    court_id: z.string().uuid("Invalid court"),
+    date: z.string().min(1, "Date is required"),
+    from_time: z.string().min(1, "From time is required"),
+    to_time: z.string().min(1, "To time is required"),
+    duration_minutes: z.number().int().min(30).max(240),
+});
+export type GenerateSlotsInput = z.infer<typeof generateSlotsSchema>;
+
+// ---------------------------------------------------------------------------
+// Court Schema
+// ---------------------------------------------------------------------------
 export const courtSchema = z.object({
     name: z.string().min(2, "Court name must be at least 2 characters"),
     sport_id: z.string(), // "" = no sport assigned

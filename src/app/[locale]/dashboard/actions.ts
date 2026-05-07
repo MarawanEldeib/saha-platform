@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { getLocale } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
-import { facilityUpdateSchema, profileUpdateSchema, courtSchema, type CourtInput } from "@/lib/validations";
+import { facilityUpdateSchema, profileUpdateSchema, courtSchema, type CourtInput, availabilitySlotSchema } from "@/lib/validations";
 import type { Database } from "@/types/database";
 
 type FacilityUpdate = Database["public"]["Tables"]["facilities"]["Update"];
@@ -113,6 +113,123 @@ export async function submitEventAction(formData: FormData) {
     });
 
     if (error) return { error: error.message };
+    return { success: true };
+}
+
+// ---------------------------------------------------------------------------
+// Availability: create single slot
+// ---------------------------------------------------------------------------
+export async function createAvailabilitySlotAction(
+    courtId: string,
+    date: string,
+    startTime: string,
+    endTime: string,
+) {
+    const supabase = await createClient();
+    const locale = await getLocale();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { error: "Not authenticated" };
+
+    const parsed = availabilitySlotSchema.safeParse({ court_id: courtId, date, start_time: startTime, end_time: endTime });
+    if (!parsed.success) return { error: parsed.error.issues[0].message };
+
+    const { data: courtRow } = await supabase.from("courts").select("facility_id").eq("id", courtId).single();
+    if (!courtRow) return { error: "Court not found" };
+
+    const { data: facility } = await supabase.from("facilities").select("id").eq("id", courtRow.facility_id).eq("owner_id", user.id).single();
+    if (!facility) return { error: "Access denied" };
+
+    const { error } = await supabase.from("court_availability").insert({
+        court_id: courtId,
+        date,
+        start_time: startTime,
+        end_time: endTime,
+        is_booked: false,
+    });
+
+    if (error) return { error: error.code === "23505" ? "A slot already exists at that time" : error.message };
+    revalidatePath(`/${locale}/dashboard/availability`);
+    return { success: true };
+}
+
+// ---------------------------------------------------------------------------
+// Availability: generate slots for a full day
+// ---------------------------------------------------------------------------
+function timeToMinutes(t: string) {
+    const [h, m] = t.split(":").map(Number);
+    return h * 60 + m;
+}
+
+function minutesToTime(mins: number) {
+    return `${String(Math.floor(mins / 60)).padStart(2, "0")}:${String(mins % 60).padStart(2, "0")}`;
+}
+
+export async function generateAvailabilitySlotsAction(
+    courtId: string,
+    date: string,
+    fromTime: string,
+    toTime: string,
+    durationMinutes: number,
+) {
+    const supabase = await createClient();
+    const locale = await getLocale();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { error: "Not authenticated" };
+
+    const { data: courtRow } = await supabase.from("courts").select("facility_id").eq("id", courtId).single();
+    if (!courtRow) return { error: "Court not found" };
+
+    const { data: facility } = await supabase.from("facilities").select("id").eq("id", courtRow.facility_id).eq("owner_id", user.id).single();
+    if (!facility) return { error: "Access denied" };
+
+    const start = timeToMinutes(fromTime);
+    const end = timeToMinutes(toTime);
+    if (start >= end) return { error: "From time must be before to time" };
+    if (end - start < durationMinutes) return { error: "Time range is shorter than the slot duration" };
+
+    const rows = [];
+    for (let cur = start; cur + durationMinutes <= end; cur += durationMinutes) {
+        rows.push({
+            court_id: courtId,
+            date,
+            start_time: minutesToTime(cur),
+            end_time: minutesToTime(cur + durationMinutes),
+            is_booked: false,
+        });
+    }
+
+    const { error } = await supabase.from("court_availability").upsert(rows, {
+        onConflict: "court_id,date,start_time",
+        ignoreDuplicates: true,
+    });
+
+    if (error) return { error: error.message };
+    revalidatePath(`/${locale}/dashboard/availability`);
+    return { success: true, count: rows.length };
+}
+
+// ---------------------------------------------------------------------------
+// Availability: delete a slot (only if not booked)
+// ---------------------------------------------------------------------------
+export async function deleteAvailabilitySlotAction(slotId: string) {
+    const supabase = await createClient();
+    const locale = await getLocale();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { error: "Not authenticated" };
+
+    const { data: slot } = await supabase.from("court_availability").select("id, is_booked, court_id").eq("id", slotId).single();
+    if (!slot) return { error: "Slot not found" };
+    if (slot.is_booked) return { error: "Cannot delete a booked slot" };
+
+    const { data: courtRow } = await supabase.from("courts").select("facility_id").eq("id", slot.court_id).single();
+    if (!courtRow) return { error: "Court not found" };
+
+    const { data: facility } = await supabase.from("facilities").select("id").eq("id", courtRow.facility_id).eq("owner_id", user.id).single();
+    if (!facility) return { error: "Access denied" };
+
+    const { error } = await supabase.from("court_availability").delete().eq("id", slotId);
+    if (error) return { error: error.message };
+    revalidatePath(`/${locale}/dashboard/availability`);
     return { success: true };
 }
 
