@@ -499,8 +499,7 @@ export interface Database {
                     status: BookingStatus;
                     qr_code_token: string;
                     notes: string | null;
-                    reminder_24h_sent: boolean;
-                    reminder_2h_sent: boolean;
+                    reminder_sent: boolean;
                     created_at: string;
                     updated_at: string;
                 };
@@ -518,15 +517,13 @@ export interface Database {
                     status?: BookingStatus;
                     qr_code_token?: string;
                     notes?: string | null;
-                    reminder_24h_sent?: boolean;
-                    reminder_2h_sent?: boolean;
+                    reminder_sent?: boolean;
                 };
                 Update: {
                     num_players?: number;
                     status?: BookingStatus;
                     notes?: string | null;
-                    reminder_24h_sent?: boolean;
-                    reminder_2h_sent?: boolean;
+                    reminder_sent?: boolean;
                     updated_at?: string;
                 };
                 Relationships: [
