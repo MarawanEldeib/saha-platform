@@ -292,47 +292,6 @@ export interface Database {
                     }
                 ];
             };
-            legal_documents: {
-                Row: {
-                    id: string;
-                    facility_id: string;
-                    owner_id: string;
-                    storage_path: string;
-                    status: DocumentStatus;
-                    admin_notes: string | null;
-                    created_at: string;
-                    reviewed_at: string | null;
-                };
-                Insert: {
-                    id?: string;
-                    facility_id: string;
-                    owner_id: string;
-                    storage_path: string;
-                    status?: DocumentStatus;
-                    admin_notes?: string | null;
-                };
-                Update: {
-                    status?: DocumentStatus;
-                    admin_notes?: string | null;
-                    reviewed_at?: string | null;
-                };
-                Relationships: [
-                    {
-                        foreignKeyName: "legal_documents_facility_id_fkey";
-                        columns: ["facility_id"];
-                        isOneToOne: false;
-                        referencedRelation: "facilities";
-                        referencedColumns: ["id"];
-                    },
-                    {
-                        foreignKeyName: "legal_documents_owner_id_fkey";
-                        columns: ["owner_id"];
-                        isOneToOne: false;
-                        referencedRelation: "profiles";
-                        referencedColumns: ["id"];
-                    }
-                ];
-            };
             matchmaking_posts: {
                 Row: {
                     id: string;
@@ -635,7 +594,6 @@ export type FacilityImage = Database["public"]["Tables"]["facility_images"]["Row
 export type StudentDiscount = Database["public"]["Tables"]["student_discounts"]["Row"];
 export type Review = Database["public"]["Tables"]["reviews"]["Row"];
 export type Event = Database["public"]["Tables"]["events"]["Row"];
-export type LegalDocument = Database["public"]["Tables"]["legal_documents"]["Row"];
 export type MatchmakingPost = Database["public"]["Tables"]["matchmaking_posts"]["Row"];
 export type Court = Database["public"]["Tables"]["courts"]["Row"];
 export type CourtAvailability = Database["public"]["Tables"]["court_availability"]["Row"];

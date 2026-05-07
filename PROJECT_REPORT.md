@@ -80,7 +80,7 @@ The platform is focused on the **Stuttgart and Baden-Württemberg region of Germ
 │  ┌────────────────┐  ┌────────────┐  ┌────────────────────┐    │
 │  │  Auth (JWT)    │  │  PostgreSQL│  │  Storage           │    │
 │  │               │  │  +PostGIS  │  │  (facility-images, │    │
-│  └────────────────┘  └────────────┘  │   legal-documents) │    │
+│  └────────────────┘  └────────────┘  │  (facility-images) │    │
 │                                      └────────────────────┘    │
 └─────────────────────────────────────────────────────────────────┘
                          │
@@ -112,7 +112,6 @@ The Supabase PostgreSQL database contains the following tables (all with Row Lev
 | `student_discounts` | Discount offers attached to a facility (description, amount, validity date). |
 | `reviews` | User reviews on facilities (1–5 star rating + comment). One review per user per facility, enforced by a UNIQUE constraint. |
 | `events` | Events tied to a facility, submitted by a business user and requiring admin approval before going live. |
-| `legal_documents` | Business registration documents (e.g. Gewerbeanmeldung) uploaded to the private `legal-documents` bucket for admin review. |
 | `matchmaking_posts` | Community board posts where users look for training partners. Filtered by sport, skill level, and date. |
 
 ### Custom Enums
@@ -163,7 +162,6 @@ The platform has **three distinct user roles**, each granting different permissi
 - Access the admin panel at `/admin`
 - View platform-wide statistics (pending facilities, pending events, total users)
 - Review and approve/reject pending facility applications (with optional rejection notes)
-- View uploaded legal documents
 - Approve/reject events submitted by businesses
 - View analytics charts (signups, active businesses, page views)
 
@@ -243,14 +241,13 @@ Located at `/[locale]/dashboard/` — accessible only to users with role `busine
 - Prompt to complete onboarding if no facility exists yet
 
 #### Onboarding Flow (`/dashboard/onboarding`) — Multi-step wizard
-Business users who haven't listed a facility are guided through a **4-step onboarding** form:
+Business users who haven't listed a facility are guided through a **3-step onboarding** form:
 
 | Step | Content |
 |---|---|
 | **Step 1 — Facility Details** | Name, description, address, city, postal code, phone, website |
 | **Step 2 — Sports Offered** | Multi-select from the 20 sport categories |
-| **Step 3 — Legal Documents** | Upload business registration document (Gewerbeanmeldung or equivalent) — PDF/image up to 10 MB, stored in the private `legal-documents` Supabase Storage bucket |
-| **Step 4 — Review & Submit** | Summary view before submitting for admin review |
+| **Step 3 — Review & Submit** | Summary view before submitting for admin review |
 
 On successful submission, the facility is created with `status = 'pending'` and the document is uploaded. Admin is notified to review.
 
@@ -292,7 +289,6 @@ Located at `/[locale]/admin/` — accessible only to users with role `admin`.
 
 #### Facility Review Detail (`/admin/facilities/[id]`)
 - Full facility information (name, address, contact, sports, description)
-- List of uploaded legal documents with download/view links
 - **Approve** button: sets facility status to `active`, visible on map and listings
 - **Reject** button: sets facility status, optionally stores an admin-provided rejection reason in the database
 - Approval/rejection is handled via Server Action (`actions.ts`)
@@ -344,7 +340,6 @@ Every table in the database has **PostgreSQL Row Level Security enabled**. Polic
 | Owner-only edits | Facilities, images, hours, discounts updatable only by the owning user or an admin |
 | Admin-only deletes | Facilities can only be deleted by admins |
 | One review per user | Database UNIQUE constraint on `(facility_id, user_id)` in `reviews` |
-| Legal document privacy | Private Supabase Storage bucket; RLS restricts access to document owner + admin |
 
 ### Helper Functions
 
@@ -360,7 +355,6 @@ Two `SECURITY DEFINER` PostgreSQL functions enable safe, non-leaking role checks
 ### GDPR Compliance
 - **Cookie consent banner** on all pages — no tracking cookies without consent
 - **`gdpr_delete_expired_accounts()`** PostgreSQL function for automated account deletion (designed to be scheduled via `pg_cron` at 2 AM daily)
-- Legal documents stored in a **private** Supabase Storage bucket, inaccessible to the public
 - No analytics or third-party tracking scripts beyond what's strictly necessary
 
 ---
@@ -372,7 +366,6 @@ Supabase Storage is used for two distinct purposes:
 | Bucket | Type | Contents | Access |
 |---|---|---|---|
 | `facility-images` | **Public** | Facility gallery photos uploaded by business owners | Anyone can read; authenticated users write their own folder |
-| `legal-documents` | **Private** | Business registration documents (Gewerbeanmeldung, etc.) | Owner + Admin only |
 
 Storage RLS policies are scoped by folder name (user UUID), preventing cross-user access.
 
@@ -480,7 +473,7 @@ npm install
    - `supabase/migrations/003_add_rejection_reason.sql`
    - `supabase/migrations/20260222_sport_suggestions.sql`
 3. Enable the **PostGIS** and **pg_trgm** extensions (Settings → Extensions)
-4. In Storage, verify the `facility-images` (public) and `legal-documents` (private) buckets were created by the migration
+4. In Storage, verify the `facility-images` (public) bucket was created by the migration
 
 ### 4. Configure environment variables
 
@@ -539,7 +532,6 @@ Saha is a **production-ready, full-stack sports facility platform** with:
 - ✅ Full English + German localisation
 - ✅ GDPR-compliant cookie consent and data deletion
 - ✅ Comprehensive Row Level Security on all database tables
-- ✅ Private storage for sensitive legal documents
 
 ---
 
