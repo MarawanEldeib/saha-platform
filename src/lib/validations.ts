@@ -155,3 +155,14 @@ export const profileUpdateSchema = z.object({
     display_name: z.string().min(2, "Name must be at least 2 characters"),
 });
 export type ProfileUpdateInput = z.infer<typeof profileUpdateSchema>;
+
+// ---------------------------------------------------------------------------
+// Court Schema
+// ---------------------------------------------------------------------------
+export const courtSchema = z.object({
+    name: z.string().min(2, "Court name must be at least 2 characters"),
+    sport_id: z.string(), // "" = no sport assigned
+    capacity: z.number().int().min(1, "Capacity must be at least 1").max(50, "Capacity cannot exceed 50"),
+    price_per_hour: z.number().min(0, "Price cannot be negative"),
+});
+export type CourtInput = z.infer<typeof courtSchema>;
