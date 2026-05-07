@@ -160,12 +160,6 @@ export default async function AdminPage() {
                 </div>
             </div>
 
-            {/* Quick Links */}
-            <div className="flex flex-wrap gap-3">
-                <Button variant="outline" asChild>
-                    <Link href={`/${locale}/admin/outreach`}>Email Outreach</Link>
-                </Button>
-            </div>
         </div>
     );
 }

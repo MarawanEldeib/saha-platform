@@ -379,31 +379,6 @@ export interface Database {
                     }
                 ];
             };
-            email_campaigns: {
-                Row: {
-                    id: string;
-                    admin_id: string;
-                    template_name: string;
-                    recipient_count: number;
-                    sent_at: string;
-                };
-                Insert: {
-                    id?: string;
-                    admin_id: string;
-                    template_name: string;
-                    recipient_count?: number;
-                };
-                Update: never;
-                Relationships: [
-                    {
-                        foreignKeyName: "email_campaigns_admin_id_fkey";
-                        columns: ["admin_id"];
-                        isOneToOne: false;
-                        referencedRelation: "profiles";
-                        referencedColumns: ["id"];
-                    }
-                ];
-            };
             courts: {
                 Row: {
                     id: string;
@@ -662,7 +637,6 @@ export type Review = Database["public"]["Tables"]["reviews"]["Row"];
 export type Event = Database["public"]["Tables"]["events"]["Row"];
 export type LegalDocument = Database["public"]["Tables"]["legal_documents"]["Row"];
 export type MatchmakingPost = Database["public"]["Tables"]["matchmaking_posts"]["Row"];
-export type EmailCampaign = Database["public"]["Tables"]["email_campaigns"]["Row"];
 export type Court = Database["public"]["Tables"]["courts"]["Row"];
 export type CourtAvailability = Database["public"]["Tables"]["court_availability"]["Row"];
 export type Booking = Database["public"]["Tables"]["bookings"]["Row"];

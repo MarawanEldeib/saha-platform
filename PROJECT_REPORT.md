@@ -34,7 +34,7 @@ Saha is a **Next.js 16** web application that serves three distinct audiences:
 |---|---|
 | **Students / Players** | Discover nearby sports facilities, filter by sport or discount, read reviews, join the matchmaking board, and attend events |
 | **Facility Owners (Business)** | Register their business, list their facility, manage photos/hours/sports/discounts, submit events for approval |
-| **Platform Admins** | Approve/reject facility listings and events, run email outreach campaigns, view platform analytics |
+| **Platform Admins** | Approve/reject facility listings and events, view platform analytics |
 
 The platform is focused on the **Stuttgart and Baden-Württemberg region of Germany**, but is architected to scale geographically.
 
@@ -87,8 +87,7 @@ The platform is focused on the **Stuttgart and Baden-Württemberg region of Germ
                          ▼
 ┌──────────────────────────┐
 │   Resend                 │
-│   (Transactional Email + │
-│    CSV Campaign Outreach) │
+│   (Transactional Email)  │
 └──────────────────────────┘
 ```
 
@@ -115,7 +114,6 @@ The Supabase PostgreSQL database contains the following tables (all with Row Lev
 | `events` | Events tied to a facility, submitted by a business user and requiring admin approval before going live. |
 | `legal_documents` | Business registration documents (e.g. Gewerbeanmeldung) uploaded to the private `legal-documents` bucket for admin review. |
 | `matchmaking_posts` | Community board posts where users look for training partners. Filtered by sport, skill level, and date. |
-| `email_campaigns` | Log of admin email outreach campaigns sent via Resend (template name, recipient count, timestamp). |
 
 ### Custom Enums
 
@@ -167,7 +165,6 @@ The platform has **three distinct user roles**, each granting different permissi
 - Review and approve/reject pending facility applications (with optional rejection notes)
 - View uploaded legal documents
 - Approve/reject events submitted by businesses
-- Send email outreach campaigns via CSV upload
 - View analytics charts (signups, active businesses, page views)
 
 ---
@@ -287,7 +284,6 @@ Located at `/[locale]/admin/` — accessible only to users with role `admin`.
   - Total registered users
 - **Recent Pending Facilities** list with facility name, city, submission date, status badge, and direct "Review" link
 - **Recent Pending Events** list with event name, hosting facility, date, status badge, and "Review" link
-- Quick link to Email Outreach
 
 #### Facility Approval Queue (`/admin/facilities`)
 - Full list of all pending facility applications
@@ -309,13 +305,6 @@ Located at `/[locale]/admin/` — accessible only to users with role `admin`.
 - Full event information (name, description, date, facility)
 - **Approve** button: sets event status to `approved`, event becomes publicly visible
 - **Reject** button: sets event status to `rejected`
-
-#### Email Outreach (`/admin/outreach`)
-- Upload a **CSV file** with columns: `name`, `email`
-- The system parses the CSV and shows a row count preview
-- Select an **email template** from predefined templates
-- Click **Send Campaign** to trigger a personalised Resend email for each contact
-- Each sent campaign is logged in the `email_campaigns` table (template name, recipient count, timestamp)
 
 #### Analytics (`/admin/analytics`)
 - Charts powered by **Recharts**
@@ -397,7 +386,6 @@ The platform uses **[Resend](https://resend.com)** for all outgoing email:
 |---|---|---|
 | Email Verification | On registration | Sent by Supabase Auth |
 | Password Reset | Forgot password request | Sent by Supabase Auth |
-| Outreach Campaigns | Admin-triggered via CSV upload | Personalised bulk email via Resend API; logged in `email_campaigns` table |
 
 Email templates are built using **`@react-email/components`** for type-safe, React-rendered HTML email templates.
 
@@ -437,7 +425,6 @@ saha-app/
 │   │           ├── page.tsx (overview)
 │   │           ├── facilities/
 │   │           ├── events/
-│   │           └── outreach/
 │   ├── components/
 │   │   ├── ui/              # Reusable UI primitives
 │   │   │   ├── Button.tsx
@@ -548,7 +535,6 @@ Saha is a **production-ready, full-stack sports facility platform** with:
 - ✅ Community matchmaking board
 - ✅ Student discount discovery
 - ✅ Verified user reviews (1 per user per facility)
-- ✅ Email outreach campaigns with CSV upload
 - ✅ Analytics dashboard (charts)
 - ✅ Full English + German localisation
 - ✅ GDPR-compliant cookie consent and data deletion

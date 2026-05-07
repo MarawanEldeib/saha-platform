@@ -215,8 +215,7 @@
         "nav": {
             "overview": "Overview",
             "verifications": "Verification Queue",
-            "events": "Event Queue",
-            "outreach": "Email Outreach"
+            "events": "Event Queue"
         },
         "verifications": {
             "title": "Facility Verification Queue",
@@ -239,13 +238,6 @@
             "event_name": "Event",
             "submitted_by": "Submitted By",
             "event_date": "Date"
-        },
-        "outreach": {
-            "title": "Email Outreach",
-            "template_label": "Email Template",
-            "send": "Send Campaign",
-            "sending": "Sending...",
-            "success": "Campaign sent successfully."
         }
     },
     "common": {
