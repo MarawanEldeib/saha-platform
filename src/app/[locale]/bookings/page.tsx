@@ -4,7 +4,9 @@ import { getLocale } from "next-intl/server";
 import { format } from "date-fns";
 import { CheckCircle, Clock, XCircle, MapPin, Calendar } from "lucide-react";
 import Link from "next/link";
+import { headers } from "next/headers";
 import { BookingQRCode } from "@/components/booking/BookingQRCode";
+import { CompletePaymentButton } from "@/components/booking/CompletePaymentButton";
 
 export const metadata = { title: "My Bookings – Saha" };
 
@@ -33,7 +35,9 @@ export default async function MyBookingsPage() {
         .order("date", { ascending: false })
         .order("start_time", { ascending: false });
 
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "";
+    const headersList = await headers();
+    const host = headersList.get("host") ?? "localhost:3000";
+    const appUrl = host.startsWith("localhost") ? `http://${host}` : `https://${host}`;
 
     return (
         <div className="max-w-2xl mx-auto px-4 py-10 space-y-6">
@@ -97,6 +101,13 @@ export default async function MyBookingsPage() {
                                         </Link>
                                     </div>
                                 </div>
+
+                                {/* Complete Payment — pending bookings */}
+                                {booking.status === "pending" && (
+                                    <div className="px-5 pb-4">
+                                        <CompletePaymentButton bookingId={booking.id} />
+                                    </div>
+                                )}
 
                                 {/* QR Code — confirmed bookings only */}
                                 {isConfirmed && booking.qr_code_token && (

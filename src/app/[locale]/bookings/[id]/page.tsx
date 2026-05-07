@@ -4,8 +4,11 @@ import { getLocale } from "next-intl/server";
 import { format } from "date-fns";
 import { CheckCircle, XCircle, Clock, MapPin } from "lucide-react";
 import Link from "next/link";
+import { headers } from "next/headers";
 import { BookingQRCode } from "@/components/booking/BookingQRCode";
 import { BookingShareActions } from "@/components/booking/BookingShareActions";
+import { BookingStatusWatcher } from "@/components/booking/BookingStatusWatcher";
+import { CompletePaymentButton } from "@/components/booking/CompletePaymentButton";
 
 export const metadata = { title: "Booking – Saha" };
 
@@ -42,13 +45,20 @@ export default async function BookingPage({
 
     const isCancelled = cancelled === "1" || booking.status === "cancelled";
     const isConfirmed = success === "1" || booking.status === "confirmed";
+    const isPending = !isConfirmed && !isCancelled && booking.status === "pending";
+    const justPaid = success === "1";
 
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "";
+    const headersList = await headers();
+    const host = headersList.get("host") ?? "localhost:3000";
+    const appUrl = host.startsWith("localhost") ? `http://${host}` : `https://${host}`;
     const shareUrl = `${appUrl}/${locale}/booking/${booking.qr_code_token}`;
 
     return (
         <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center px-4 py-12">
             <div className="max-w-md w-full space-y-6">
+                {/* Polls every 2.5s after Stripe redirect until webhook fires and status flips */}
+                <BookingStatusWatcher isPending={isPending} justPaid={justPaid} />
+
                 {/* Status header */}
                 <div className="text-center">
                     {isConfirmed && !isCancelled ? (
@@ -107,6 +117,9 @@ export default async function BookingPage({
                         </div>
                     )}
                 </div>
+
+                {/* Complete Payment — pending bookings */}
+                {isPending && <CompletePaymentButton bookingId={booking.id} />}
 
                 {/* QR Code — only for confirmed bookings */}
                 {isConfirmed && !isCancelled && booking.qr_code_token && (

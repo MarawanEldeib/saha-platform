@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { headers } from "next/headers";
 import { getLocale } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import { facilityUpdateSchema, profileUpdateSchema, courtSchema, type CourtInput, availabilitySlotSchema, facilityHoursSchema } from "@/lib/validations";
@@ -504,7 +505,9 @@ export async function createBookingAndCheckoutAction(
         status: "pending",
     } as never);
 
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL!;
+    const headersList = await headers();
+    const host = headersList.get("host") ?? "localhost:3000";
+    const appUrl = host.startsWith("localhost") ? `http://${host}` : `https://${host}`;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const facilityData = (court as any).facilities;
     const stripeAccountId = facilityData?.stripe_account_id as string | null;
@@ -543,25 +546,67 @@ export async function createBookingAndCheckoutAction(
 }
 
 // ---------------------------------------------------------------------------
-// Profile: update display name
+// Profile: update display name and phone
 // ---------------------------------------------------------------------------
 export async function updateProfileAction(formData: FormData) {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return { error: "Not authenticated" };
 
-    const raw = { display_name: (formData.get("display_name") as string)?.trim() };
+    const rawPhone = (formData.get("phone") as string)?.trim();
+    const raw = {
+        display_name: (formData.get("display_name") as string)?.trim(),
+        phone: rawPhone || "",
+    };
     const parsed = profileUpdateSchema.safeParse(raw);
     if (!parsed.success) return { error: parsed.error.issues[0].message };
 
     const { error } = await supabase
         .from("profiles")
-        .update({ display_name: parsed.data.display_name })
+        .update({
+            display_name: parsed.data.display_name,
+            phone: parsed.data.phone || null,
+        } as never)
         .eq("id", user.id);
 
     if (error) return { error: error.message };
     revalidatePath("/", "layout");
     return { success: true };
+}
+
+// ---------------------------------------------------------------------------
+// Booking: retry payment for a pending booking
+// ---------------------------------------------------------------------------
+export async function retryPaymentAction(bookingId: string) {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { error: "Not authenticated" };
+
+    // Confirm this booking belongs to the user and is still pending
+    const { data: booking } = await supabase
+        .from("bookings")
+        .select("id, status")
+        .eq("id", bookingId)
+        .eq("player_id", user.id)
+        .single();
+
+    if (!booking) return { error: "Booking not found" };
+    if (booking.status !== "pending") return { error: "Booking is no longer pending" };
+
+    // Get the Stripe session ID from the payments record
+    const { data: payment } = await supabase
+        .from("payments")
+        .select("stripe_checkout_session_id")
+        .eq("booking_id", bookingId)
+        .single();
+
+    if (!payment?.stripe_checkout_session_id) return { error: "Payment record not found" };
+
+    // Retrieve the Stripe session — if still open, return its URL
+    const session = await stripe.checkout.sessions.retrieve(payment.stripe_checkout_session_id);
+    if (session.status === "open" && session.url) return { checkoutUrl: session.url };
+
+    return { error: "Your payment session has expired. The slot has been released — please book again." };
 }
 
 export async function markCheckedInAction(bookingId: string) {
