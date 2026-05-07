@@ -141,11 +141,6 @@ export const declineReasonSchema = z.object({
 });
 export type DeclineReasonInput = z.infer<typeof declineReasonSchema>;
 
-export const outreachCsvSchema = z.object({
-    template_name: z.enum(["outreach"]),
-});
-export type OutreachCsvInput = z.infer<typeof outreachCsvSchema>;
-
 export const profileUpdateSchema = z.object({
     display_name: z.string().min(2, "Name must be at least 2 characters"),
 });
