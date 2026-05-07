@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { notFound } from "next/navigation";
 import { format } from "date-fns";
 import { MapPin, Clock, Users, Calendar } from "lucide-react";
@@ -11,7 +11,7 @@ export async function generateMetadata({
     params: Promise<{ token: string }>;
 }): Promise<Metadata> {
     const { token } = await params;
-    const supabase = await createClient();
+    const supabase = createAdminClient();
     const { data } = await supabase
         .from("bookings")
         .select("date, courts(name, facilities(name))")
@@ -31,7 +31,7 @@ export default async function ShareableBookingPage({
     params: Promise<{ locale: string; token: string }>;
 }) {
     const { token, locale } = await params;
-    const supabase = await createClient();
+    const supabase = createAdminClient();
 
     const { data: booking } = await supabase
         .from("bookings")
