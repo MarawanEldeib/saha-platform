@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { getLocale } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
-import { facilityUpdateSchema, profileUpdateSchema } from "@/lib/validations";
+import { facilityUpdateSchema, profileUpdateSchema, courtSchema, type CourtInput } from "@/lib/validations";
 import type { Database } from "@/types/database";
 
 type FacilityUpdate = Database["public"]["Tables"]["facilities"]["Update"];
@@ -113,6 +113,150 @@ export async function submitEventAction(formData: FormData) {
     });
 
     if (error) return { error: error.message };
+    return { success: true };
+}
+
+// ---------------------------------------------------------------------------
+// Courts: create
+// ---------------------------------------------------------------------------
+export async function createCourtAction(facilityId: string, input: CourtInput) {
+    const supabase = await createClient();
+    const locale = await getLocale();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { error: "Not authenticated" };
+
+    const { data: facility } = await supabase
+        .from("facilities")
+        .select("id")
+        .eq("id", facilityId)
+        .eq("owner_id", user.id)
+        .single();
+    if (!facility) return { error: "Facility not found or access denied" };
+
+    const parsed = courtSchema.safeParse(input);
+    if (!parsed.success) return { error: parsed.error.issues[0].message };
+
+    const { error } = await supabase.from("courts").insert({
+        facility_id: facilityId,
+        name: parsed.data.name,
+        sport_id: parsed.data.sport_id === "" ? null : parseInt(parsed.data.sport_id, 10),
+        capacity: parsed.data.capacity,
+        price_per_hour: parsed.data.price_per_hour,
+        is_active: true,
+    });
+
+    if (error) return { error: error.message };
+    revalidatePath(`/${locale}/dashboard/courts`);
+    return { success: true };
+}
+
+// ---------------------------------------------------------------------------
+// Courts: update
+// ---------------------------------------------------------------------------
+export async function updateCourtAction(courtId: string, input: CourtInput) {
+    const supabase = await createClient();
+    const locale = await getLocale();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { error: "Not authenticated" };
+
+    const { data: courtRow } = await supabase
+        .from("courts")
+        .select("facility_id")
+        .eq("id", courtId)
+        .single();
+    if (!courtRow) return { error: "Court not found" };
+
+    const { data: facility } = await supabase
+        .from("facilities")
+        .select("id")
+        .eq("id", courtRow.facility_id)
+        .eq("owner_id", user.id)
+        .single();
+    if (!facility) return { error: "Access denied" };
+
+    const parsed = courtSchema.safeParse(input);
+    if (!parsed.success) return { error: parsed.error.issues[0].message };
+
+    const { error } = await supabase
+        .from("courts")
+        .update({
+            name: parsed.data.name,
+            sport_id: parsed.data.sport_id === "" ? null : parseInt(parsed.data.sport_id, 10),
+            capacity: parsed.data.capacity,
+            price_per_hour: parsed.data.price_per_hour,
+        })
+        .eq("id", courtId);
+
+    if (error) return { error: error.message };
+    revalidatePath(`/${locale}/dashboard/courts`);
+    return { success: true };
+}
+
+// ---------------------------------------------------------------------------
+// Courts: toggle active
+// ---------------------------------------------------------------------------
+export async function toggleCourtActiveAction(courtId: string, isActive: boolean) {
+    const supabase = await createClient();
+    const locale = await getLocale();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { error: "Not authenticated" };
+
+    const { data: courtRow } = await supabase
+        .from("courts")
+        .select("facility_id")
+        .eq("id", courtId)
+        .single();
+    if (!courtRow) return { error: "Court not found" };
+
+    const { data: facility } = await supabase
+        .from("facilities")
+        .select("id")
+        .eq("id", courtRow.facility_id)
+        .eq("owner_id", user.id)
+        .single();
+    if (!facility) return { error: "Access denied" };
+
+    const { error } = await supabase
+        .from("courts")
+        .update({ is_active: isActive })
+        .eq("id", courtId);
+
+    if (error) return { error: error.message };
+    revalidatePath(`/${locale}/dashboard/courts`);
+    return { success: true };
+}
+
+// ---------------------------------------------------------------------------
+// Courts: delete
+// ---------------------------------------------------------------------------
+export async function deleteCourtAction(courtId: string) {
+    const supabase = await createClient();
+    const locale = await getLocale();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { error: "Not authenticated" };
+
+    const { data: courtRow } = await supabase
+        .from("courts")
+        .select("facility_id")
+        .eq("id", courtId)
+        .single();
+    if (!courtRow) return { error: "Court not found" };
+
+    const { data: facility } = await supabase
+        .from("facilities")
+        .select("id")
+        .eq("id", courtRow.facility_id)
+        .eq("owner_id", user.id)
+        .single();
+    if (!facility) return { error: "Access denied" };
+
+    const { error } = await supabase
+        .from("courts")
+        .delete()
+        .eq("id", courtId);
+
+    if (error) return { error: error.message };
+    revalidatePath(`/${locale}/dashboard/courts`);
     return { success: true };
 }
 

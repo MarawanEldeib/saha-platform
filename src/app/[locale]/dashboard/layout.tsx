@@ -8,11 +8,13 @@ import {
     Building2,
     CalendarPlus,
     Settings,
+    Trophy,
 } from "lucide-react";
 
 const navItems = [
     { href: "dashboard", label: "Overview", icon: LayoutDashboard },
     { href: "dashboard/facility", label: "My Facility", icon: Building2 },
+    { href: "dashboard/courts", label: "Courts", icon: Trophy },
     { href: "dashboard/events", label: "Events", icon: CalendarPlus },
     { href: "dashboard/settings", label: "Settings", icon: Settings },
 ];
