@@ -3,6 +3,8 @@ export type FacilityStatus = "pending" | "active" | "suspended";
 export type EventStatus = "pending" | "approved" | "rejected";
 export type SkillLevel = "beginner" | "intermediate" | "advanced";
 export type DocumentStatus = "pending" | "approved" | "rejected";
+export type BookingStatus = "pending" | "confirmed" | "cancelled" | "completed" | "no_show";
+export type PaymentStatus = "pending" | "succeeded" | "failed" | "refunded";
 
 export interface Database {
     public: {
@@ -402,6 +404,215 @@ export interface Database {
                     }
                 ];
             };
+            courts: {
+                Row: {
+                    id: string;
+                    facility_id: string;
+                    sport_id: number | null;
+                    name: string;
+                    capacity: number;
+                    price_per_hour: number;
+                    is_active: boolean;
+                    created_at: string;
+                    updated_at: string;
+                };
+                Insert: {
+                    id?: string;
+                    facility_id: string;
+                    sport_id?: number | null;
+                    name: string;
+                    capacity?: number;
+                    price_per_hour: number;
+                    is_active?: boolean;
+                };
+                Update: {
+                    sport_id?: number | null;
+                    name?: string;
+                    capacity?: number;
+                    price_per_hour?: number;
+                    is_active?: boolean;
+                    updated_at?: string;
+                };
+                Relationships: [
+                    {
+                        foreignKeyName: "courts_facility_id_fkey";
+                        columns: ["facility_id"];
+                        isOneToOne: false;
+                        referencedRelation: "facilities";
+                        referencedColumns: ["id"];
+                    },
+                    {
+                        foreignKeyName: "courts_sport_id_fkey";
+                        columns: ["sport_id"];
+                        isOneToOne: false;
+                        referencedRelation: "sports";
+                        referencedColumns: ["id"];
+                    }
+                ];
+            };
+            court_availability: {
+                Row: {
+                    id: string;
+                    court_id: string;
+                    date: string;
+                    start_time: string;
+                    end_time: string;
+                    is_booked: boolean;
+                    created_at: string;
+                };
+                Insert: {
+                    id?: string;
+                    court_id: string;
+                    date: string;
+                    start_time: string;
+                    end_time: string;
+                    is_booked?: boolean;
+                };
+                Update: {
+                    is_booked?: boolean;
+                };
+                Relationships: [
+                    {
+                        foreignKeyName: "court_availability_court_id_fkey";
+                        columns: ["court_id"];
+                        isOneToOne: false;
+                        referencedRelation: "courts";
+                        referencedColumns: ["id"];
+                    }
+                ];
+            };
+            bookings: {
+                Row: {
+                    id: string;
+                    availability_id: string;
+                    court_id: string;
+                    player_id: string;
+                    date: string;
+                    start_time: string;
+                    end_time: string;
+                    num_players: number;
+                    total_price: number;
+                    currency: string;
+                    status: BookingStatus;
+                    qr_code_token: string;
+                    notes: string | null;
+                    created_at: string;
+                    updated_at: string;
+                };
+                Insert: {
+                    id?: string;
+                    availability_id: string;
+                    court_id: string;
+                    player_id: string;
+                    date: string;
+                    start_time: string;
+                    end_time: string;
+                    num_players?: number;
+                    total_price: number;
+                    currency?: string;
+                    status?: BookingStatus;
+                    qr_code_token?: string;
+                    notes?: string | null;
+                };
+                Update: {
+                    num_players?: number;
+                    status?: BookingStatus;
+                    notes?: string | null;
+                    updated_at?: string;
+                };
+                Relationships: [
+                    {
+                        foreignKeyName: "bookings_availability_id_fkey";
+                        columns: ["availability_id"];
+                        isOneToOne: false;
+                        referencedRelation: "court_availability";
+                        referencedColumns: ["id"];
+                    },
+                    {
+                        foreignKeyName: "bookings_court_id_fkey";
+                        columns: ["court_id"];
+                        isOneToOne: false;
+                        referencedRelation: "courts";
+                        referencedColumns: ["id"];
+                    },
+                    {
+                        foreignKeyName: "bookings_player_id_fkey";
+                        columns: ["player_id"];
+                        isOneToOne: false;
+                        referencedRelation: "profiles";
+                        referencedColumns: ["id"];
+                    }
+                ];
+            };
+            payments: {
+                Row: {
+                    id: string;
+                    booking_id: string;
+                    stripe_payment_intent_id: string | null;
+                    stripe_checkout_session_id: string | null;
+                    amount: number;
+                    currency: string;
+                    status: PaymentStatus;
+                    created_at: string;
+                    updated_at: string;
+                };
+                Insert: {
+                    id?: string;
+                    booking_id: string;
+                    stripe_payment_intent_id?: string | null;
+                    stripe_checkout_session_id?: string | null;
+                    amount: number;
+                    currency?: string;
+                    status?: PaymentStatus;
+                };
+                Update: {
+                    stripe_payment_intent_id?: string | null;
+                    stripe_checkout_session_id?: string | null;
+                    status?: PaymentStatus;
+                    updated_at?: string;
+                };
+                Relationships: [
+                    {
+                        foreignKeyName: "payments_booking_id_fkey";
+                        columns: ["booking_id"];
+                        isOneToOne: false;
+                        referencedRelation: "bookings";
+                        referencedColumns: ["id"];
+                    }
+                ];
+            };
+            booking_guests: {
+                Row: {
+                    id: string;
+                    booking_id: string;
+                    name: string | null;
+                    email: string | null;
+                    invited_at: string;
+                    confirmed_at: string | null;
+                };
+                Insert: {
+                    id?: string;
+                    booking_id: string;
+                    name?: string | null;
+                    email?: string | null;
+                    invited_at?: string;
+                    confirmed_at?: string | null;
+                };
+                Update: {
+                    name?: string | null;
+                    email?: string | null;
+                    confirmed_at?: string | null;
+                };
+                Relationships: [
+                    {
+                        foreignKeyName: "booking_guests_booking_id_fkey";
+                        columns: ["booking_id"];
+                        isOneToOne: false;
+                        referencedRelation: "bookings";
+                        referencedColumns: ["id"];
+                    }
+                ];
+            };
         };
         Views: Record<string, never>;
         Functions: {
@@ -433,6 +644,8 @@ export interface Database {
             event_status: EventStatus;
             skill_level: SkillLevel;
             document_status: DocumentStatus;
+            booking_status: BookingStatus;
+            payment_status: PaymentStatus;
         };
         CompositeTypes: Record<string, never>;
     };
@@ -450,6 +663,11 @@ export type Event = Database["public"]["Tables"]["events"]["Row"];
 export type LegalDocument = Database["public"]["Tables"]["legal_documents"]["Row"];
 export type MatchmakingPost = Database["public"]["Tables"]["matchmaking_posts"]["Row"];
 export type EmailCampaign = Database["public"]["Tables"]["email_campaigns"]["Row"];
+export type Court = Database["public"]["Tables"]["courts"]["Row"];
+export type CourtAvailability = Database["public"]["Tables"]["court_availability"]["Row"];
+export type Booking = Database["public"]["Tables"]["bookings"]["Row"];
+export type Payment = Database["public"]["Tables"]["payments"]["Row"];
+export type BookingGuest = Database["public"]["Tables"]["booking_guests"]["Row"];
 
 // Rich joined types used in the UI
 export type FacilityWithDetails = Facility & {
@@ -458,4 +676,13 @@ export type FacilityWithDetails = Facility & {
     facility_images: FacilityImage[];
     student_discounts: StudentDiscount[];
     reviews: Array<Review & { profiles: Pick<Profile, "display_name" | "avatar_url"> }>;
+};
+
+export type CourtWithSport = Court & { sports: Sport | null };
+
+export type BookingWithDetails = Booking & {
+    courts: CourtWithSport & { facilities: Pick<Facility, "id" | "name" | "address" | "city"> };
+    profiles: Pick<Profile, "display_name" | "avatar_url">;
+    payments: Payment[];
+    booking_guests: BookingGuest[];
 };
