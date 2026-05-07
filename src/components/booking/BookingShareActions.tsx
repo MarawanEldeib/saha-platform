@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Copy, Check, Users, Calendar, ExternalLink } from "lucide-react";
+import { format } from "date-fns";
 
 interface Props {
     courtName: string;
@@ -51,7 +52,8 @@ export function BookingShareActions(props: Props) {
     const [copied, setCopied] = useState(false);
     const [showSplit, setShowSplit] = useState(false);
 
-    const waText = `Hey! I booked ${courtName} at ${facilityName} on ${date} at ${startTime.slice(0, 5)}. Join me: ${shareUrl}`;
+    const readableDate = format(new Date(date), "EEEE, MMMM d");
+    const waText = `Hey! I booked ${courtName} at ${facilityName} on ${readableDate} at ${startTime.slice(0, 5)}. Join me: ${shareUrl}`;
     const waUrl = `https://wa.me/?text=${encodeURIComponent(waText)}`;
     const gcalUrl = buildGCalUrl(props);
     const perPlayer = numPlayers > 0 ? (totalPrice / numPlayers).toFixed(0) : totalPrice;
