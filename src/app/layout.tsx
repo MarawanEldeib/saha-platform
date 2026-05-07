@@ -7,11 +7,11 @@ const inter = Inter({ subsets: ["latin"] });
 export const metadata: Metadata = {
   title: {
     template: "%s | Saha",
-    default: "Saha – Sports Facility Directory",
+    default: "Saha – Book Racket Sports Courts in the UAE",
   },
   description:
-    "Find sports facilities near you in Stuttgart and Baden-Württemberg. Search by sport, find student discounts, and connect with other players.",
-  keywords: ["sports", "facility", "Stuttgart", "students", "discount", "Sportstätte"],
+    "Discover and book Padel, Tennis, Squash, and Badminton courts in Dubai and Abu Dhabi. Find facilities, check availability, and play today.",
+  keywords: ["padel", "tennis", "squash", "badminton", "court booking", "Dubai", "Abu Dhabi", "UAE", "racket sports"],
   authors: [{ name: "Saha Platform" }],
   openGraph: {
     siteName: "Saha",
@@ -27,7 +27,7 @@ export default function RootLayout({
 }) {
   return (
     <html suppressHydrationWarning>
-      <body className={`${inter.className} antialiased`}>{children}</body>
+      <body suppressHydrationWarning className={`${inter.className} antialiased`}>{children}</body>
     </html>
   );
 }
