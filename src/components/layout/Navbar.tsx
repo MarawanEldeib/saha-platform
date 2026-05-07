@@ -4,7 +4,7 @@ import * as React from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
-import { MapPin, Menu, X, LogOut, LayoutDashboard, ShieldCheck } from "lucide-react";
+import { MapPin, Menu, X, LogOut, LayoutDashboard, ShieldCheck, CalendarDays, Settings } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
 import type { Profile } from "@/types/database";
@@ -86,6 +86,18 @@ export function Navbar({ profile }: NavbarProps) {
                                         {t("dashboard")}
                                     </Link>
                                 )}
+                                {profile.role === "user" && (
+                                    <>
+                                        <Link href={`/${locale}/bookings`} className={ghostBtn}>
+                                            <CalendarDays className="h-4 w-4" />
+                                            My Bookings
+                                        </Link>
+                                        <Link href={`/${locale}/account/settings`} className={ghostBtn}>
+                                            <Settings className="h-4 w-4" />
+                                            Settings
+                                        </Link>
+                                    </>
+                                )}
                                 <button
                                     onClick={handleLogout}
                                     className={ghostBtn}
@@ -138,13 +150,27 @@ export function Navbar({ profile }: NavbarProps) {
                     ))}
                     <div className="pt-2 flex flex-col gap-2">
                         {profile ? (
-                            <button
-                                onClick={() => { handleLogout(); setMenuOpen(false); }}
-                                className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-red-600"
-                            >
-                                <LogOut className="h-4 w-4" />
-                                {t("logout")}
-                            </button>
+                            <>
+                                {profile.role === "user" && (
+                                    <>
+                                        <Link href={`/${locale}/bookings`} onClick={() => setMenuOpen(false)} className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800">
+                                            <CalendarDays className="h-4 w-4" />
+                                            My Bookings
+                                        </Link>
+                                        <Link href={`/${locale}/account/settings`} onClick={() => setMenuOpen(false)} className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800">
+                                            <Settings className="h-4 w-4" />
+                                            Settings
+                                        </Link>
+                                    </>
+                                )}
+                                <button
+                                    onClick={() => { handleLogout(); setMenuOpen(false); }}
+                                    className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-red-600"
+                                >
+                                    <LogOut className="h-4 w-4" />
+                                    {t("logout")}
+                                </button>
+                            </>
                         ) : (
                             <>
                                 <Link href={`/${locale}/login`} onClick={() => setMenuOpen(false)} className="block px-3 py-2 rounded-lg text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100">
