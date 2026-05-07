@@ -32,7 +32,6 @@ These need to be created via migration:
 | Table | Reason |
 | --- | --- |
 | `student_discounts` | Platform is no longer student-focused |
-| `legal_documents` | Feature was never completed |
 
 ## Enums
 
