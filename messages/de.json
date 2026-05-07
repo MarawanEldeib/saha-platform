@@ -215,8 +215,7 @@
         "nav": {
             "overview": "Übersicht",
             "verifications": "Verifizierungswarteschlange",
-            "events": "Veranstaltungswarteschlange",
-            "outreach": "E-Mail-Kontaktaufnahme"
+            "events": "Veranstaltungswarteschlange"
         },
         "verifications": {
             "title": "Anlagen-Verifizierungswarteschlange",
@@ -239,13 +238,6 @@
             "event_name": "Veranstaltung",
             "submitted_by": "Eingereicht von",
             "event_date": "Datum"
-        },
-        "outreach": {
-            "title": "E-Mail-Kontaktaufnahme",
-            "template_label": "E-Mail-Vorlage",
-            "send": "Kampagne senden",
-            "sending": "Wird gesendet...",
-            "success": "Kampagne erfolgreich gesendet."
         }
     },
     "common": {

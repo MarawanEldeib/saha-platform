@@ -183,37 +183,6 @@ export interface Database {
                     }
                 ];
             };
-            student_discounts: {
-                Row: {
-                    id: string;
-                    facility_id: string;
-                    description: string;
-                    amount: string | null;
-                    valid_until: string | null;
-                    created_at: string;
-                };
-                Insert: {
-                    id?: string;
-                    facility_id: string;
-                    description: string;
-                    amount?: string | null;
-                    valid_until?: string | null;
-                };
-                Update: {
-                    description?: string;
-                    amount?: string | null;
-                    valid_until?: string | null;
-                };
-                Relationships: [
-                    {
-                        foreignKeyName: "student_discounts_facility_id_fkey";
-                        columns: ["facility_id"];
-                        isOneToOne: false;
-                        referencedRelation: "facilities";
-                        referencedColumns: ["id"];
-                    }
-                ];
-            };
             reviews: {
                 Row: {
                     id: string;
@@ -298,47 +267,6 @@ export interface Database {
                     }
                 ];
             };
-            legal_documents: {
-                Row: {
-                    id: string;
-                    facility_id: string;
-                    owner_id: string;
-                    storage_path: string;
-                    status: DocumentStatus;
-                    admin_notes: string | null;
-                    created_at: string;
-                    reviewed_at: string | null;
-                };
-                Insert: {
-                    id?: string;
-                    facility_id: string;
-                    owner_id: string;
-                    storage_path: string;
-                    status?: DocumentStatus;
-                    admin_notes?: string | null;
-                };
-                Update: {
-                    status?: DocumentStatus;
-                    admin_notes?: string | null;
-                    reviewed_at?: string | null;
-                };
-                Relationships: [
-                    {
-                        foreignKeyName: "legal_documents_facility_id_fkey";
-                        columns: ["facility_id"];
-                        isOneToOne: false;
-                        referencedRelation: "facilities";
-                        referencedColumns: ["id"];
-                    },
-                    {
-                        foreignKeyName: "legal_documents_owner_id_fkey";
-                        columns: ["owner_id"];
-                        isOneToOne: false;
-                        referencedRelation: "profiles";
-                        referencedColumns: ["id"];
-                    }
-                ];
-            };
             matchmaking_posts: {
                 Row: {
                     id: string;
@@ -381,31 +309,6 @@ export interface Database {
                         columns: ["sport_id"];
                         isOneToOne: false;
                         referencedRelation: "sports";
-                        referencedColumns: ["id"];
-                    }
-                ];
-            };
-            email_campaigns: {
-                Row: {
-                    id: string;
-                    admin_id: string;
-                    template_name: string;
-                    recipient_count: number;
-                    sent_at: string;
-                };
-                Insert: {
-                    id?: string;
-                    admin_id: string;
-                    template_name: string;
-                    recipient_count?: number;
-                };
-                Update: never;
-                Relationships: [
-                    {
-                        foreignKeyName: "email_campaigns_admin_id_fkey";
-                        columns: ["admin_id"];
-                        isOneToOne: false;
-                        referencedRelation: "profiles";
                         referencedColumns: ["id"];
                     }
                 ];
@@ -666,12 +569,9 @@ export type Sport = Database["public"]["Tables"]["sports"]["Row"];
 export type Facility = Database["public"]["Tables"]["facilities"]["Row"];
 export type FacilityHours = Database["public"]["Tables"]["facility_hours"]["Row"];
 export type FacilityImage = Database["public"]["Tables"]["facility_images"]["Row"];
-export type StudentDiscount = Database["public"]["Tables"]["student_discounts"]["Row"];
 export type Review = Database["public"]["Tables"]["reviews"]["Row"];
 export type Event = Database["public"]["Tables"]["events"]["Row"];
-export type LegalDocument = Database["public"]["Tables"]["legal_documents"]["Row"];
 export type MatchmakingPost = Database["public"]["Tables"]["matchmaking_posts"]["Row"];
-export type EmailCampaign = Database["public"]["Tables"]["email_campaigns"]["Row"];
 export type Court = Database["public"]["Tables"]["courts"]["Row"];
 export type CourtAvailability = Database["public"]["Tables"]["court_availability"]["Row"];
 export type Booking = Database["public"]["Tables"]["bookings"]["Row"];
@@ -683,7 +583,6 @@ export type FacilityWithDetails = Facility & {
     facility_sports: Array<{ sport_id: number; sports: Sport }>;
     facility_hours: FacilityHours[];
     facility_images: FacilityImage[];
-    student_discounts: StudentDiscount[];
     reviews: Array<Review & { profiles: Pick<Profile, "display_name" | "avatar_url"> }>;
 };
 

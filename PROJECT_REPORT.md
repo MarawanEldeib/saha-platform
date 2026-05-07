@@ -34,7 +34,7 @@ Saha is a **Next.js 16** web application that serves three distinct audiences:
 |---|---|
 | **Students / Players** | Discover nearby sports facilities, filter by sport or discount, read reviews, join the matchmaking board, and attend events |
 | **Facility Owners (Business)** | Register their business, list their facility, manage photos/hours/sports/discounts, submit events for approval |
-| **Platform Admins** | Approve/reject facility listings and events, run email outreach campaigns, view platform analytics |
+| **Platform Admins** | Approve/reject facility listings and events, view platform analytics |
 
 The platform is focused on the **Stuttgart and Baden-Württemberg region of Germany**, but is architected to scale geographically.
 
@@ -80,15 +80,14 @@ The platform is focused on the **Stuttgart and Baden-Württemberg region of Germ
 │  ┌────────────────┐  ┌────────────┐  ┌────────────────────┐    │
 │  │  Auth (JWT)    │  │  PostgreSQL│  │  Storage           │    │
 │  │               │  │  +PostGIS  │  │  (facility-images, │    │
-│  └────────────────┘  └────────────┘  │   legal-documents) │    │
+│  └────────────────┘  └────────────┘  │  (facility-images) │    │
 │                                      └────────────────────┘    │
 └─────────────────────────────────────────────────────────────────┘
                          │
                          ▼
 ┌──────────────────────────┐
 │   Resend                 │
-│   (Transactional Email + │
-│    CSV Campaign Outreach) │
+│   (Transactional Email)  │
 └──────────────────────────┘
 ```
 
@@ -113,9 +112,7 @@ The Supabase PostgreSQL database contains the following tables (all with Row Lev
 | `student_discounts` | Discount offers attached to a facility (description, amount, validity date). |
 | `reviews` | User reviews on facilities (1–5 star rating + comment). One review per user per facility, enforced by a UNIQUE constraint. |
 | `events` | Events tied to a facility, submitted by a business user and requiring admin approval before going live. |
-| `legal_documents` | Business registration documents (e.g. Gewerbeanmeldung) uploaded to the private `legal-documents` bucket for admin review. |
 | `matchmaking_posts` | Community board posts where users look for training partners. Filtered by sport, skill level, and date. |
-| `email_campaigns` | Log of admin email outreach campaigns sent via Resend (template name, recipient count, timestamp). |
 
 ### Custom Enums
 
@@ -165,9 +162,7 @@ The platform has **three distinct user roles**, each granting different permissi
 - Access the admin panel at `/admin`
 - View platform-wide statistics (pending facilities, pending events, total users)
 - Review and approve/reject pending facility applications (with optional rejection notes)
-- View uploaded legal documents
 - Approve/reject events submitted by businesses
-- Send email outreach campaigns via CSV upload
 - View analytics charts (signups, active businesses, page views)
 
 ---
@@ -246,14 +241,13 @@ Located at `/[locale]/dashboard/` — accessible only to users with role `busine
 - Prompt to complete onboarding if no facility exists yet
 
 #### Onboarding Flow (`/dashboard/onboarding`) — Multi-step wizard
-Business users who haven't listed a facility are guided through a **4-step onboarding** form:
+Business users who haven't listed a facility are guided through a **3-step onboarding** form:
 
 | Step | Content |
 |---|---|
 | **Step 1 — Facility Details** | Name, description, address, city, postal code, phone, website |
 | **Step 2 — Sports Offered** | Multi-select from the 20 sport categories |
-| **Step 3 — Legal Documents** | Upload business registration document (Gewerbeanmeldung or equivalent) — PDF/image up to 10 MB, stored in the private `legal-documents` Supabase Storage bucket |
-| **Step 4 — Review & Submit** | Summary view before submitting for admin review |
+| **Step 3 — Review & Submit** | Summary view before submitting for admin review |
 
 On successful submission, the facility is created with `status = 'pending'` and the document is uploaded. Admin is notified to review.
 
@@ -287,7 +281,6 @@ Located at `/[locale]/admin/` — accessible only to users with role `admin`.
   - Total registered users
 - **Recent Pending Facilities** list with facility name, city, submission date, status badge, and direct "Review" link
 - **Recent Pending Events** list with event name, hosting facility, date, status badge, and "Review" link
-- Quick link to Email Outreach
 
 #### Facility Approval Queue (`/admin/facilities`)
 - Full list of all pending facility applications
@@ -296,7 +289,6 @@ Located at `/[locale]/admin/` — accessible only to users with role `admin`.
 
 #### Facility Review Detail (`/admin/facilities/[id]`)
 - Full facility information (name, address, contact, sports, description)
-- List of uploaded legal documents with download/view links
 - **Approve** button: sets facility status to `active`, visible on map and listings
 - **Reject** button: sets facility status, optionally stores an admin-provided rejection reason in the database
 - Approval/rejection is handled via Server Action (`actions.ts`)
@@ -309,13 +301,6 @@ Located at `/[locale]/admin/` — accessible only to users with role `admin`.
 - Full event information (name, description, date, facility)
 - **Approve** button: sets event status to `approved`, event becomes publicly visible
 - **Reject** button: sets event status to `rejected`
-
-#### Email Outreach (`/admin/outreach`)
-- Upload a **CSV file** with columns: `name`, `email`
-- The system parses the CSV and shows a row count preview
-- Select an **email template** from predefined templates
-- Click **Send Campaign** to trigger a personalised Resend email for each contact
-- Each sent campaign is logged in the `email_campaigns` table (template name, recipient count, timestamp)
 
 #### Analytics (`/admin/analytics`)
 - Charts powered by **Recharts**
@@ -355,7 +340,6 @@ Every table in the database has **PostgreSQL Row Level Security enabled**. Polic
 | Owner-only edits | Facilities, images, hours, discounts updatable only by the owning user or an admin |
 | Admin-only deletes | Facilities can only be deleted by admins |
 | One review per user | Database UNIQUE constraint on `(facility_id, user_id)` in `reviews` |
-| Legal document privacy | Private Supabase Storage bucket; RLS restricts access to document owner + admin |
 
 ### Helper Functions
 
@@ -371,7 +355,6 @@ Two `SECURITY DEFINER` PostgreSQL functions enable safe, non-leaking role checks
 ### GDPR Compliance
 - **Cookie consent banner** on all pages — no tracking cookies without consent
 - **`gdpr_delete_expired_accounts()`** PostgreSQL function for automated account deletion (designed to be scheduled via `pg_cron` at 2 AM daily)
-- Legal documents stored in a **private** Supabase Storage bucket, inaccessible to the public
 - No analytics or third-party tracking scripts beyond what's strictly necessary
 
 ---
@@ -383,7 +366,6 @@ Supabase Storage is used for two distinct purposes:
 | Bucket | Type | Contents | Access |
 |---|---|---|---|
 | `facility-images` | **Public** | Facility gallery photos uploaded by business owners | Anyone can read; authenticated users write their own folder |
-| `legal-documents` | **Private** | Business registration documents (Gewerbeanmeldung, etc.) | Owner + Admin only |
 
 Storage RLS policies are scoped by folder name (user UUID), preventing cross-user access.
 
@@ -397,7 +379,6 @@ The platform uses **[Resend](https://resend.com)** for all outgoing email:
 |---|---|---|
 | Email Verification | On registration | Sent by Supabase Auth |
 | Password Reset | Forgot password request | Sent by Supabase Auth |
-| Outreach Campaigns | Admin-triggered via CSV upload | Personalised bulk email via Resend API; logged in `email_campaigns` table |
 
 Email templates are built using **`@react-email/components`** for type-safe, React-rendered HTML email templates.
 
@@ -437,7 +418,6 @@ saha-app/
 │   │           ├── page.tsx (overview)
 │   │           ├── facilities/
 │   │           ├── events/
-│   │           └── outreach/
 │   ├── components/
 │   │   ├── ui/              # Reusable UI primitives
 │   │   │   ├── Button.tsx
@@ -493,7 +473,7 @@ npm install
    - `supabase/migrations/003_add_rejection_reason.sql`
    - `supabase/migrations/20260222_sport_suggestions.sql`
 3. Enable the **PostGIS** and **pg_trgm** extensions (Settings → Extensions)
-4. In Storage, verify the `facility-images` (public) and `legal-documents` (private) buckets were created by the migration
+4. In Storage, verify the `facility-images` (public) bucket was created by the migration
 
 ### 4. Configure environment variables
 
@@ -548,12 +528,10 @@ Saha is a **production-ready, full-stack sports facility platform** with:
 - ✅ Community matchmaking board
 - ✅ Student discount discovery
 - ✅ Verified user reviews (1 per user per facility)
-- ✅ Email outreach campaigns with CSV upload
 - ✅ Analytics dashboard (charts)
 - ✅ Full English + German localisation
 - ✅ GDPR-compliant cookie consent and data deletion
 - ✅ Comprehensive Row Level Security on all database tables
-- ✅ Private storage for sensitive legal documents
 
 ---
 
