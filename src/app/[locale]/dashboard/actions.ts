@@ -563,3 +563,25 @@ export async function updateProfileAction(formData: FormData) {
     revalidatePath("/", "layout");
     return { success: true };
 }
+
+export async function markCheckedInAction(bookingId: string) {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { error: "Unauthorized" };
+
+    const { data: facility } = await supabase
+        .from("facilities")
+        .select("id")
+        .eq("owner_id", user.id)
+        .single();
+    if (!facility) return { error: "No facility found" };
+
+    await supabase
+        .from("bookings")
+        .update({ status: "completed" } as never)
+        .eq("id", bookingId)
+        .eq("status", "confirmed");
+
+    revalidatePath("/dashboard/checkin");
+    return { success: true };
+}

@@ -34,6 +34,7 @@
     "react-dropzone": "^15.0.0",
     "react-hook-form": "^7.71.2",
     "react-leaflet": "^5.0.0",
+    "react-qr-code": "^2.0.21",
     "recharts": "^3.7.0",
     "resend": "^6.9.2",
     "stripe": "^22.1.1",

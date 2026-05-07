@@ -4,6 +4,8 @@ import { getLocale } from "next-intl/server";
 import { format } from "date-fns";
 import { CheckCircle, XCircle, Clock, MapPin } from "lucide-react";
 import Link from "next/link";
+import { BookingQRCode } from "@/components/booking/BookingQRCode";
+import { BookingShareActions } from "@/components/booking/BookingShareActions";
 
 export const metadata = { title: "Booking – Saha" };
 
@@ -25,7 +27,7 @@ export default async function BookingPage({
     const { data: booking } = await supabase
         .from("bookings")
         .select(`
-            id, date, start_time, end_time, status, total_price, currency, qr_code_token,
+            id, date, start_time, end_time, status, total_price, currency, qr_code_token, num_players,
             courts(name, facilities(name, address, city))
         `)
         .eq("id", id)
@@ -40,6 +42,9 @@ export default async function BookingPage({
 
     const isCancelled = cancelled === "1" || booking.status === "cancelled";
     const isConfirmed = success === "1" || booking.status === "confirmed";
+
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "";
+    const shareUrl = `${appUrl}/${locale}/booking/${booking.qr_code_token}`;
 
     return (
         <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center px-4 py-12">
@@ -86,6 +91,10 @@ export default async function BookingPage({
                         </span>
                     </div>
                     <div className="flex justify-between text-sm">
+                        <span className="text-gray-500 dark:text-gray-400">Players</span>
+                        <span className="font-medium text-gray-900 dark:text-white">{booking.num_players}</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
                         <span className="text-gray-500 dark:text-gray-400">Total</span>
                         <span className="font-semibold text-gray-900 dark:text-white">
                             {booking.total_price} {booking.currency}
@@ -99,6 +108,27 @@ export default async function BookingPage({
                     )}
                 </div>
 
+                {/* QR Code — only for confirmed bookings */}
+                {isConfirmed && !isCancelled && booking.qr_code_token && (
+                    <BookingQRCode token={booking.qr_code_token} appUrl={appUrl} />
+                )}
+
+                {/* Share actions — only for confirmed bookings */}
+                {isConfirmed && !isCancelled && (
+                    <BookingShareActions
+                        courtName={court?.name ?? ""}
+                        facilityName={facility?.name ?? ""}
+                        date={booking.date}
+                        startTime={booking.start_time}
+                        endTime={booking.end_time}
+                        address={`${facility?.address ?? ""}, ${facility?.city ?? ""}`}
+                        totalPrice={booking.total_price}
+                        currency={booking.currency}
+                        numPlayers={booking.num_players}
+                        shareUrl={shareUrl}
+                    />
+                )}
+
                 <div className="flex gap-3">
                     <Link
                         href={`/${locale}/map`}
@@ -107,7 +137,7 @@ export default async function BookingPage({
                         Find more courts
                     </Link>
                     <Link
-                        href={`/${locale}/dashboard`}
+                        href={`/${locale}/bookings`}
                         className="flex-1 px-4 py-2.5 rounded-lg bg-gray-900 dark:bg-white text-white dark:text-gray-900 text-sm font-medium text-center hover:opacity-90 transition-opacity"
                     >
                         My bookings
