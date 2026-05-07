@@ -55,6 +55,7 @@ export interface Database {
                     location: unknown | null;
                     status: FacilityStatus;
                     rejection_reason: string | null;
+                    stripe_account_id: string | null;
                     created_at: string;
                     updated_at: string;
                 };
@@ -71,6 +72,7 @@ export interface Database {
                     website?: string | null;
                     location?: unknown | null;
                     status?: FacilityStatus;
+                    stripe_account_id?: string | null;
                 };
                 Update: {
                     name?: string;
@@ -84,6 +86,7 @@ export interface Database {
                     location?: unknown | null;
                     status?: FacilityStatus;
                     rejection_reason?: string | null;
+                    stripe_account_id?: string | null;
                     updated_at?: string;
                 };
                 Relationships: [

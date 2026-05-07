@@ -5,6 +5,7 @@ import { getLocale } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import { facilityUpdateSchema, profileUpdateSchema, courtSchema, type CourtInput, availabilitySlotSchema, facilityHoursSchema } from "@/lib/validations";
 import type { Database } from "@/types/database";
+import { stripe, PLATFORM_FEE_PERCENT } from "@/lib/stripe";
 
 type FacilityUpdate = Database["public"]["Tables"]["facilities"]["Update"];
 type FacilityInsert = Database["public"]["Tables"]["facility_sports"]["Insert"];
@@ -415,6 +416,130 @@ export async function saveFacilityHoursAction(
     if (error) return { error: error.message };
     revalidatePath(`/${locale}/dashboard/facility`);
     return { success: true };
+}
+
+// ---------------------------------------------------------------------------
+// Booking: get available slots for a court on a date (used by player booking widget)
+// ---------------------------------------------------------------------------
+export async function getAvailableSlotsAction(courtId: string, date: string) {
+    const supabase = await createClient();
+    const { data } = await supabase
+        .from("court_availability")
+        .select("id, start_time, end_time")
+        .eq("court_id", courtId)
+        .eq("date", date)
+        .eq("is_booked", false)
+        .order("start_time");
+    return { slots: data ?? [] };
+}
+
+// ---------------------------------------------------------------------------
+// Booking: create booking + Stripe checkout session
+// ---------------------------------------------------------------------------
+export async function createBookingAndCheckoutAction(
+    availabilityId: string,
+    courtId: string,
+    date: string,
+    startTime: string,
+    endTime: string,
+    numPlayers: number,
+) {
+    const supabase = await createClient();
+    const locale = await getLocale();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { error: "Not authenticated" };
+
+    // Fetch court + facility info
+    const { data: court } = await supabase
+        .from("courts")
+        .select("id, name, price_per_hour, facility_id, facilities(id, name, stripe_account_id)")
+        .eq("id", courtId)
+        .single();
+    if (!court) return { error: "Court not found" };
+
+    // Calculate price: price_per_hour * duration
+    const [sh, sm] = startTime.split(":").map(Number);
+    const [eh, em] = endTime.split(":").map(Number);
+    const durationHours = ((eh * 60 + em) - (sh * 60 + sm)) / 60;
+    const totalAed = Math.round(court.price_per_hour * durationHours * 100) / 100;
+
+    // Lock the slot immediately to prevent double-booking
+    const { error: lockError } = await supabase
+        .from("court_availability")
+        .update({ is_booked: true } as never)
+        .eq("id", availabilityId)
+        .eq("is_booked", false);
+
+    if (lockError) return { error: "Slot is no longer available" };
+
+    // Create booking record (pending)
+    const { data: booking, error: bookingError } = await supabase
+        .from("bookings")
+        .insert({
+            availability_id: availabilityId,
+            court_id: courtId,
+            player_id: user.id,
+            date,
+            start_time: startTime,
+            end_time: endTime,
+            num_players: numPlayers,
+            total_price: totalAed,
+            currency: "AED",
+            status: "pending",
+        } as never)
+        .select("id")
+        .single();
+
+    if (bookingError || !booking) {
+        // Release the slot on failure
+        await supabase.from("court_availability").update({ is_booked: false } as never).eq("id", availabilityId);
+        return { error: "Failed to create booking" };
+    }
+
+    // Create pending payment record
+    await supabase.from("payments").insert({
+        booking_id: booking.id,
+        amount: totalAed,
+        currency: "AED",
+        status: "pending",
+    } as never);
+
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL!;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const facilityData = (court as any).facilities;
+    const stripeAccountId = facilityData?.stripe_account_id as string | null;
+
+    const sessionParams: Parameters<typeof stripe.checkout.sessions.create>[0] = {
+        mode: "payment",
+        line_items: [{
+            quantity: 1,
+            price_data: {
+                currency: "aed",
+                unit_amount: Math.round(totalAed * 100),
+                product_data: {
+                    name: `${court.name} — ${date} ${startTime}–${endTime}`,
+                    description: facilityData?.name ?? undefined,
+                },
+            },
+        }],
+        metadata: { booking_id: booking.id, availability_id: availabilityId },
+        success_url: `${appUrl}/${locale}/bookings/${booking.id}?success=1`,
+        cancel_url: `${appUrl}/${locale}/bookings/${booking.id}?cancelled=1`,
+        expires_at: Math.floor(Date.now() / 1000) + 30 * 60, // 30 min to pay
+    };
+
+    // Route payment to facility's connected Stripe account (if connected)
+    if (stripeAccountId) {
+        const feeAmount = Math.round(totalAed * 100 * PLATFORM_FEE_PERCENT / 100);
+        sessionParams.payment_intent_data = {
+            application_fee_amount: feeAmount,
+            transfer_data: { destination: stripeAccountId },
+        };
+    }
+
+    const session = await stripe.checkout.sessions.create(sessionParams);
+
+    return { checkoutUrl: session.url };
 }
 
 // ---------------------------------------------------------------------------
