@@ -2,7 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getLocale } from "next-intl/server";
 import { redirect } from "next/navigation";
 import { NewEventForm } from "./NewEventForm";
-import { Badge } from "@/components/ui/Badge";
+import { OwnerEventCard } from "./OwnerEventCard";
 import { Calendar } from "lucide-react";
 import { getActiveFacility } from "@/lib/facility-context";
 
@@ -58,22 +58,14 @@ export default async function EventsPage() {
                         </div>
                     ) : (
                         <div className="space-y-4">
-                            {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-                            {events.map((event: any) => (
-                                <div key={event.id} className="p-4 rounded-xl border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-950/50">
-                                    <div className="flex justify-between items-start mb-2">
-                                        <h3 className="font-semibold text-gray-900 dark:text-white">{event.name}</h3>
-                                        <Badge variant={event.status === "approved" ? "success" : event.status === "rejected" ? "danger" : "warning"}>
-                                            {event.status}
-                                        </Badge>
-                                    </div>
-                                    <p className="text-sm text-gray-600 dark:text-gray-300 mb-2 line-clamp-2">
-                                        {event.description || "No description provided."}
-                                    </p>
-                                    <p className="text-xs text-gray-500 font-medium">
-                                        {new Date(event.event_date).toLocaleString(locale, { dateStyle: 'long', timeStyle: 'short' })}
-                                    </p>
-                                </div>
+                            {events.map((event: { id: string; name: string; description: string | null; event_date: string; status: "pending" | "approved" | "rejected" }) => (
+                                <OwnerEventCard
+                                    key={event.id}
+                                    event={event}
+                                    facilityName={facility.name}
+                                    locale={locale}
+                                    formattedDate={new Date(event.event_date).toLocaleString(locale, { dateStyle: "long", timeStyle: "short" })}
+                                />
                             ))}
                         </div>
                     )}
