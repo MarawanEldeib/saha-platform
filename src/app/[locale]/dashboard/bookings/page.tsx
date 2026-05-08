@@ -3,6 +3,7 @@ import { getLocale, getTranslations } from "next-intl/server";
 import { redirect } from "next/navigation";
 import { CalendarDays, TrendingUp, CheckCircle, AlertCircle } from "lucide-react";
 import { ExportButton } from "./ExportButton";
+import { OwnerCancelButton } from "./OwnerCancelButton";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = { title: "Bookings & Revenue – Saha" };
@@ -211,6 +212,7 @@ export default async function OwnerBookingsPage() {
                                     <th className="text-start px-4 py-3 font-medium">{t("player_label")}</th>
                                     <th className="text-start px-4 py-3 font-medium">{t("amount_label")}</th>
                                     <th className="text-start px-4 py-3 font-medium">{t("status_label")}</th>
+                                    <th className="px-4 py-3" />
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
@@ -231,6 +233,11 @@ export default async function OwnerBookingsPage() {
                                             <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_STYLES[b.status] ?? ""}`}>
                                                 {b.status}
                                             </span>
+                                        </td>
+                                        <td className="px-4 py-3 text-end">
+                                            {["confirmed", "pending"].includes(b.status) && (
+                                                <OwnerCancelButton bookingId={b.id} />
+                                            )}
                                         </td>
                                     </tr>
                                 ))}
