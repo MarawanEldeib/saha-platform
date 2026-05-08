@@ -5,6 +5,7 @@ import { FacilityEditForm } from "./FacilityEditForm";
 import { HoursForm } from "./HoursForm";
 import { StripeConnectSection } from "./StripeConnectSection";
 import { ShareableLinkCard } from "./ShareableLinkCard";
+import { getActiveFacility } from "@/lib/facility-context";
 
 export const metadata = { title: "Manage Facility – Saha" };
 
@@ -15,14 +16,16 @@ export default async function FacilityPage() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) redirect(`/${locale}/login`);
 
+    const active = await getActiveFacility(supabase, user.id);
+    if (!active) redirect(`/${locale}/dashboard/onboarding`);
+
+    // Re-fetch the active facility with the columns the form needs.
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: facilityRows } = await (supabase as any)
+    const { data: facility } = await (supabase as any)
         .from("facilities")
         .select("id, name, slug, description, address, city, postal_code, phone, website, stripe_account_id, facility_images(id, storage_path, display_order)")
-        .eq("owner_id", user.id)
-        .order("created_at", { ascending: false })
-        .limit(1);
-    const facility = facilityRows?.[0] ?? null;
+        .eq("id", active.id)
+        .single();
 
     if (!facility) {
         redirect(`/${locale}/dashboard/onboarding`);

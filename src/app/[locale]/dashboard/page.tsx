@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/Button";
 import { FacilityStatusBadge } from "@/components/ui/Badge";
 import { ArrowRight, AlertCircle } from "lucide-react";
+import { getActiveFacility, listOwnerFacilities } from "@/lib/facility-context";
 
 export const metadata = { title: "Dashboard" };
 
@@ -14,13 +15,8 @@ export default async function DashboardPage() {
 
     const { data: { user } } = await supabase.auth.getUser();
     const { data: profile } = await supabase.from("profiles").select("display_name").eq("id", user!.id).single();
-    const { data: facilityRows } = await supabase
-        .from("facilities")
-        .select("id, name, status")
-        .eq("owner_id", user!.id)
-        .order("created_at", { ascending: false })
-        .limit(1);
-    const facility = facilityRows?.[0] ?? null;
+    const facility = await getActiveFacility(supabase, user!.id);
+    const facilities = await listOwnerFacilities(supabase, user!.id);
 
     return (
         <div className="max-w-3xl space-y-8">
@@ -50,6 +46,11 @@ export default async function DashboardPage() {
                         <div>
                             <p className="text-sm text-gray-500 dark:text-gray-400">{t("status_label")}</p>
                             <h2 className="text-xl font-semibold text-gray-900 dark:text-white mt-1">{facility.name}</h2>
+                            {facilities.length > 1 && (
+                                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                    1 of {facilities.length} facilities — switch from the sidebar.
+                                </p>
+                            )}
                         </div>
                         <FacilityStatusBadge status={facility.status} />
                     </div>
@@ -58,7 +59,10 @@ export default async function DashboardPage() {
                             <Link href={`/${locale}/dashboard/facility`}>Manage Facility</Link>
                         </Button>
                         <Button variant="ghost" size="sm" asChild>
-                            <Link href={`/${locale}/facilities/${facility.id}`}>View Public Page</Link>
+                            <Link href={`/${locale}/f/${facility.slug}`}>View Public Page</Link>
+                        </Button>
+                        <Button variant="ghost" size="sm" asChild>
+                            <Link href={`/${locale}/dashboard/facilities`}>All Facilities</Link>
                         </Button>
                     </div>
                 </div>

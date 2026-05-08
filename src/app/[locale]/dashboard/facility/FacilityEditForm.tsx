@@ -59,6 +59,7 @@ export function FacilityEditForm({ facility, allSports, currentSportIds, initial
         setServerError(null);
         setSaved(false);
         const fd = new FormData();
+        fd.append("facility_id", facility.id);
         Object.entries(data).forEach(([k, v]) => fd.append(k, v ?? ""));
         const result = await updateFacilityAction(fd);
         if (result?.error) setServerError(result.error);

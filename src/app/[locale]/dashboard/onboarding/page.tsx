@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/Button";
 import { useRouter } from "next/navigation";
 import { CheckCircle, Building2 } from "lucide-react";
 import type { Database } from "@/types/database";
+import { setActiveFacilityAction } from "../actions";
 
 type FacilitySportsInsert = Database["public"]["Tables"]["facility_sports"]["Insert"];
 
@@ -79,6 +80,9 @@ export default function OnboardingPage() {
 
         if (error) { setServerError(error.message); return; }
         setFacilityId(facility.id);
+        // Make the just-created facility the active one — relevant when
+        // re-running onboarding to add a second facility (SAH-65).
+        await setActiveFacilityAction(facility.id);
         setStep(2);
     };
 
