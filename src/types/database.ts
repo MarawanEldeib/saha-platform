@@ -525,6 +525,20 @@ export interface Database {
                     }
                 ];
             };
+            stripe_events: {
+                Row: {
+                    id: string;
+                    type: string;
+                    received_at: string;
+                };
+                Insert: {
+                    id: string;
+                    type: string;
+                    received_at?: string;
+                };
+                Update: Record<string, never>;
+                Relationships: [];
+            };
         };
         Views: Record<string, never>;
         Functions: {
