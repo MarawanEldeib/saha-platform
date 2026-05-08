@@ -21,11 +21,13 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: npm
 
       - name: Install dependencies
-        run: npm ci
+        # Use install (not ci) so transitive peer-dep resolutions don't
+        # trip cross-platform lockfile lints. Lock file is still committed.
+        run: npm install --no-audit --no-fund
 
       - name: Lint
         run: npm run lint
