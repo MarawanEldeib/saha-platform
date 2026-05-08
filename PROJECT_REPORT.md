@@ -1,538 +1,220 @@
-# 🏟️ Saha Platform — Full Project Report
+# Saha Platform — Project Report
 
-> **Saha** is a sports facility directory and community platform built for students in Stuttgart and Baden-Württemberg, Germany. It connects students with local sports facilities, enables facility owners to list and manage their venues, and helps athletes find teammates through a community matchmaking board.
+> **Saha** is a court-booking platform for racket sports in the UAE — Padel, Tennis, Squash, Badminton, Pickleball.
+> It connects players with local sports facilities, lets facility owners list courts, manage availability, and accept payments via Stripe Connect, and gives admins approval queues + an audit log.
 
----
-
-## Table of Contents
-
-1. [Project Overview](#1-project-overview)
-2. [Technology Stack](#2-technology-stack)
-3. [Architecture](#3-architecture)
-4. [Database Schema](#4-database-schema)
-5. [User Roles](#5-user-roles)
-6. [Application Features](#6-application-features)
-   - [Public Pages](#61-public-pages)
-   - [Authentication System](#62-authentication-system)
-   - [Business Dashboard](#63-business-dashboard)
-   - [Admin Panel](#64-admin-panel)
-7. [Internationalization (i18n)](#7-internationalization-i18n)
-8. [Security & Compliance](#8-security--compliance)
-9. [File & Storage System](#9-file--storage-system)
-10. [Email System](#10-email-system)
-11. [Directory Structure](#11-directory-structure)
-12. [Getting Started](#12-getting-started)
-13. [Environment Variables](#13-environment-variables)
+The previous version of this file described a German student-focused product. That was the legacy positioning. Reality is UAE-first sports-booking. Anything below reflects the current state of `master`.
 
 ---
 
-## 1. Project Overview
+## 1. Product
 
-Saha is a **Next.js 16** web application that serves three distinct audiences:
-
-| Audience | What They Get |
+| Audience | What they get |
 |---|---|
-| **Students / Players** | Discover nearby sports facilities, filter by sport or discount, read reviews, join the matchmaking board, and attend events |
-| **Facility Owners (Business)** | Register their business, list their facility, manage photos/hours/sports/discounts, submit events for approval |
-| **Platform Admins** | Approve/reject facility listings and events, view platform analytics |
+| Players | Discover nearby courts, filter by sport, view ratings, book a slot, pay via Stripe, receive WhatsApp + email confirmations, scan a QR code at check-in |
+| Facility owners | Onboard via 3-step flow, manage courts + availability + hours + photos, accept Stripe Connect payouts (10% platform fee), see a finance dashboard, cancel + refund bookings |
+| Admins | Approve / reject facility applications and events, view platform-wide audit log |
 
-The platform is focused on the **Stuttgart and Baden-Württemberg region of Germany**, but is architected to scale geographically.
+Geography: UAE first. Multi-region (KSA, EG, OM) is tracked in [SAH-103](https://linear.app/saha-platform/issue/SAH-103) (currency) and [SAH-106](https://linear.app/saha-platform/issue/SAH-106) (per-region Stripe).
+
+Languages: English + Arabic. RTL is set on `<html dir="rtl">` for `ar`.
 
 ---
 
-## 2. Technology Stack
+## 2. Stack
 
-| Layer | Technology |
+| Layer | Tech |
 |---|---|
-| **Framework** | [Next.js 16](https://nextjs.org) (App Router, React 19, TypeScript 5) |
-| **Database** | [Supabase](https://supabase.com) (PostgreSQL 15 with PostGIS + pg_trgm extensions) |
-| **Auth** | Supabase Auth (email/password) |
-| **Styling** | Tailwind CSS v4 |
-| **UI Components** | Radix UI primitives (Dialog, Dropdown, Avatar, Select, Tabs, Toast, Label, Separator, Slot) |
-| **Icons** | Lucide React |
-| **Forms** | React Hook Form + Zod validation |
-| **Charts** | Recharts |
-| **Maps** | Leaflet + React Leaflet |
-| **Email** | Resend (transactional + bulk campaign emails via `@react-email/components`) |
-| **i18n** | next-intl (English + German) |
-| **Date Handling** | date-fns |
-| **File Uploads** | react-dropzone |
-| **Animation** | Babel React Compiler (experimental) |
+| Framework | Next.js 16 (App Router, React 19, TypeScript 5) |
+| Database | Supabase Postgres (PostGIS + pg_trgm) |
+| Auth | Supabase Auth (email/password) |
+| Storage | Supabase Storage — `facility-images`, `avatars` |
+| Payments | Stripe Connect (Express, AED, 10% application fee + transfer_data) |
+| Email | Resend |
+| WhatsApp | Twilio |
+| Map | MapLibre GL + CARTO basemaps + Mapbox Geocoding |
+| i18n | next-intl |
+| Deployment | Vercel + Vercel Cron + GitHub Actions CI |
 
 ---
 
-## 3. Architecture
+## 3. Architecture (high level)
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                         Next.js 16 App                          │
-│  ┌──────────────┐  ┌──────────────┐  ┌───────────────────────┐  │
-│  │  Public Pages│  │  Auth Pages  │  │  Protected Dashboards │  │
-│  │  (SSR / RSC) │  │  (SSR / RSC) │  │  Business + Admin     │  │
-│  └──────────────┘  └──────────────┘  └───────────────────────┘  │
-│              ↑                    ↑                              │
-│         Server Actions       Route Handlers                      │
-└─────────────────────────────────────────────────────────────────┘
-                         │
-                         ▼
-┌─────────────────────────────────────────────────────────────────┐
-│                         Supabase                                │
-│  ┌────────────────┐  ┌────────────┐  ┌────────────────────┐    │
-│  │  Auth (JWT)    │  │  PostgreSQL│  │  Storage           │    │
-│  │               │  │  +PostGIS  │  │  (facility-images, │    │
-│  └────────────────┘  └────────────┘  │  (facility-images) │    │
-│                                      └────────────────────┘    │
-└─────────────────────────────────────────────────────────────────┘
-                         │
-                         ▼
-┌──────────────────────────┐
-│   Resend                 │
-│   (Transactional Email)  │
-└──────────────────────────┘
+Browser
+  │
+  │ HTTPS
+  ▼
+Vercel (Next.js — App Router, Server Actions, Route Handlers)
+  │            │             │
+  │            │             ▼
+  │            │       /api/stripe/webhook ──► Stripe
+  │            ▼
+  │      /api/cron/*  (reminder-emails, mark-no-shows)
+  ▼
+Supabase
+  ├── Postgres + RLS
+  ├── Auth
+  └── Storage
 ```
 
-The app uses **Next.js App Router with React Server Components** for all data fetching. Server Actions handle mutations (form submissions, approvals). The client only receives serialised props — no raw Supabase credentials are ever exposed to the browser.
+- All mutations go through Server Actions or Route Handlers — the browser never holds the service-role key.
+- Auth runs through `@supabase/ssr` middleware (`src/proxy.ts`) which refreshes JWT cookies and gates `/admin` and `/dashboard`.
+- RLS is the security boundary, not the API layer. Every table has policies; the only escape hatch is `createAdminClient()` which is used in webhook handlers, cron, and a handful of admin actions.
+- Stripe is the source of truth for money. We never touch card data.
 
 ---
 
-## 4. Database Schema
+## 4. Database (current)
 
-The Supabase PostgreSQL database contains the following tables (all with Row Level Security enabled):
+Active tables in production:
 
-### Core Tables
-
-| Table | Description |
+| Table | Purpose |
 |---|---|
-| `profiles` | Extends `auth.users`. One row per user. Stores `role`, `display_name`, `avatar_url`. Auto-created on sign-up via a PostgreSQL trigger. |
-| `sports` | Reference table of racket sports: Padel, Tennis, Squash, Badminton, Pickleball. |
-| `facilities` | Core facility listings. Includes name, address, city, postal code, phone, website, PostGIS `GEOGRAPHY(POINT, 4326)` location, and approval status. |
-| `facility_sports` | Many-to-many join between facilities and sports. |
-| `facility_hours` | Operating hours per day of week (0–6 = Mon–Sun) with open/close times and `is_closed` flag. |
-| `facility_images` | Ordered gallery images stored in Supabase Storage (`facility-images` public bucket). |
-| `student_discounts` | Discount offers attached to a facility (description, amount, validity date). |
-| `reviews` | User reviews on facilities (1–5 star rating + comment). One review per user per facility, enforced by a UNIQUE constraint. |
-| `events` | Events tied to a facility, submitted by a business user and requiring admin approval before going live. |
-| `matchmaking_posts` | Community board posts where users look for training partners. Filtered by sport, skill level, and date. |
+| `profiles` | Mirror of `auth.users` with role + display name + phone + `no_show_count` + `deletion_requested_at` |
+| `facilities` | The sports venue. Owns slug (branded URL), Stripe Connect account id, geocoded `location`. Status pending/active/suspended |
+| `facility_sports` | M:N join — facility ↔ sport |
+| `facility_hours` | Open/close times per day-of-week |
+| `facility_images` | Storage paths in `facility-images` bucket, ordered |
+| `courts` | Individual courts inside a facility, with sport, capacity, price/hour |
+| `court_availability` | Bookable slots, with `is_booked` |
+| `bookings` | Player reservations, status enum (pending/confirmed/cancelled/completed/no_show), QR token, total price |
+| `payments` | Stripe payment intent + checkout session ids, status (pending/succeeded/failed/refunded) |
+| `booking_guests` | Stub for future split-pay flow ([SAH-92](https://linear.app/saha-platform/issue/SAH-92)) |
+| `events` | Facility events submitted for admin approval |
+| `matchmaking_posts` | Community board ([SAH-96](https://linear.app/saha-platform/issue/SAH-96) — kill-or-ship pending) |
+| `reviews` | One-per-user-per-facility, INSERT requires a completed booking (RLS) |
+| `sports` | Reference table — Padel, Pickleball, Tennis, Squash, Badminton |
+| `stripe_events` | Webhook idempotency dedup table |
+| `audit_log` | Append-only record of admin + cancellation + system actions |
 
-### Custom Enums
+Dropped (kept around for migration history): `student_discounts`, `legal_documents`, `email_campaigns`.
 
-| Enum | Values |
+Geospatial: `facilities.location GEOGRAPHY(POINT, 4326)` with a GIST index. `facilities_within_radius(lat, lng, radius_km, sport_filter)` returns active facilities sorted by distance.
+
+---
+
+## 5. Routes
+
+### Public
+
+- `/` — root redirect to default locale.
+- `/[locale]` — home / landing.
+- `/[locale]/map` — interactive map.
+- `/[locale]/facilities/[id]` — canonical facility detail (UUID).
+- `/[locale]/f/[slug]` — branded facility URL — same content, slug-based.
+- `/[locale]/community` — matchmaking board.
+- `/[locale]/events` — public approved events.
+- `/[locale]/booking/[token]` — guest preview by QR token.
+
+### Auth
+
+- `/[locale]/login`, `/register`, `/forgot-password`, `/reset-password`.
+
+### Player
+
+- `/[locale]/account`, `/account/settings`.
+- `/[locale]/bookings`, `/bookings/[id]`.
+
+### Owner / business
+
+- `/[locale]/dashboard` — overview.
+- `/[locale]/dashboard/onboarding` — 3-step setup.
+- `/[locale]/dashboard/facility` — manage facility (incl. branded link card).
+- `/[locale]/dashboard/courts`.
+- `/[locale]/dashboard/availability`.
+- `/[locale]/dashboard/bookings` — bookings + revenue, owner cancel button.
+- `/[locale]/dashboard/checkin` — staff/owner QR check-in.
+- `/[locale]/dashboard/events`.
+- `/[locale]/dashboard/settings`.
+
+### Admin
+
+- `/[locale]/admin` — overview.
+- `/[locale]/admin/facilities` + `/[id]` — approval queue.
+- `/[locale]/admin/events` + `/[id]`.
+
+### API / cron / webhooks
+
+- `/api/stripe/webhook` — full event coverage (see §6).
+- `/api/stripe/connect`, `/disconnect`, `/account-session`.
+- `/api/bookings/export` — owner CSV.
+- `/api/cron/reminder-emails` — daily 07:00 UTC.
+- `/api/cron/mark-no-shows` — daily 23:00 UTC (03:00 GST).
+
+---
+
+## 6. Stripe webhook coverage
+
+| Event | Handled |
 |---|---|
-| `user_role` | `user`, `business`, `admin` |
-| `facility_status` | `pending`, `active`, `suspended` |
-| `event_status` | `pending`, `approved`, `rejected` |
-| `skill_level` | `beginner`, `intermediate`, `advanced` |
-| `document_status` | `pending`, `approved`, `rejected` |
+| `checkout.session.completed` | mark booking `confirmed`, mark slot booked, mark payment `succeeded`, send WhatsApp + email |
+| `checkout.session.expired` | mark booking `cancelled`, release slot |
+| `payment_intent.payment_failed` | mark payment `failed`, cancel booking, release slot |
+| `charge.refunded` | sync `payments.status='refunded'`, mark booking `cancelled`, audit log |
+| `account.updated` | audit log (Connect onboarding completion) |
+| `account.application.deauthorized` | clear `facilities.stripe_account_id`, audit log — owner must reconnect |
+| `payout.failed` | audit log + console.error |
+| `charge.dispute.created` | audit log with linked facility id, ops follow-up |
 
-### Geospatial Features
-
-The `facilities` table uses a **PostGIS** geography column (`GEOGRAPHY(POINT, 4326)`) with a GIST spatial index. A custom PostgreSQL function `facilities_within_radius(lat, lng, radius_km, sport_filter, discount_only)` powers the map's radius-based search — it returns all active facilities within a given kilometre radius, sorted by distance, with optional sport and discount filters.
-
-### Performance Indexes
-
-- `idx_facilities_location` — GIST index for geospatial queries
-- `idx_facilities_owner` — Facility lookup by owner
-- `idx_facilities_status` — Status filtering
-- `idx_reviews_facility` — Reviews per facility
-- `idx_events_facility`, `idx_events_status`
-- `idx_matchmaking_sport`
+All webhook events are idempotent via `stripe_events` dedup table.
 
 ---
 
-## 5. User Roles
+## 7. Security posture (current)
 
-The platform has **three distinct user roles**, each granting different permissions:
+- All tables have RLS. Service-role key only loads inside admin/cron/webhook handlers.
+- `handle_new_user` trigger never elevates to admin from user metadata. Admin promotion is SQL-only.
+- Reviews require a completed booking before INSERT (RLS).
+- `facility-images` bucket INSERT/UPDATE/DELETE scoped to facility owner.
+- HSTS, X-Frame-Options, X-Content-Type-Options, Referrer-Policy, Permissions-Policy, CSP set in `next.config.ts`.
+- `gdpr_delete_expired_accounts()` only deletes users who explicitly requested deletion ≥30 days ago.
+- Audit log of every admin and cancellation action.
+- Booking creation now reads slot times from the DB — never trusts client-supplied times.
+- Stripe Connect requires `charges_enabled && details_submitted` before letting a booking through. No silent fallback to platform.
 
-### 👤 Student / Player (`user`)
-- Browse and search the public facility directory
-- View facility details, hours, sports, student discounts
-- View and attend events
-- Write reviews for facilities
-- Post on the matchmaking board to find training partners
-
-### 🏢 Business / Facility Owner (`business`)
-- Everything a student can do, plus:
-- Complete the **4-step business onboarding** flow to register their facility
-- Manage their facility listing (description, photos, hours, sports, discounts)
-- Submit events for admin approval
-- Track event approval status in the dashboard
-
-### 🛡️ Admin (`admin`)
-- Everything everyone else can do, plus:
-- Access the admin panel at `/admin`
-- View platform-wide statistics (pending facilities, pending events, total users)
-- Review and approve/reject pending facility applications (with optional rejection notes)
-- Approve/reject events submitted by businesses
-- View analytics charts (signups, active businesses, page views)
+Open follow-ups (Linear): rate limiting ([SAH-76](https://linear.app/saha-platform/issue/SAH-76)), Sentry ([SAH-75](https://linear.app/saha-platform/issue/SAH-75)), Vercel BotID ([SAH-78](https://linear.app/saha-platform/issue/SAH-78)), admin 2FA ([SAH-80](https://linear.app/saha-platform/issue/SAH-80)), WhatsApp OTP ([SAH-79](https://linear.app/saha-platform/issue/SAH-79)).
 
 ---
 
-## 6. Application Features
-
-### 6.1 Public Pages
-
-#### 🏠 Home Page (`/`)
-- **Hero section** with animated gradient background, primary CTA ("Explore the Map"), and secondary CTA ("Join the Community")
-- **Live stats bar** showing real-time counts of facilities, sports, registered students, and cities — all fetched in parallel from the database
-- **Feature cards** highlighting: Interactive Map, Student Discounts, Matchmaking Board, Verified Reviews
-- **Smart CTA section** for facility owners — hidden for students, shows "Go to Dashboard" for existing business accounts, or "Register Your Business" for guests
-
-#### 🗺️ Map Page (`/map`)
-- Full-screen interactive map powered by **Leaflet** and **React Leaflet**
-- Search bar to filter by sport, facility name, or location
-- Toggle filter for **student discounts only**
-- All-sports dropdown selector
-- Sidebar listing nearby facilities sorted by distance
-- Clicking a facility opens a detail card with a "View Details" link
-- Geospatial data powered by PostGIS `facilities_within_radius` database function
-
-#### 🏟️ Facility Detail Page (`/facilities/[id]`)
-- Facility header with name, address, and status badge
-- Photo gallery (images from Supabase Storage)
-- Opening hours for each day of the week
-- List of sports offered
-- Student discounts section (description, amount, validity date)
-- Upcoming approved events
-- Reviews section:
-  - Average star rating display
-  - Existing user reviews with stars and comments
-  - Authenticated users can write/submit a new review (one per user per facility)
-
-#### 👥 Community Board (`/community`)
-- **Matchmaking board** for finding training partners
-- Filterable by sport and skill level
-- Post cards showing: sport, skill level (beginner/intermediate/advanced), date, location text, user name, message
-- Authenticated users can create new posts via an inline form
-- Guest users see a prompt to log in before posting
-
-#### 📅 Events Page (`/events`)
-- Browse all **admin-approved** upcoming sports events
-- Displays: event name, date, venue (facility name), and organiser
-- Events displayed from soonest to latest
-
----
-
-### 6.2 Authentication System
-
-Located at `/[locale]/(auth)/`:
-
-| Route | Feature |
-|---|---|
-| `/login` | Email + password login |
-| `/register` | Account creation with role selection (Student or Business) |
-| `/forgot-password` | Password reset request — sends email via Supabase |
-| `/reset-password` | Set new password from reset link |
-
-**Key details:**
-- All auth actions use **Next.js Server Actions** (`actions.ts`)
-- Registration flow automatically creates a `profiles` row via PostgreSQL trigger
-- Role is passed at registration as user metadata and stored in the `profiles.role` column
-- Supabase session cookies are managed via `@supabase/ssr` middleware
-
----
-
-### 6.3 Business Dashboard
-
-Located at `/[locale]/dashboard/` — accessible only to users with role `business` or `admin`.
-
-#### Overview Page
-- Welcome message with the user's display name
-- Current facility listing status badge (Pending / Active / Suspended)
-- Prompt to complete onboarding if no facility exists yet
-
-#### Onboarding Flow (`/dashboard/onboarding`) — Multi-step wizard
-Business users who haven't listed a facility are guided through a **3-step onboarding** form:
-
-| Step | Content |
-|---|---|
-| **Step 1 — Facility Details** | Name, description, address, city, postal code, phone, website |
-| **Step 2 — Sports Offered** | Multi-select from the 20 sport categories |
-| **Step 3 — Review & Submit** | Summary view before submitting for admin review |
-
-On successful submission, the facility is created with `status = 'pending'` and the document is uploaded. Admin is notified to review.
-
-#### Manage Facility (`/dashboard/facility`)
-- Edit facility description
-- Manage the **photo gallery**: drag-and-drop image upload via `react-dropzone`, reorder or remove images
-- Edit **opening hours** for each day of the week (individual open/close times or mark as closed)
-- Manage **sports offered** (multi-select)
-- Manage **student discounts**: add/remove discounts with description, amount/percentage, and optional expiry date
-- All changes saved via Server Actions
-
-#### Events Management (`/dashboard/events`)
-- View all events submitted by the business, with status (pending/approved/rejected)
-- Submit new events (name, date, description) associated with the business's facility
-- All submitted events start as `status = 'pending'` and require admin approval before appearing publicly
-
-#### Account Settings (`/dashboard/settings`)
-- Update display name
-- View email (read-only)
-
----
-
-### 6.4 Admin Panel
-
-Located at `/[locale]/admin/` — accessible only to users with role `admin`.
-
-#### Admin Overview
-- **Stats dashboard** with 3 metric cards:
-  - Pending Facilities count
-  - Pending Events count
-  - Total registered users
-- **Recent Pending Facilities** list with facility name, city, submission date, status badge, and direct "Review" link
-- **Recent Pending Events** list with event name, hosting facility, date, status badge, and "Review" link
-
-#### Facility Approval Queue (`/admin/facilities`)
-- Full list of all pending facility applications
-- Each row: facility name, city, owner, submission date, status badge
-- Click through to individual review page
-
-#### Facility Review Detail (`/admin/facilities/[id]`)
-- Full facility information (name, address, contact, sports, description)
-- **Approve** button: sets facility status to `active`, visible on map and listings
-- **Reject** button: sets facility status, optionally stores an admin-provided rejection reason in the database
-- Approval/rejection is handled via Server Action (`actions.ts`)
-
-#### Event Approval Queue (`/admin/events`)
-- All pending events with name, submitting business, hosting facility, and event date
-- Click through to individual event review page
-
-#### Event Review Detail (`/admin/events/[id]`)
-- Full event information (name, description, date, facility)
-- **Approve** button: sets event status to `approved`, event becomes publicly visible
-- **Reject** button: sets event status to `rejected`
-
-#### Analytics (`/admin/analytics`)
-- Charts powered by **Recharts**
-- Metrics: New Signups, Active Businesses, Page Views
-- Configurable time period: Last 7 Days, Last 30 Days, Last 90 Days
-
----
-
-## 7. Internationalization (i18n)
-
-The entire application is **fully translated** in two languages:
-
-| Language | Locale Code | File |
-|---|---|---|
-| English | `en` | `messages/en.json` |
-| German | `de` | `messages/de.json` |
-
-**Implementation:**
-- Powered by **next-intl** with full App Router support
-- All routes use a `[locale]` dynamic segment (e.g. `/en/map`, `/de/map`)
-- Locale is detected from the URL and stored in middleware
-- Users can switch languages via the language toggle in the navigation bar
-- Translated strings cover: navigation, home page, map, facility detail, community, events, all auth flows, dashboard, and admin panel
-
----
-
-## 8. Security & Compliance
-
-### Row Level Security (RLS)
-
-Every table in the database has **PostgreSQL Row Level Security enabled**. Policies are defined for each table and operation:
-
-| Principle | Implementation |
-|---|---|
-| Public read of active facilities | `facilities_select_public` — status = 'active' OR owner OR admin |
-| Business-only write access | `facilities_insert_business` — requires `business` or `admin` role |
-| Owner-only edits | Facilities, images, hours, discounts updatable only by the owning user or an admin |
-| Admin-only deletes | Facilities can only be deleted by admins |
-| One review per user | Database UNIQUE constraint on `(facility_id, user_id)` in `reviews` |
-
-### Helper Functions
-
-Two `SECURITY DEFINER` PostgreSQL functions enable safe, non-leaking role checks:
-- `public.is_admin()` — Returns boolean
-- `public.get_user_role()` — Returns the calling user's role string
-
-### Authentication Security
-- Passwords hashed by Supabase Auth (bcrypt)
-- JWT session tokens with short expiry, refreshed via `@supabase/ssr` middleware
-- Route-level auth guards using server-side session checks with automatic redirect
-
-### GDPR Compliance
-- **Cookie consent banner** on all pages — no tracking cookies without consent
-- **`gdpr_delete_expired_accounts()`** PostgreSQL function for automated account deletion (designed to be scheduled via `pg_cron` at 2 AM daily)
-- No analytics or third-party tracking scripts beyond what's strictly necessary
-
----
-
-## 9. File & Storage System
-
-Supabase Storage is used for two distinct purposes:
-
-| Bucket | Type | Contents | Access |
-|---|---|---|---|
-| `facility-images` | **Public** | Facility gallery photos uploaded by business owners | Anyone can read; authenticated users write their own folder |
-
-Storage RLS policies are scoped by folder name (user UUID), preventing cross-user access.
-
----
-
-## 10. Email System
-
-The platform uses **[Resend](https://resend.com)** for all outgoing email:
-
-| Email Type | Trigger | Details |
-|---|---|---|
-| Email Verification | On registration | Sent by Supabase Auth |
-| Password Reset | Forgot password request | Sent by Supabase Auth |
-
-Email templates are built using **`@react-email/components`** for type-safe, React-rendered HTML email templates.
-
----
-
-## 11. Directory Structure
+## 8. Local dev
 
 ```
-saha-app/
-├── messages/
-│   ├── en.json              # English translations
-│   └── de.json              # German translations
-├── public/                  # Static assets
-├── src/
-│   ├── app/
-│   │   ├── layout.tsx       # Root layout
-│   │   ├── page.tsx         # Root redirect
-│   │   └── [locale]/        # Localised routes
-│   │       ├── page.tsx     # Home page
-│   │       ├── layout.tsx   # Nav + footer shell
-│   │       ├── (auth)/      # Auth routes
-│   │       │   ├── login/
-│   │       │   ├── register/
-│   │       │   ├── forgot-password/
-│   │       │   ├── reset-password/
-│   │       ├── map/         # Interactive map
-│   │       ├── facilities/  # Facility detail pages
-│   │       ├── community/   # Matchmaking board
-│   │       ├── events/      # Public events listing
-│   │       ├── dashboard/   # Business portal
-│   │       │   ├── page.tsx (overview)
-│   │       │   ├── onboarding/
-│   │       │   ├── facility/
-│   │       │   ├── events/
-│   │       │   └── settings/
-│   │       └── admin/       # Admin panel
-│   │           ├── page.tsx (overview)
-│   │           ├── facilities/
-│   │           ├── events/
-│   ├── components/
-│   │   ├── ui/              # Reusable UI primitives
-│   │   │   ├── Button.tsx
-│   │   │   ├── Badge.tsx    # FacilityStatusBadge, EventStatusBadge
-│   │   │   └── ...
-│   │   ├── facility/        # Facility-specific components
-│   │   ├── layout/          # Nav, footer, sidebar
-│   │   └── map/             # Leaflet map components
-│   ├── lib/
-│   │   ├── supabase/        # Client, server, middleware factories
-│   │   ├── utils.ts         # Shared utilities
-│   │   └── validations.ts   # Zod schemas for all forms
-│   ├── types/
-│   │   └── database.ts      # TypeScript types for DB tables
-│   └── i18n/                # next-intl routing + config
-├── supabase/
-│   └── migrations/
-│       ├── 001_initial_schema.sql   # Full schema (tables, RLS, functions)
-│       ├── 003_add_rejection_reason.sql
-│       └── 20260222_sport_suggestions.sql
-├── next.config.ts
-├── tsconfig.json
-└── package.json
-```
-
----
-
-## 12. Getting Started
-
-### Prerequisites
-- Node.js 20+
-- A Supabase project (free tier works)
-- A Resend account (for email)
-
-### 1. Clone the repository
-
-```bash
 git clone https://github.com/MarawanEldeib/saha-platform.git
 cd saha-platform
-```
-
-### 2. Install dependencies
-
-```bash
 npm install
-```
-
-### 3. Set up Supabase
-
-1. Create a new project at [supabase.com](https://supabase.com)
-2. In the SQL Editor, run the migration scripts in order:
-   - `supabase/migrations/001_initial_schema.sql`
-   - `supabase/migrations/003_add_rejection_reason.sql`
-   - `supabase/migrations/20260222_sport_suggestions.sql`
-3. Enable the **PostGIS** and **pg_trgm** extensions (Settings → Extensions)
-4. In Storage, verify the `facility-images` (public) bucket was created by the migration
-
-### 4. Configure environment variables
-
-Copy the example file and fill in your credentials:
-
-```bash
-cp .env.local.example .env.local
-```
-
-Edit `.env.local` with your Supabase URL, anon key, and Resend API key (see [Environment Variables](#13-environment-variables)).
-
-### 5. Run locally
-
-```bash
+cp .env.example .env.local   # fill in Supabase + Stripe + Twilio + Resend + Mapbox keys
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000).
+Required env vars (see `.env.example`):
 
-### 6. Create an admin account
-
-After registering a normal account, manually update the role in the Supabase dashboard:
-
-```sql
-UPDATE public.profiles SET role = 'admin' WHERE id = '<your-user-uuid>';
-```
-
----
-
-## 13. Environment Variables
-
-| Variable | Description |
-|---|---|
-| `NEXT_PUBLIC_SUPABASE_URL` | Your Supabase project URL (public) |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Your Supabase anon/public key (public) |
-| `RESEND_API_KEY` | Resend API key for sending emails |
-| `NEXT_PUBLIC_SITE_URL` | Full URL of the deployed app (e.g. `https://saha.example.com`) |
-
-> **⚠️ Never commit `.env.local` to version control.** It is already included in `.gitignore`.
+- `NEXT_PUBLIC_SUPABASE_URL`
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+- `SUPABASE_SERVICE_ROLE_KEY`
+- `STRIPE_SECRET_KEY`
+- `STRIPE_WEBHOOK_SECRET`
+- `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`
+- `RESEND_API_KEY`
+- `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_WHATSAPP_FROM`
+- `NEXT_PUBLIC_MAPBOX_TOKEN`
+- `NEXT_PUBLIC_APP_URL`
+- `CRON_SECRET`
 
 ---
 
-## Summary
+## 9. Operations
 
-Saha is a **production-ready, full-stack sports facility platform** with:
+Runbooks:
 
-- ✅ Multi-role user system (student, business, admin)
-- ✅ Geospatial search with PostGIS
-- ✅ Interactive Leaflet map
-- ✅ Multi-step business onboarding with document upload
-- ✅ Admin approval workflows for facilities and events
-- ✅ Community matchmaking board
-- ✅ Student discount discovery
-- ✅ Verified user reviews (1 per user per facility)
-- ✅ Analytics dashboard (charts)
-- ✅ Full English + German localisation
-- ✅ GDPR-compliant cookie consent and data deletion
-- ✅ Comprehensive Row Level Security on all database tables
+- [docs/RUNBOOK_STRIPE.md](docs/RUNBOOK_STRIPE.md) — payouts, refunds, disputes, deauthorization, webhook outage.
+- [docs/RUNBOOK_ADMIN.md](docs/RUNBOOK_ADMIN.md) — facility approval, suspension, PII deletion, admin 2FA recovery.
+- [docs/SAHA-ARCHITECTURE-REVIEW.md](docs/SAHA-ARCHITECTURE-REVIEW.md) — full senior FS / security review (May 2026).
+
+CI: `.github/workflows/ci.yml` runs lint + typecheck + build on every PR and on master pushes.
+
+Cron: managed via `vercel.json` — reminder-emails (daily 07:00 UTC), mark-no-shows (daily 23:00 UTC).
 
 ---
 
-*Report generated: March 2026 · Built with Next.js 16, Supabase, Tailwind CSS, and ❤️*
+*Last refreshed: 2026-05-09. Update this doc on any change to stack, schema, or routing — staleness has bitten us before.*
