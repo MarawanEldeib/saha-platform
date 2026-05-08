@@ -597,6 +597,27 @@ export async function updateAvatarAction(avatarUrl: string) {
 }
 
 // ---------------------------------------------------------------------------
+// Profile: remove avatar
+// ---------------------------------------------------------------------------
+export async function removeAvatarAction() {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { error: "Not authenticated" };
+
+    // Delete from storage (ignore errors — file may not exist)
+    await supabase.storage.from("avatars").remove([`${user.id}/avatar.jpg`]);
+
+    const { error } = await supabase
+        .from("profiles")
+        .update({ avatar_url: null } as never)
+        .eq("id", user.id);
+
+    if (error) return { error: error.message };
+    revalidatePath("/", "layout");
+    return { success: true };
+}
+
+// ---------------------------------------------------------------------------
 // Profile: update display name and phone
 // ---------------------------------------------------------------------------
 export async function updateProfileAction(formData: FormData) {

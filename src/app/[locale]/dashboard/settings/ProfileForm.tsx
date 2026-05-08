@@ -2,7 +2,7 @@
 
 import React from "react";
 import { useRouter } from "next/navigation";
-import { updateProfileAction, updateAvatarAction } from "../actions";
+import { updateProfileAction, updateAvatarAction, removeAvatarAction } from "../actions";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { CheckCircle, Camera, Loader2 } from "lucide-react";
@@ -55,9 +55,25 @@ export function ProfileForm({ initialName, initialPhone, initialAvatar }: Props)
     const [loading, setLoading] = React.useState(false);
     const [avatarUrl, setAvatarUrl] = React.useState<string | null>(initialAvatar ?? null);
     const [uploading, setUploading] = React.useState(false);
+    const [removing, setRemoving] = React.useState(false);
     const fileInputRef = React.useRef<HTMLInputElement>(null);
 
     const handleAvatarClick = () => fileInputRef.current?.click();
+
+    const handleRemoveAvatar = async () => {
+        setRemoving(true);
+        setError(null);
+        try {
+            const result = await removeAvatarAction();
+            if (result?.error) throw new Error(result.error);
+            setAvatarUrl(null);
+            router.refresh();
+        } catch (err) {
+            setError(err instanceof Error ? err.message : "Remove failed");
+        } finally {
+            setRemoving(false);
+        }
+    };
 
     const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -140,11 +156,21 @@ export function ProfileForm({ initialName, initialPhone, initialAvatar }: Props)
                     <button
                         type="button"
                         onClick={handleAvatarClick}
-                        disabled={uploading}
+                        disabled={uploading || removing}
                         className="text-sm font-medium text-emerald-600 dark:text-emerald-400 hover:underline disabled:opacity-50"
                     >
                         {uploading ? t("uploading_avatar") : t("change_avatar")}
                     </button>
+                    {avatarUrl && (
+                        <button
+                            type="button"
+                            onClick={handleRemoveAvatar}
+                            disabled={uploading || removing}
+                            className="block text-xs text-red-500 hover:text-red-600 dark:hover:text-red-400 mt-1 disabled:opacity-50"
+                        >
+                            {removing ? "Removing…" : "Remove photo"}
+                        </button>
+                    )}
                     <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">JPEG, PNG or WebP</p>
                 </div>
                 <input
