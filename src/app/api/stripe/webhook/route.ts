@@ -3,6 +3,7 @@ import { getStripe } from "@/lib/stripe";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { sendWhatsApp } from "@/lib/twilio";
 import { sendBookingConfirmationEmail } from "@/lib/emails/booking-confirmation-email";
+import { logAuditEvent } from "@/lib/audit";
 import { format } from "date-fns";
 import Stripe from "stripe";
 
@@ -139,6 +140,184 @@ export async function POST(req: NextRequest) {
             .from("bookings")
             .update({ status: "cancelled" } as never)
             .eq("id", bookingId);
+    }
+
+    // ---------------------------------------------------------------------
+    // Payment intent failed — release the slot, mark booking cancelled, and
+    // notify the player. Triggered when 3DS challenges fail or card declines
+    // happen after the Checkout session was created but before completion.
+    // ---------------------------------------------------------------------
+    if (event.type === "payment_intent.payment_failed") {
+        const intent = event.data.object as Stripe.PaymentIntent;
+        const bookingId = intent.metadata?.booking_id;
+        const availabilityId = intent.metadata?.availability_id;
+
+        if (bookingId) {
+            await supabase
+                .from("payments")
+                .update({ status: "failed" } as never)
+                .eq("booking_id", bookingId);
+
+            await supabase
+                .from("bookings")
+                .update({ status: "cancelled" } as never)
+                .eq("id", bookingId);
+
+            if (availabilityId) {
+                await supabase
+                    .from("court_availability")
+                    .update({ is_booked: false } as never)
+                    .eq("id", availabilityId);
+            }
+        }
+    }
+
+    // ---------------------------------------------------------------------
+    // Refund issued from the Stripe dashboard (i.e. not via our cancel flow).
+    // Sync our payments + bookings rows so the dashboard stays consistent.
+    // ---------------------------------------------------------------------
+    if (event.type === "charge.refunded") {
+        const charge = event.data.object as Stripe.Charge;
+        const intentId = typeof charge.payment_intent === "string"
+            ? charge.payment_intent
+            : charge.payment_intent?.id;
+        if (intentId) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const { data: payment } = await (supabase as any)
+                .from("payments")
+                .select("booking_id")
+                .eq("stripe_payment_intent_id", intentId)
+                .single();
+
+            if (payment?.booking_id) {
+                await supabase
+                    .from("payments")
+                    .update({ status: "refunded" } as never)
+                    .eq("booking_id", payment.booking_id);
+
+                await supabase
+                    .from("bookings")
+                    .update({ status: "cancelled" } as never)
+                    .eq("id", payment.booking_id);
+
+                await logAuditEvent({
+                    actorId: null,
+                    actorRole: "system",
+                    action: "payment.refunded.via_stripe_dashboard",
+                    targetType: "booking",
+                    targetId: payment.booking_id,
+                    metadata: { stripe_payment_intent_id: intentId, charge_id: charge.id },
+                });
+            }
+        }
+    }
+
+    // ---------------------------------------------------------------------
+    // Connected account state changed. The most useful signal is when an
+    // owner finishes Connect onboarding (charges_enabled flips to true) —
+    // we want a record so the dashboard can show "ready" status.
+    // ---------------------------------------------------------------------
+    if (event.type === "account.updated") {
+        const account = event.data.object as Stripe.Account;
+        await logAuditEvent({
+            actorId: null,
+            actorRole: "system",
+            action: "stripe.account.updated",
+            targetType: "stripe_account",
+            metadata: {
+                stripe_account_id: account.id,
+                charges_enabled: account.charges_enabled,
+                details_submitted: account.details_submitted,
+                payouts_enabled: account.payouts_enabled,
+            },
+        });
+    }
+
+    // ---------------------------------------------------------------------
+    // Owner deauthorized our app on their Stripe account. Clear the linked
+    // account id so future booking attempts hit the "not yet ready" guard
+    // (SAH-68) and the owner is forced to reconnect.
+    // For this event the connected account id is on event.account, not in
+    // event.data.object (which is the deauthorized Application).
+    // ---------------------------------------------------------------------
+    if (event.type === "account.application.deauthorized") {
+        const connectedAccountId = event.account;
+        if (connectedAccountId) {
+            await supabase
+                .from("facilities")
+                .update({ stripe_account_id: null } as never)
+                .eq("stripe_account_id", connectedAccountId);
+
+            await logAuditEvent({
+                actorId: null,
+                actorRole: "system",
+                action: "stripe.account.deauthorized",
+                targetType: "stripe_account",
+                metadata: { stripe_account_id: connectedAccountId },
+            });
+        }
+    }
+
+    // ---------------------------------------------------------------------
+    // Payout to the connected account failed. We can't fix this from code —
+    // it usually means the owner's bank rejected. Record for ops follow-up.
+    // ---------------------------------------------------------------------
+    if (event.type === "payout.failed") {
+        const payout = event.data.object as Stripe.Payout;
+        await logAuditEvent({
+            actorId: null,
+            actorRole: "system",
+            action: "stripe.payout.failed",
+            targetType: "stripe_payout",
+            metadata: {
+                payout_id: payout.id,
+                amount: payout.amount,
+                currency: payout.currency,
+                failure_code: payout.failure_code,
+                failure_message: payout.failure_message,
+            },
+        });
+        console.error("[stripe] payout failed", payout.id, payout.failure_code, payout.failure_message);
+    }
+
+    // ---------------------------------------------------------------------
+    // Player chargeback. Pause the facility for ops review and record. We
+    // intentionally do not auto-refund — disputes need human judgement.
+    // ---------------------------------------------------------------------
+    if (event.type === "charge.dispute.created") {
+        const dispute = event.data.object as Stripe.Dispute;
+        const intentId = typeof dispute.payment_intent === "string"
+            ? dispute.payment_intent
+            : dispute.payment_intent?.id;
+
+        let facilityId: string | null = null;
+        if (intentId) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const { data: payment } = await (supabase as any)
+                .from("payments")
+                .select("booking_id, bookings(court_id, courts(facility_id))")
+                .eq("stripe_payment_intent_id", intentId)
+                .single();
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            facilityId = (payment as any)?.bookings?.courts?.facility_id ?? null;
+        }
+
+        await logAuditEvent({
+            actorId: null,
+            actorRole: "system",
+            action: "stripe.dispute.created",
+            targetType: "stripe_dispute",
+            targetId: facilityId,
+            metadata: {
+                dispute_id: dispute.id,
+                amount: dispute.amount,
+                currency: dispute.currency,
+                reason: dispute.reason,
+                status: dispute.status,
+                stripe_payment_intent_id: intentId,
+            },
+        });
+        console.error("[stripe] dispute created", dispute.id, dispute.reason, "facility:", facilityId);
     }
 
     return NextResponse.json({ received: true });
