@@ -15,9 +15,9 @@
     },
     "home": {
         "hero": {
-            "badge": "Padel · Tennis · Squash · Badminton",
+            "badge": "Padel · Pickleball · Tennis · Squash · Badminton",
             "title": "Find Racket Sport Courts Near You",
-            "subtitle": "The easiest way to find and book padel, tennis, squash, and badminton courts in Dubai and across the UAE.",
+            "subtitle": "The easiest way to find and book padel, pickleball, tennis, squash, and badminton courts in Dubai and across the UAE.",
             "cta_primary": "Find Courts",
             "cta_secondary": "Find a Partner",
             "tagline": "Dubai · Abu Dhabi · UAE"
@@ -60,7 +60,9 @@
         "no_results": "No facilities found. Try adjusting your filters.",
         "loading": "Loading facilities...",
         "details_button": "View Details",
-        "sidebar_title": "Nearby Facilities"
+        "sidebar_title": "Nearby Facilities",
+        "km_away": "km away",
+        "outside_uae": "Saha is currently only available in the UAE. Coming soon to your region!"
     },
     "facility": {
         "hours": "Opening Hours",
@@ -315,7 +317,9 @@
         "phone_placeholder": "+971501234567",
         "phone_hint": "Include country code. Used to send booking confirmations and reminders via WhatsApp.",
         "save": "Save Changes",
-        "saved": "Profile updated successfully!"
+        "saved": "Profile updated successfully!",
+        "change_avatar": "Change photo",
+        "uploading_avatar": "Uploading..."
     },
     "facility_form": {
         "heading": "Manage Facility",
@@ -437,6 +441,13 @@
             "accept": "Accept",
             "reject": "Reject"
         }
+    },
+    "sports": {
+        "Padel": "Padel",
+        "Pickleball": "Pickleball",
+        "Tennis": "Tennis",
+        "Squash": "Squash",
+        "Badminton": "Badminton"
     },
     "footer": {
         "tagline": "The sports facility directory in the UAE.",

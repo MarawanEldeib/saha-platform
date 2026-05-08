@@ -36,6 +36,7 @@ type Props = {
 
 export function CourtsClient({ courts, sports, facilityId }: Props) {
     const t = useTranslations("courts");
+    const tSports = useTranslations("sports");
     const router = useRouter();
     const [editingCourt, setEditingCourt] = useState<CourtRow | null>(null);
     const [showForm, setShowForm] = useState(false);
@@ -142,7 +143,7 @@ export function CourtsClient({ courts, sports, facilityId }: Props) {
                                         {court.name}
                                     </p>
                                     <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                                        {court.sports?.name ?? t("no_sport")} &middot; {court.capacity} {t("players")} &middot; AED {Number(court.price_per_hour).toFixed(0)}/hr
+                                        {court.sports?.name ? tSports(court.sports.name as Parameters<typeof tSports>[0]) : t("no_sport")} &middot; {court.capacity} {t("players")} &middot; AED {Number(court.price_per_hour).toFixed(0)}/hr
                                     </p>
                                 </div>
 
@@ -230,7 +231,7 @@ export function CourtsClient({ courts, sports, facilityId }: Props) {
                                 >
                                     <option value="">{t("no_specific_sport")}</option>
                                     {sports.map((s) => (
-                                        <option key={s.id} value={String(s.id)}>{s.name}</option>
+                                        <option key={s.id} value={String(s.id)}>{tSports(s.name as Parameters<typeof tSports>[0])}</option>
                                     ))}
                                 </select>
                             </div>

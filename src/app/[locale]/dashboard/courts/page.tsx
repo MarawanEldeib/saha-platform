@@ -45,6 +45,7 @@ export default async function CourtsPage() {
         supabase
             .from("sports")
             .select("*")
+            .in("name", ["Padel", "Pickleball", "Squash", "Tennis", "Badminton"])
             .order("name"),
     ]);
 

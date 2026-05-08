@@ -17,7 +17,7 @@ export default async function AccountSettingsPage() {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data: profile } = await (supabase as any)
         .from("profiles")
-        .select("display_name, phone")
+        .select("display_name, phone, avatar_url")
         .eq("id", user.id)
         .single();
 
@@ -30,7 +30,11 @@ export default async function AccountSettingsPage() {
 
             <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-6">
                 <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-5">{t("profile_section")}</h2>
-                <ProfileForm initialName={profile?.display_name || ""} initialPhone={profile?.phone || ""} />
+                <ProfileForm
+                    initialName={profile?.display_name || ""}
+                    initialPhone={profile?.phone || ""}
+                    initialAvatar={profile?.avatar_url || null}
+                />
             </div>
         </div>
     );

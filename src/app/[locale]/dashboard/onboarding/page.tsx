@@ -30,6 +30,7 @@ export default function OnboardingPage() {
         createClient()
             .from("sports")
             .select("id, name")
+            .in("name", ["Padel", "Pickleball", "Squash", "Tennis", "Badminton"])
             .order("name")
             .then(({ data }) => setDbSports(data ?? []));
     }, [step, dbSports.length]);
@@ -53,9 +54,26 @@ export default function OnboardingPage() {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) { router.push(`/${locale}/login`); return; }
 
+        // Geocode the address so the facility appears on the map immediately
+        let locationWkt: string | null = null;
+        try {
+            const token = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
+            if (token) {
+                const query = encodeURIComponent(`${data.address}, ${data.city}, UAE`);
+                const res = await fetch(
+                    `https://api.mapbox.com/geocoding/v5/mapbox.places/${query}.json?access_token=${token}&limit=1&country=ae`
+                );
+                if (res.ok) {
+                    const json = await res.json() as { features?: { geometry?: { type: string; coordinates: [number, number] } }[] };
+                    const coords = json.features?.[0]?.geometry?.coordinates;
+                    if (coords) locationWkt = `POINT(${coords[0]} ${coords[1]})`;
+                }
+            }
+        } catch { /* Geocoding failure is non-fatal */ }
+
         const { data: facility, error } = await supabase
             .from("facilities")
-            .insert({ ...data, owner_id: user.id, status: "pending" })
+            .insert({ ...data, owner_id: user.id, status: "pending", ...(locationWkt ? { location: locationWkt } : {}) })
             .select("id")
             .single();
 

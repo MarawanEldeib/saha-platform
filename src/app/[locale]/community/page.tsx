@@ -33,6 +33,7 @@ const skillBadgeVariant: Record<string, "info" | "warning" | "danger"> = {
 
 export default function CommunityPage() {
     const t = useTranslations("community");
+    const tSports = useTranslations("sports");
     const locale = useLocale();
     const router = useRouter();
 
@@ -62,7 +63,7 @@ export default function CommunityPage() {
                     .select("*, sports(name), profiles(display_name)")
                     .eq("is_active", true)
                     .order("created_at", { ascending: false }),
-                supabase.from("sports").select("*").order("name"),
+                supabase.from("sports").select("*").in("name", ["Padel", "Pickleball", "Squash", "Tennis", "Badminton"]).order("name"),
             ]);
             if (postsData) setPosts(postsData as Post[]);
             if (sportsData) setSports(sportsData);
@@ -123,7 +124,7 @@ export default function CommunityPage() {
                                     className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm px-3 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500"
                                 >
                                     <option value="">Any sport</option>
-                                    {sports.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+                                    {sports.map((s) => <option key={s.id} value={s.id}>{tSports(s.name as Parameters<typeof tSports>[0])}</option>)}
                                 </select>
                             </div>
                             <div className="space-y-1.5">
@@ -163,7 +164,7 @@ export default function CommunityPage() {
                                 </p>
                                 <div className="flex items-center gap-2 shrink-0">
                                     {post.sports && (
-                                        <Badge variant="outline">{post.sports.name}</Badge>
+                                        <Badge variant="outline">{tSports(post.sports.name as Parameters<typeof tSports>[0])}</Badge>
                                     )}
                                     <Badge variant={skillBadgeVariant[post.skill_level] ?? "default"}>
                                         {t(`level_${post.skill_level}` as "level_beginner" | "level_intermediate" | "level_advanced")}

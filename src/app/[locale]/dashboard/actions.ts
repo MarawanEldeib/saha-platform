@@ -13,6 +13,28 @@ type FacilityUpdate = Database["public"]["Tables"]["facilities"]["Update"];
 type FacilityInsert = Database["public"]["Tables"]["facility_sports"]["Insert"];
 
 // ---------------------------------------------------------------------------
+// Geocoding helper — uses Mapbox Geocoding API v5
+// ---------------------------------------------------------------------------
+async function geocodeAddress(address: string, city: string): Promise<string | null> {
+    const token = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
+    if (!token) return null;
+    const query = encodeURIComponent(`${address}, ${city}, UAE`);
+    try {
+        const res = await fetch(
+            `https://api.mapbox.com/geocoding/v5/mapbox.places/${query}.json?access_token=${token}&limit=1&country=ae`,
+            { signal: AbortSignal.timeout(5000) },
+        );
+        if (!res.ok) return null;
+        const data = await res.json() as { features?: { geometry?: { type: string; coordinates: [number, number] } }[] };
+        const coords = data.features?.[0]?.geometry?.coordinates;
+        if (!coords) return null;
+        return `POINT(${coords[0]} ${coords[1]})`;
+    } catch {
+        return null;
+    }
+}
+
+// ---------------------------------------------------------------------------
 // Facility: update core details
 // ---------------------------------------------------------------------------
 export async function updateFacilityAction(formData: FormData) {
@@ -34,11 +56,14 @@ export async function updateFacilityAction(formData: FormData) {
     const parsed = facilityUpdateSchema.safeParse(raw);
     if (!parsed.success) return { error: parsed.error.issues[0].message };
 
+    const locationWkt = await geocodeAddress(parsed.data.address, parsed.data.city);
+
     const update: FacilityUpdate = {
         ...parsed.data,
         phone: parsed.data.phone ?? null,
         website: parsed.data.website ?? null,
         updated_at: new Date().toISOString(),
+        ...(locationWkt ? { location: locationWkt as never } : {}),
     };
 
     const { error } = await supabase
@@ -544,6 +569,24 @@ export async function createBookingAndCheckoutAction(
     const session = await getStripe().checkout.sessions.create(sessionParams);
 
     return { checkoutUrl: session.url };
+}
+
+// ---------------------------------------------------------------------------
+// Profile: update avatar URL
+// ---------------------------------------------------------------------------
+export async function updateAvatarAction(avatarUrl: string) {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { error: "Not authenticated" };
+
+    const { error } = await supabase
+        .from("profiles")
+        .update({ avatar_url: avatarUrl } as never)
+        .eq("id", user.id);
+
+    if (error) return { error: error.message };
+    revalidatePath("/", "layout");
+    return { success: true };
 }
 
 // ---------------------------------------------------------------------------

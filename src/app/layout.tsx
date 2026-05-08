@@ -12,8 +12,8 @@ export const metadata: Metadata = {
     default: "Saha – Book Racket Sports Courts in the UAE",
   },
   description:
-    "Discover and book Padel, Tennis, Squash, and Badminton courts in Dubai and Abu Dhabi. Find facilities, check availability, and play today.",
-  keywords: ["padel", "tennis", "squash", "badminton", "court booking", "Dubai", "Abu Dhabi", "UAE", "racket sports"],
+    "Discover and book Padel, Pickleball, Tennis, Squash, and Badminton courts in Dubai and Abu Dhabi. Find facilities, check availability, and play today.",
+  keywords: ["padel", "pickleball", "tennis", "squash", "badminton", "court booking", "Dubai", "Abu Dhabi", "UAE", "racket sports"],
   authors: [{ name: "Saha Platform" }],
   openGraph: {
     siteName: "Saha",

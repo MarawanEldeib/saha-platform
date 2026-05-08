@@ -29,7 +29,7 @@ export default async function FacilityPage() {
 
     const [{ data: allSports }, { data: facilitySpots }, { data: hours }] = await Promise.all([
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (supabase as any).from("sports").select("id, name").order("name"),
+        (supabase as any).from("sports").select("id, name").in("name", ["Padel", "Pickleball", "Squash", "Tennis", "Badminton"]).order("name"),
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (supabase as any).from("facility_sports").select("sport_id").eq("facility_id", facility.id),
         // eslint-disable-next-line @typescript-eslint/no-explicit-any

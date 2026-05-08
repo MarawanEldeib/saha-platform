@@ -33,6 +33,7 @@ export default async function FacilityDetailPage({
     const { id } = await params;
     const t = await getTranslations("facility");
     const tf = await getTranslations("facility_form");
+    const tSports = await getTranslations("sports");
     const locale = await getLocale();
     const supabase = await createClient();
 
@@ -131,7 +132,7 @@ export default async function FacilityDetailPage({
                             <div className="flex flex-wrap gap-2">
                                 {facility.facility_sports.map((fs: { sport_id: number; sports: { name: string } }) => (
                                     <span key={fs.sport_id} className="px-3 py-1 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 text-sm rounded-full font-medium">
-                                        {fs.sports.name}
+                                        {tSports(fs.sports.name as Parameters<typeof tSports>[0])}
                                     </span>
                                 ))}
                             </div>

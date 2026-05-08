@@ -3,6 +3,7 @@
 import React, { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { usePathname } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { Plus, Trash2, Zap, X, ChevronLeft, ChevronRight, Lock } from "lucide-react";
 import {
     createAvailabilitySlotAction,
@@ -71,6 +72,7 @@ function formatDateLabel(dateStr: string, today: string) {
 export function AvailabilityClient({ courts, slots, selectedCourtId, selectedDate, today }: Props) {
     const router = useRouter();
     const pathname = usePathname();
+    const tSports = useTranslations("sports");
     const [isPending, startTransition] = useTransition();
 
     const [showAddForm, setShowAddForm] = useState(false);
@@ -153,7 +155,7 @@ export function AvailabilityClient({ courts, slots, selectedCourtId, selectedDat
                 >
                     {courts.map((c) => (
                         <option key={c.id} value={c.id}>
-                            {c.name}{c.sports ? ` — ${c.sports.name}` : ""}
+                            {c.name}{c.sports ? ` — ${tSports(c.sports.name as Parameters<typeof tSports>[0])}` : ""}
                         </option>
                     ))}
                 </select>
