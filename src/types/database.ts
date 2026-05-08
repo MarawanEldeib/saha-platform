@@ -15,6 +15,7 @@ export interface Database {
                     role: UserRole;
                     display_name: string | null;
                     avatar_url: string | null;
+                    phone: string | null;
                     created_at: string;
                     updated_at: string;
                 };
@@ -23,6 +24,7 @@ export interface Database {
                     role?: UserRole;
                     display_name?: string | null;
                     avatar_url?: string | null;
+                    phone?: string | null;
                     created_at?: string;
                     updated_at?: string;
                 };
@@ -30,6 +32,7 @@ export interface Database {
                     role?: UserRole;
                     display_name?: string | null;
                     avatar_url?: string | null;
+                    phone?: string | null;
                     updated_at?: string;
                 };
                 Relationships: [];
@@ -55,6 +58,7 @@ export interface Database {
                     location: unknown | null;
                     status: FacilityStatus;
                     rejection_reason: string | null;
+                    stripe_account_id: string | null;
                     created_at: string;
                     updated_at: string;
                 };
@@ -71,6 +75,7 @@ export interface Database {
                     website?: string | null;
                     location?: unknown | null;
                     status?: FacilityStatus;
+                    stripe_account_id?: string | null;
                 };
                 Update: {
                     name?: string;
@@ -84,6 +89,7 @@ export interface Database {
                     location?: unknown | null;
                     status?: FacilityStatus;
                     rejection_reason?: string | null;
+                    stripe_account_id?: string | null;
                     updated_at?: string;
                 };
                 Relationships: [
@@ -399,6 +405,7 @@ export interface Database {
                     status: BookingStatus;
                     qr_code_token: string;
                     notes: string | null;
+                    reminder_sent: boolean;
                     created_at: string;
                     updated_at: string;
                 };
@@ -416,11 +423,13 @@ export interface Database {
                     status?: BookingStatus;
                     qr_code_token?: string;
                     notes?: string | null;
+                    reminder_sent?: boolean;
                 };
                 Update: {
                     num_players?: number;
                     status?: BookingStatus;
                     notes?: string | null;
+                    reminder_sent?: boolean;
                     updated_at?: string;
                 };
                 Relationships: [

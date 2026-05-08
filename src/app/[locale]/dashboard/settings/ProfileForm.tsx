@@ -6,7 +6,12 @@ import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { CheckCircle } from "lucide-react";
 
-export function ProfileForm({ initialName }: { initialName: string }) {
+interface Props {
+    initialName: string;
+    initialPhone: string;
+}
+
+export function ProfileForm({ initialName, initialPhone }: Props) {
     const [error, setError] = React.useState<string | null>(null);
     const [success, setSuccess] = React.useState(false);
     const [loading, setLoading] = React.useState(false);
@@ -31,6 +36,18 @@ export function ProfileForm({ initialName }: { initialName: string }) {
                 defaultValue={initialName}
                 required
             />
+            <div className="space-y-1">
+                <Input
+                    label="WhatsApp Phone Number"
+                    name="phone"
+                    type="tel"
+                    placeholder="+971501234567"
+                    defaultValue={initialPhone}
+                />
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                    Include country code. Used to send booking confirmations and reminders via WhatsApp.
+                </p>
+            </div>
             {error && <p className="text-sm text-red-500" role="alert">{error}</p>}
             {success && (
                 <p className="text-sm text-emerald-600 flex items-center gap-1">

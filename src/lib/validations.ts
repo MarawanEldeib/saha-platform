@@ -143,6 +143,7 @@ export type DeclineReasonInput = z.infer<typeof declineReasonSchema>;
 
 export const profileUpdateSchema = z.object({
     display_name: z.string().min(2, "Name must be at least 2 characters"),
+    phone: z.string().regex(/^\+?[1-9]\d{6,14}$/, "Enter a valid number with country code (e.g. +971501234567)").optional().or(z.literal("")),
 });
 export type ProfileUpdateInput = z.infer<typeof profileUpdateSchema>;
 

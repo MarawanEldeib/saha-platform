@@ -9,6 +9,7 @@ import { format } from "date-fns";
 import { DAY_KEYS, formatTime } from "@/lib/utils";
 import Image from "next/image";
 import type { Metadata } from "next";
+import { BookingWidget } from "./BookingWidget";
 
 export async function generateMetadata({
     params,
@@ -34,6 +35,8 @@ export default async function FacilityDetailPage({
     const locale = await getLocale();
     const supabase = await createClient();
 
+    const { data: { user } } = await supabase.auth.getUser();
+
     const { data: facility, error } = await supabase
         .from("facilities")
         .select(
@@ -42,7 +45,8 @@ export default async function FacilityDetailPage({
        facility_hours(*),
        facility_images(*),
        reviews(*, profiles(display_name, avatar_url)),
-       events(id, name, event_date, status)`
+       events(id, name, event_date, status),
+       courts(id, name, price_per_hour, sport_id, is_active)`
         )
         .eq("id", id)
         .eq("status", "active")
@@ -215,6 +219,13 @@ export default async function FacilityDetailPage({
                         </div>
                     )}
 
+                    {/* Booking widget */}
+                    <BookingWidget
+                        facilityId={facility.id}
+                        courts={(facility.courts ?? []).filter((c: { is_active: boolean }) => c.is_active)}
+                        isLoggedIn={!!user}
+                        locale={locale}
+                    />
                 </aside>
             </div>
         </div>
