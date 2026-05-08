@@ -2,7 +2,8 @@ import { headers } from "next/headers";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 interface AuditEvent {
-    actorId: string;
+    /** UUID of the acting user, or null for system events (webhook, cron). */
+    actorId: string | null;
     actorRole: string;
     action: string;
     targetType: string;
@@ -27,7 +28,7 @@ export async function logAuditEvent(event: AuditEvent): Promise<void> {
         const supabase = createAdminClient();
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         await (supabase as any).from("audit_log").insert({
-            actor_id: event.actorId,
+            actor_id: event.actorId ?? null,
             actor_role: event.actorRole,
             action: event.action,
             target_type: event.targetType,
