@@ -539,6 +539,34 @@ export interface Database {
                 Update: Record<string, never>;
                 Relationships: [];
             };
+            audit_log: {
+                Row: {
+                    id: string;
+                    actor_id: string | null;
+                    actor_role: string;
+                    action: string;
+                    target_type: string;
+                    target_id: string | null;
+                    metadata: Record<string, unknown> | null;
+                    ip: string | null;
+                    user_agent: string | null;
+                    created_at: string;
+                };
+                Insert: {
+                    id?: string;
+                    actor_id?: string | null;
+                    actor_role: string;
+                    action: string;
+                    target_type: string;
+                    target_id?: string | null;
+                    metadata?: Record<string, unknown> | null;
+                    ip?: string | null;
+                    user_agent?: string | null;
+                    created_at?: string;
+                };
+                Update: Record<string, never>;
+                Relationships: [];
+            };
         };
         Views: Record<string, never>;
         Functions: {

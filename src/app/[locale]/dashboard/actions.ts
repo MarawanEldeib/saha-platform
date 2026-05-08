@@ -8,6 +8,7 @@ import { facilityUpdateSchema, profileUpdateSchema, courtSchema, type CourtInput
 import type { Database } from "@/types/database";
 import type Stripe from "stripe";
 import { getStripe, PLATFORM_FEE_PERCENT } from "@/lib/stripe";
+import { logAuditEvent } from "@/lib/audit";
 
 type FacilityUpdate = Database["public"]["Tables"]["facilities"]["Update"];
 type FacilityInsert = Database["public"]["Tables"]["facility_sports"]["Insert"];
@@ -760,8 +761,22 @@ export async function cancelBookingAction(bookingId: string) {
     await supabase.from("bookings").update({ status: "cancelled" } as never).eq("id", bookingId);
     await supabase.from("court_availability").update({ is_booked: false } as never).eq("id", booking.availability_id);
 
+    const refunded = withinWindow && payment?.status === "succeeded";
+    await logAuditEvent({
+        actorId: user.id,
+        actorRole: "user",
+        action: "booking.cancel.player",
+        targetType: "booking",
+        targetId: bookingId,
+        metadata: {
+            refunded,
+            within_window: withinWindow,
+            hours_until: hoursUntil,
+        },
+    });
+
     revalidatePath(`/${locale}/bookings`);
-    return { success: true, refunded: withinWindow && payment?.status === "succeeded" };
+    return { success: true, refunded };
 }
 
 export async function markCheckedInAction(bookingId: string) {
