@@ -55,10 +55,6 @@ export function BookingWidget({ courts, isLoggedIn, locale }: Props) {
         startTransition(async () => {
             const result = await createBookingAndCheckoutAction(
                 selectedSlot.id,
-                courtId,
-                date,
-                selectedSlot.start_time,
-                selectedSlot.end_time,
                 1,
             );
             if (result.error) {

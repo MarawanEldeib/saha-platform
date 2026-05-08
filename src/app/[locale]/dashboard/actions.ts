@@ -462,13 +462,13 @@ export async function getAvailableSlotsAction(courtId: string, date: string) {
 
 // ---------------------------------------------------------------------------
 // Booking: create booking + Stripe checkout session
+// SECURITY: Server is the source of truth for slot times and price. The
+// previous version trusted client-supplied start/end times and silently
+// fell back to platform-account charges when the connected Stripe account
+// wasn't ready (SAH-67, SAH-68).
 // ---------------------------------------------------------------------------
 export async function createBookingAndCheckoutAction(
     availabilityId: string,
-    courtId: string,
-    date: string,
-    startTime: string,
-    endTime: string,
     numPlayers: number,
 ) {
     const supabase = await createClient();
@@ -476,39 +476,79 @@ export async function createBookingAndCheckoutAction(
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return { error: "Not authenticated" };
 
-    // Fetch court + facility info
+    // Authoritative slot data — never trust client times.
+    const { data: slot } = await supabase
+        .from("court_availability")
+        .select("id, court_id, date, start_time, end_time, is_booked")
+        .eq("id", availabilityId)
+        .single();
+    if (!slot) return { error: "Slot not found" };
+    if (slot.is_booked) return { error: "Slot is no longer available" };
+
     const { data: court } = await supabase
         .from("courts")
-        .select("id, name, price_per_hour, facility_id, facilities(id, name, stripe_account_id)")
-        .eq("id", courtId)
+        .select("id, name, price_per_hour, capacity, facility_id, facilities(id, name, stripe_account_id)")
+        .eq("id", slot.court_id)
         .single();
     if (!court) return { error: "Court not found" };
 
-    // Calculate price: price_per_hour * duration
-    const [sh, sm] = startTime.split(":").map(Number);
-    const [eh, em] = endTime.split(":").map(Number);
+    if (numPlayers < 1 || numPlayers > (court.capacity ?? 1)) {
+        return { error: "Invalid number of players" };
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const facilityData = (court as any).facilities;
+    const stripeAccountId = facilityData?.stripe_account_id as string | null;
+
+    // Block if facility hasn't connected Stripe — funds would otherwise land
+    // in the platform account.
+    if (!stripeAccountId) {
+        return { error: "This facility is not yet ready to receive payments." };
+    }
+
+    // Verify the connected account is fully onboarded before creating the
+    // checkout session. Without this, Stripe accepts the session but blocks
+    // the transfer at capture time, leaving funds in the platform account.
+    try {
+        const account = await getStripe().accounts.retrieve(stripeAccountId);
+        if (!account.charges_enabled || !account.details_submitted) {
+            return { error: "This facility is not yet ready to receive payments." };
+        }
+    } catch {
+        return { error: "Could not verify the facility's payment account. Please try again." };
+    }
+
+    // Compute price from authoritative slot times.
+    const [sh, sm] = slot.start_time.split(":").map(Number);
+    const [eh, em] = slot.end_time.split(":").map(Number);
     const durationHours = ((eh * 60 + em) - (sh * 60 + sm)) / 60;
+    if (durationHours <= 0) return { error: "Invalid slot" };
     const totalAed = Math.round(court.price_per_hour * durationHours * 100) / 100;
 
-    // Lock the slot immediately to prevent double-booking
-    const { error: lockError } = await supabase
+    // Lock the slot to prevent double-booking. Conditional on is_booked=false
+    // makes this a CAS — if a concurrent caller locked it first, this returns
+    // zero rows and we abort.
+    const { data: lockedRows, error: lockError } = await supabase
         .from("court_availability")
         .update({ is_booked: true } as never)
         .eq("id", availabilityId)
-        .eq("is_booked", false);
+        .eq("is_booked", false)
+        .select("id");
 
-    if (lockError) return { error: "Slot is no longer available" };
+    if (lockError || !lockedRows || lockedRows.length === 0) {
+        return { error: "Slot is no longer available" };
+    }
 
-    // Create booking record (pending)
+    // Create booking record (pending) using slot-canonical times.
     const { data: booking, error: bookingError } = await supabase
         .from("bookings")
         .insert({
             availability_id: availabilityId,
-            court_id: courtId,
+            court_id: slot.court_id,
             player_id: user.id,
-            date,
-            start_time: startTime,
-            end_time: endTime,
+            date: slot.date,
+            start_time: slot.start_time,
+            end_time: slot.end_time,
             num_players: numPlayers,
             total_price: totalAed,
             currency: "AED",
@@ -518,7 +558,6 @@ export async function createBookingAndCheckoutAction(
         .single();
 
     if (bookingError || !booking) {
-        // Release the slot on failure
         await supabase.from("court_availability").update({ is_booked: false } as never).eq("id", availabilityId);
         return { error: "Failed to create booking" };
     }
@@ -534,10 +573,8 @@ export async function createBookingAndCheckoutAction(
     const headersList = await headers();
     const host = headersList.get("host") ?? "localhost:3000";
     const appUrl = host.startsWith("localhost") ? `http://${host}` : `https://${host}`;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const facilityData = (court as any).facilities;
-    const stripeAccountId = facilityData?.stripe_account_id as string | null;
 
+    const feeAmount = Math.round(totalAed * 100 * PLATFORM_FEE_PERCENT / 100);
     const sessionParams: Stripe.Checkout.SessionCreateParams = {
         mode: "payment",
         line_items: [{
@@ -547,7 +584,7 @@ export async function createBookingAndCheckoutAction(
                 unit_amount: Math.round(totalAed * 100),
                 product_data: {
                     name: facilityData?.name ? `${facilityData.name} — ${court.name}` : court.name,
-                    description: `${date} · ${startTime}–${endTime}`,
+                    description: `${slot.date} · ${slot.start_time}–${slot.end_time}`,
                 },
             },
         }],
@@ -555,24 +592,21 @@ export async function createBookingAndCheckoutAction(
         success_url: `${appUrl}/${locale}/bookings/${booking.id}?success=1`,
         cancel_url: `${appUrl}/${locale}/bookings/${booking.id}?cancelled=1`,
         expires_at: Math.floor(Date.now() / 1000) + 30 * 60, // 30 min to pay
-    };
-
-    // Route payment to facility's connected Stripe account (if connected)
-    if (stripeAccountId) {
-        const feeAmount = Math.round(totalAed * 100 * PLATFORM_FEE_PERCENT / 100);
-        sessionParams.payment_intent_data = {
+        payment_intent_data: {
             application_fee_amount: feeAmount,
             transfer_data: { destination: stripeAccountId },
-        };
-    }
+        },
+    };
 
     let session: Stripe.Checkout.Session;
     try {
         session = await getStripe().checkout.sessions.create(sessionParams);
     } catch {
-        // Connected account not ready — fall back to direct charge without transfer
-        delete sessionParams.payment_intent_data;
-        session = await getStripe().checkout.sessions.create(sessionParams);
+        // Stripe rejected the session — release the slot, mark booking cancelled,
+        // and surface a clear error rather than silently rerouting to platform.
+        await supabase.from("bookings").update({ status: "cancelled" } as never).eq("id", booking.id);
+        await supabase.from("court_availability").update({ is_booked: false } as never).eq("id", availabilityId);
+        return { error: "Could not start payment. Please try again." };
     }
 
     return { checkoutUrl: session.url };
