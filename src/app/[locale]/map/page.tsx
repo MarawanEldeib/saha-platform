@@ -4,7 +4,8 @@ import React from "react";
 import { useTranslations } from "next-intl";
 import dynamic from "next/dynamic";
 import { createClient } from "@/lib/supabase/client";
-import { Search, Loader2 } from "lucide-react";
+import { Search, Loader2, ChevronRight } from "lucide-react";
+import Link from "next/link";
 import type { Sport } from "@/types/database";
 
 // Dynamically import Leaflet components to avoid SSR issues
@@ -135,23 +136,40 @@ export default function MapPage() {
                         </p>
                     )}
 
-                    {filteredFacilities.map((facility) => (
-                        <button
-                            key={facility.id}
-                            type="button"
-                            onClick={() => setSelectedFacility(facility)}
-                            className={`w-full text-left px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors ${selectedFacility?.id === facility.id ? "bg-emerald-50 dark:bg-emerald-900/20" : ""
-                                }`}
-                        >
-                            <p className="font-medium text-sm text-gray-900 dark:text-white truncate">{facility.name}</p>
-                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{facility.city}</p>
-                            {facility.distance_m && (
-                                <p className="text-xs text-emerald-600 dark:text-emerald-400 mt-0.5">
-                                    {(facility.distance_m / 1000).toFixed(1)} km away
-                                </p>
-                            )}
-                        </button>
-                    ))}
+                    {filteredFacilities.map((facility) => {
+                        const isSelected = selectedFacility?.id === facility.id;
+                        return (
+                            <div
+                                key={facility.id}
+                                className={`transition-colors ${isSelected ? "bg-emerald-50 dark:bg-emerald-900/20" : ""}`}
+                            >
+                                <button
+                                    type="button"
+                                    onClick={() => setSelectedFacility(facility)}
+                                    className="w-full text-left px-4 pt-3 pb-2 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                                >
+                                    <p className="font-medium text-sm text-gray-900 dark:text-white truncate">{facility.name}</p>
+                                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{facility.city}</p>
+                                    {facility.distance_m && (
+                                        <p className="text-xs text-emerald-600 dark:text-emerald-400 mt-0.5">
+                                            {(facility.distance_m / 1000).toFixed(1)} km away
+                                        </p>
+                                    )}
+                                </button>
+                                {isSelected && (
+                                    <div className="px-4 pb-3">
+                                        <Link
+                                            href={`/en/facilities/${facility.id}`}
+                                            className="flex items-center justify-center gap-1.5 w-full px-3 py-2 rounded-lg bg-emerald-600 text-white text-xs font-medium hover:bg-emerald-700 transition-colors"
+                                        >
+                                            View & Book
+                                            <ChevronRight className="h-3.5 w-3.5" />
+                                        </Link>
+                                    </div>
+                                )}
+                            </div>
+                        );
+                    })}
                 </div>
             </aside>
 

@@ -3,6 +3,7 @@ import { getLocale } from "next-intl/server";
 import { redirect } from "next/navigation";
 import { FacilityEditForm } from "./FacilityEditForm";
 import { HoursForm } from "./HoursForm";
+import { StripeConnectSection } from "./StripeConnectSection";
 
 export const metadata = { title: "Manage Facility – Saha" };
 
@@ -15,7 +16,7 @@ export default async function FacilityPage() {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data: facilityRows } = await (supabase as any)
         .from("facilities")
-        .select("id, name, description, address, city, postal_code, phone, website")
+        .select("id, name, description, address, city, postal_code, phone, website, stripe_account_id")
         .eq("owner_id", user.id)
         .order("created_at", { ascending: false })
         .limit(1);
@@ -55,6 +56,7 @@ export default async function FacilityPage() {
                 facilityId={facility.id}
                 initialHours={hours ?? []}
             />
+            <StripeConnectSection isConnected={!!facility.stripe_account_id} />
         </div>
     );
 }
