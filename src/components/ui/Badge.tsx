@@ -1,5 +1,8 @@
+"use client";
+
 import * as React from "react";
 import { cn } from "@/lib/utils";
+import { useTranslations } from "next-intl";
 
 type BadgeVariant = "default" | "success" | "warning" | "danger" | "info" | "outline";
 
@@ -31,31 +34,34 @@ export function Badge({ className, variant = "default", children, ...props }: Ba
     );
 }
 
-/** Maps a facility status string to Badge variant */
+const facilityStatusVariant: Record<string, BadgeVariant> = {
+    active: "success",
+    pending: "warning",
+    suspended: "danger",
+};
+
 export function FacilityStatusBadge({ status }: { status: string }) {
-    const map: Record<string, BadgeVariant> = {
-        active: "success",
-        pending: "warning",
-        suspended: "danger",
-    };
+    const t = useTranslations("facility");
     const labels: Record<string, string> = {
-        active: "Active",
-        pending: "Pending",
-        suspended: "Suspended",
+        active: t("status_active"),
+        pending: t("status_pending"),
+        suspended: t("status_suspended"),
     };
-    return <Badge variant={map[status] ?? "default"}>{labels[status] ?? status}</Badge>;
+    return <Badge variant={facilityStatusVariant[status] ?? "default"}>{labels[status] ?? status}</Badge>;
 }
 
+const eventStatusVariant: Record<string, BadgeVariant> = {
+    approved: "success",
+    pending: "warning",
+    rejected: "danger",
+};
+
 export function EventStatusBadge({ status }: { status: string }) {
-    const map: Record<string, BadgeVariant> = {
-        approved: "success",
-        pending: "warning",
-        rejected: "danger",
-    };
+    const t = useTranslations("admin");
     const labels: Record<string, string> = {
-        approved: "Approved",
-        pending: "Pending",
-        rejected: "Rejected",
+        approved: t("events.status_approved"),
+        pending: t("events.status_pending"),
+        rejected: t("events.status_rejected"),
     };
-    return <Badge variant={map[status] ?? "default"}>{labels[status] ?? status}</Badge>;
+    return <Badge variant={eventStatusVariant[status] ?? "default"}>{labels[status] ?? status}</Badge>;
 }

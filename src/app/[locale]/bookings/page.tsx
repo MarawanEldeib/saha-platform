@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
-import { getLocale } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
 import { format } from "date-fns";
 import { CheckCircle, Clock, XCircle, MapPin, Calendar } from "lucide-react";
 import Link from "next/link";
@@ -11,16 +11,17 @@ import { CompletePaymentButton } from "@/components/booking/CompletePaymentButto
 export const metadata = { title: "My Bookings – Saha" };
 
 const STATUS_CONFIG = {
-    confirmed: { icon: CheckCircle, color: "text-emerald-500", label: "Confirmed" },
-    pending: { icon: Clock, color: "text-amber-400", label: "Pending" },
-    cancelled: { icon: XCircle, color: "text-red-400", label: "Cancelled" },
-    completed: { icon: CheckCircle, color: "text-gray-400", label: "Completed" },
-    no_show: { icon: XCircle, color: "text-gray-400", label: "No Show" },
+    confirmed: { icon: CheckCircle, color: "text-emerald-500", labelKey: "status_confirmed" },
+    pending: { icon: Clock, color: "text-amber-400", labelKey: "status_pending" },
+    cancelled: { icon: XCircle, color: "text-red-400", labelKey: "status_cancelled" },
+    completed: { icon: CheckCircle, color: "text-gray-400", labelKey: "status_completed" },
+    no_show: { icon: XCircle, color: "text-gray-400", labelKey: "status_no_show" },
 } as const;
 
 export default async function MyBookingsPage() {
     const supabase = await createClient();
     const locale = await getLocale();
+    const t = await getTranslations("bookings");
 
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) redirect(`/${locale}/login`);
@@ -42,19 +43,19 @@ export default async function MyBookingsPage() {
     return (
         <div className="max-w-2xl mx-auto px-4 py-10 space-y-6">
             <div>
-                <h1 className="text-2xl font-bold text-gray-900 dark:text-white">My Bookings</h1>
-                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Your court booking history</p>
+                <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{t("title")}</h1>
+                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{t("subtitle")}</p>
             </div>
 
             {!bookings?.length ? (
                 <div className="text-center py-16 space-y-3">
                     <Calendar className="h-12 w-12 text-gray-300 dark:text-gray-600 mx-auto" />
-                    <p className="text-gray-500 dark:text-gray-400">No bookings yet</p>
+                    <p className="text-gray-500 dark:text-gray-400">{t("no_bookings")}</p>
                     <Link
                         href={`/${locale}/map`}
                         className="inline-block px-4 py-2 rounded-lg bg-gray-900 dark:bg-white text-white dark:text-gray-900 text-sm font-medium hover:opacity-90 transition-opacity"
                     >
-                        Find a court
+                        {t("find_court")}
                     </Link>
                 </div>
             ) : (
@@ -64,7 +65,7 @@ export default async function MyBookingsPage() {
                         const court = (booking as any).courts;
                         const facility = court?.facilities;
                         const status = booking.status as keyof typeof STATUS_CONFIG;
-                        const { icon: Icon, color, label } = STATUS_CONFIG[status] ?? STATUS_CONFIG.pending;
+                        const { icon: Icon, color, labelKey } = STATUS_CONFIG[status] ?? STATUS_CONFIG.pending;
                         const isConfirmed = booking.status === "confirmed";
 
                         return (
@@ -79,7 +80,7 @@ export default async function MyBookingsPage() {
                                     </div>
                                     <span className={`flex items-center gap-1 text-xs font-medium ${color}`}>
                                         <Icon className="h-3.5 w-3.5" />
-                                        {label}
+                                        {t(labelKey)}
                                     </span>
                                 </div>
 
@@ -92,12 +93,12 @@ export default async function MyBookingsPage() {
                                         </div>
                                     )}
                                     <div className="flex justify-between text-sm">
-                                        <span className="text-gray-500 dark:text-gray-400">{booking.num_players} players · {booking.total_price} {booking.currency}</span>
+                                        <span className="text-gray-500 dark:text-gray-400">{booking.num_players} {t("players")} · {booking.total_price} {booking.currency}</span>
                                         <Link
                                             href={`/${locale}/bookings/${booking.id}`}
                                             className="text-emerald-600 dark:text-emerald-400 font-medium hover:underline"
                                         >
-                                            View details
+                                            {t("view_details")}
                                         </Link>
                                     </div>
                                 </div>

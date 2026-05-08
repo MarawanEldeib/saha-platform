@@ -6,7 +6,7 @@ import { StarRating } from "@/components/ui/StarRating";
 import { ReviewForm } from "@/components/facility/ReviewForm";
 import { MapPin, Globe, Phone, Clock, Calendar } from "lucide-react";
 import { format } from "date-fns";
-import { DAY_KEYS, formatTime } from "@/lib/utils";
+import { DAY_KEYS, formatTime, getStorageUrl } from "@/lib/utils";
 import Image from "next/image";
 import type { Metadata } from "next";
 import { BookingWidget } from "./BookingWidget";
@@ -32,6 +32,13 @@ export default async function FacilityDetailPage({
 }) {
     const { id } = await params;
     const t = await getTranslations("facility");
+    const tf = await getTranslations("facility_form");
+    const tc = await getTranslations("common");
+    const tSports = await getTranslations("sports");
+    const sportName = (name: string) =>
+        (["Padel", "Pickleball", "Tennis", "Squash", "Badminton"] as const).includes(name as never)
+            ? tSports(name as Parameters<typeof tSports>[0])
+            : name;
     const locale = await getLocale();
     const supabase = await createClient();
 
@@ -64,6 +71,11 @@ export default async function FacilityDetailPage({
             facility.reviews.length
             : 0;
 
+    const images = [...(facility.facility_images ?? [])].sort(
+        (a: { display_order?: number | null }, b: { display_order?: number | null }) =>
+            (a.display_order ?? 0) - (b.display_order ?? 0)
+    );
+
     return (
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-10">
             {/* Header */}
@@ -72,8 +84,8 @@ export default async function FacilityDetailPage({
                     <h1 className="text-3xl font-bold text-gray-900 dark:text-white">{facility.name}</h1>
                     <div className="flex items-center gap-2 mt-2 text-gray-500 dark:text-gray-400">
                         <MapPin className="h-4 w-4" />
-                        <span className="text-sm">
-                            {facility.address}, {facility.city}, {facility.postal_code}
+                        <span className="text-sm" dir="ltr">
+                            {facility.address}, {facility.city}{facility.postal_code ? `, ${facility.postal_code}` : ""}
                         </span>
                     </div>
                     <div className="flex items-center gap-3 mt-3">
@@ -89,18 +101,22 @@ export default async function FacilityDetailPage({
             </div>
 
             {/* Images */}
-            {facility.facility_images?.length > 0 && (
+            {images.length > 0 ? (
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                    {facility.facility_images.slice(0, 6).map((img: { id: string; storage_path: string }) => (
+                    {images.map((img: { id: string; storage_path: string }) => (
                         <div key={img.id} className="aspect-video relative rounded-xl overflow-hidden bg-gray-100 dark:bg-gray-800">
                             <Image
-                                src={`${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/facility-images/${img.storage_path}`}
+                                src={getStorageUrl("facility-images", img.storage_path)}
                                 alt={facility.name}
                                 fill
                                 className="object-cover"
                             />
                         </div>
                     ))}
+                </div>
+            ) : (
+                <div className="rounded-xl border border-dashed border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900 px-4 py-10 text-center text-sm text-gray-500 dark:text-gray-400">
+                    {tf("no_photos")}
                 </div>
             )}
 
@@ -121,7 +137,7 @@ export default async function FacilityDetailPage({
                             <div className="flex flex-wrap gap-2">
                                 {facility.facility_sports.map((fs: { sport_id: number; sports: { name: string } }) => (
                                     <span key={fs.sport_id} className="px-3 py-1 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 text-sm rounded-full font-medium">
-                                        {fs.sports.name}
+                                        {sportName(fs.sports.name)}
                                     </span>
                                 ))}
                             </div>
@@ -204,7 +220,7 @@ export default async function FacilityDetailPage({
                                     const dayKey = DAY_KEYS[h.day_of_week];
                                     return (
                                         <div key={h.id} className="flex justify-between text-sm">
-                                            <span className="capitalize text-gray-600 dark:text-gray-400">{dayKey}</span>
+                                            <span className="capitalize text-gray-600 dark:text-gray-400">{tc(dayKey as Parameters<typeof tc>[0])}</span>
                                             {h.is_closed ? (
                                                 <span className="text-gray-400 dark:text-gray-600">{t("closed")}</span>
                                             ) : (

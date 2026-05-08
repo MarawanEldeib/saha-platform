@@ -33,7 +33,12 @@ const skillBadgeVariant: Record<string, "info" | "warning" | "danger"> = {
 
 export default function CommunityPage() {
     const t = useTranslations("community");
+    const tc = useTranslations("common");
+    const tSports = useTranslations("sports");
     const locale = useLocale();
+    const knownSports = ["Padel", "Pickleball", "Tennis", "Squash", "Badminton"] as const;
+    const sportName = (name: string) =>
+        knownSports.includes(name as typeof knownSports[number]) ? tSports(name as typeof knownSports[number]) : name;
     const router = useRouter();
 
     const [posts, setPosts] = React.useState<Post[]>([]);
@@ -62,7 +67,7 @@ export default function CommunityPage() {
                     .select("*, sports(name), profiles(display_name)")
                     .eq("is_active", true)
                     .order("created_at", { ascending: false }),
-                supabase.from("sports").select("*").order("name"),
+                supabase.from("sports").select("*").in("name", ["Padel", "Pickleball", "Squash", "Tennis", "Badminton"]).order("name"),
             ]);
             if (postsData) setPosts(postsData as Post[]);
             if (sportsData) setSports(sportsData);
@@ -108,7 +113,7 @@ export default function CommunityPage() {
                 </div>
                 <Button variant="primary" onClick={() => setShowForm(!showForm)}>
                     {showForm ? <X className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
-                    {showForm ? "Cancel" : t("new_post")}
+                    {showForm ? tc("cancel") : t("new_post")}
                 </Button>
             </div>
 
@@ -122,8 +127,8 @@ export default function CommunityPage() {
                                     onChange={(e) => setValue("sport_id", e.target.value ? Number(e.target.value) : null)}
                                     className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm px-3 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500"
                                 >
-                                    <option value="">Any sport</option>
-                                    {sports.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+                                    <option value="">{t("any_sport")}</option>
+                                    {sports.map((s) => <option key={s.id} value={s.id}>{sportName(s.name)}</option>)}
                                 </select>
                             </div>
                             <div className="space-y-1.5">
@@ -139,8 +144,8 @@ export default function CommunityPage() {
                             </div>
                         </div>
                         <Input label={t("date_label")} type="date" error={errors.post_date?.message} {...register("post_date")} />
-                        <Input label="Location (optional)" type="text" placeholder="e.g. Mitte Stuttgart" {...register("location_text")} />
-                        <Textarea label={t("message_label")} placeholder="Describe what you're looking for..." error={errors.message?.message} {...register("message")} />
+                        <Input label={t("location_label")} type="text" placeholder={t("location_placeholder")} {...register("location_text")} />
+                        <Textarea label={t("message_label")} placeholder={t("message_placeholder")} error={errors.message?.message} {...register("message")} />
                         {serverError && <p className="text-sm text-red-500" role="alert">{serverError}</p>}
                         <Button type="submit" variant="primary" loading={isSubmitting}>{t("submit")}</Button>
                     </form>
@@ -159,14 +164,14 @@ export default function CommunityPage() {
                         <div key={post.id} className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-5 space-y-3">
                             <div className="flex items-start justify-between gap-3">
                                 <p className="font-medium text-gray-900 dark:text-white">
-                                    {post.profiles?.display_name ?? "Anonymous"}
+                                    {post.profiles?.display_name ?? t("anonymous")}
                                 </p>
                                 <div className="flex items-center gap-2 shrink-0">
                                     {post.sports && (
-                                        <Badge variant="outline">{post.sports.name}</Badge>
+                                        <Badge variant="outline">{sportName(post.sports.name)}</Badge>
                                     )}
                                     <Badge variant={skillBadgeVariant[post.skill_level] ?? "default"}>
-                                        {post.skill_level}
+                                        {t(`level_${post.skill_level}` as "level_beginner" | "level_intermediate" | "level_advanced")}
                                     </Badge>
                                 </div>
                             </div>

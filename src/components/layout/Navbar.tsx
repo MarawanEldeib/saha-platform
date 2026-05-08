@@ -32,6 +32,22 @@ export function Navbar({ profile }: NavbarProps) {
         { href: `/${locale}/events`, label: t("events") },
     ];
 
+    const localeOptions = [
+        { value: "en", label: "English" },
+        { value: "ar", label: "العربية" },
+    ];
+
+    const getPathWithLocale = (nextLocale: string) => {
+        const withoutLocale = pathname.replace(new RegExp(`^/${locale}(?=/|$)`), "");
+        return withoutLocale ? `/${nextLocale}${withoutLocale}` : `/${nextLocale}`;
+    };
+
+    const handleLocaleChange = (nextLocale: string) => {
+        if (nextLocale === locale) return;
+        router.push(getPathWithLocale(nextLocale));
+        router.refresh();
+    };
+
     const handleLogout = async () => {
         const supabase = createClient();
         await supabase.auth.signOut();
@@ -71,7 +87,23 @@ export function Navbar({ profile }: NavbarProps) {
                     </nav>
 
                     {/* Right Actions */}
-                    <div className="hidden md:flex items-center gap-2">
+                    <div className="hidden md:flex items-center gap-3">
+                        <div className="flex items-center rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+                            {localeOptions.map((option) => (
+                                <button
+                                    key={option.value}
+                                    onClick={() => handleLocaleChange(option.value)}
+                                    className={`px-3 py-1.5 text-xs font-medium transition-colors ${
+                                        locale === option.value
+                                            ? "bg-emerald-600 text-white"
+                                            : "text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800"
+                                    }`}
+                                    aria-label={option.label}
+                                >
+                                    {option.value.toUpperCase()}
+                                </button>
+                            ))}
+                        </div>
                         {profile ? (
                             <>
                                 {profile.role === "admin" && (
@@ -90,14 +122,24 @@ export function Navbar({ profile }: NavbarProps) {
                                     <>
                                         <Link href={`/${locale}/bookings`} className={ghostBtn}>
                                             <CalendarDays className="h-4 w-4" />
-                                            My Bookings
-                                        </Link>
-                                        <Link href={`/${locale}/account/settings`} className={ghostBtn}>
-                                            <Settings className="h-4 w-4" />
-                                            Settings
+                                            {t("bookings")}
                                         </Link>
                                     </>
                                 )}
+                                <Link
+                                    href={`/${locale}/account/settings`}
+                                    className="shrink-0 w-8 h-8 rounded-full overflow-hidden bg-emerald-100 dark:bg-emerald-900/30 border border-gray-200 dark:border-gray-700 hover:ring-2 hover:ring-emerald-500 hover:ring-offset-1 transition-all flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-1"
+                                    aria-label={t("settings")}
+                                >
+                                    {profile.avatar_url ? (
+                                        // eslint-disable-next-line @next/next/no-img-element
+                                        <img src={profile.avatar_url} alt="" className="w-full h-full object-cover" />
+                                    ) : (
+                                        <span className="text-xs font-bold text-emerald-700 dark:text-emerald-400 select-none">
+                                            {profile.display_name?.trim().split(" ").map((w) => w[0]).slice(0, 2).join("").toUpperCase() || "?"}
+                                        </span>
+                                    )}
+                                </Link>
                                 <button
                                     onClick={handleLogout}
                                     className={ghostBtn}
@@ -133,6 +175,24 @@ export function Navbar({ profile }: NavbarProps) {
             {/* Mobile menu */}
             {menuOpen && (
                 <div className="md:hidden border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 px-4 py-3 space-y-1">
+                    <div className="px-3 py-2 flex items-center gap-2">
+                        <span className="text-xs text-gray-500 dark:text-gray-400">{t("language")}</span>
+                        <div className="flex items-center rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+                            {localeOptions.map((option) => (
+                                <button
+                                    key={option.value}
+                                    onClick={() => { handleLocaleChange(option.value); setMenuOpen(false); }}
+                                    className={`px-3 py-1.5 text-xs font-medium transition-colors ${
+                                        locale === option.value
+                                            ? "bg-emerald-600 text-white"
+                                            : "text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800"
+                                    }`}
+                                >
+                                    {option.value.toUpperCase()}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
                     {navLinks.map((link) => (
                         <Link
                             key={link.href}
@@ -155,14 +215,14 @@ export function Navbar({ profile }: NavbarProps) {
                                     <>
                                         <Link href={`/${locale}/bookings`} onClick={() => setMenuOpen(false)} className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800">
                                             <CalendarDays className="h-4 w-4" />
-                                            My Bookings
-                                        </Link>
-                                        <Link href={`/${locale}/account/settings`} onClick={() => setMenuOpen(false)} className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800">
-                                            <Settings className="h-4 w-4" />
-                                            Settings
+                                            {t("bookings")}
                                         </Link>
                                     </>
                                 )}
+                                <Link href={`/${locale}/account/settings`} onClick={() => setMenuOpen(false)} className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800">
+                                    <Settings className="h-4 w-4" />
+                                    {t("settings")}
+                                </Link>
                                 <button
                                     onClick={() => { handleLogout(); setMenuOpen(false); }}
                                     className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-red-600"

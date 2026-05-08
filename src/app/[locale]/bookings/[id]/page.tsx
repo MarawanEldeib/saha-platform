@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { notFound, redirect } from "next/navigation";
-import { getLocale } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
 import { format } from "date-fns";
 import { CheckCircle, XCircle, Clock, MapPin } from "lucide-react";
 import Link from "next/link";
@@ -23,6 +23,7 @@ export default async function BookingPage({
     const { success, cancelled } = await searchParams;
     const supabase = await createClient();
     const locale = await getLocale();
+    const t = await getTranslations("booking_detail");
 
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) redirect(`/${locale}/login`);
@@ -64,20 +65,20 @@ export default async function BookingPage({
                     {isConfirmed && !isCancelled ? (
                         <>
                             <CheckCircle className="h-14 w-14 text-emerald-500 mx-auto mb-3" />
-                            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Booking Confirmed</h1>
-                            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Your court is reserved. See you there!</p>
+                            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{t("confirmed_heading")}</h1>
+                            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{t("confirmed_desc")}</p>
                         </>
                     ) : isCancelled ? (
                         <>
                             <XCircle className="h-14 w-14 text-red-400 mx-auto mb-3" />
-                            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Booking Cancelled</h1>
-                            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Payment was not completed. The slot has been released.</p>
+                            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{t("cancelled_heading")}</h1>
+                            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{t("cancelled_desc")}</p>
                         </>
                     ) : (
                         <>
                             <Clock className="h-14 w-14 text-amber-400 mx-auto mb-3" />
-                            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Awaiting Payment</h1>
-                            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Complete your payment to confirm this booking.</p>
+                            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{t("pending_heading")}</h1>
+                            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{t("pending_desc")}</p>
                         </>
                     )}
                 </div>
@@ -85,27 +86,27 @@ export default async function BookingPage({
                 {/* Booking details */}
                 <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-5 space-y-3">
                     <div className="flex justify-between text-sm">
-                        <span className="text-gray-500 dark:text-gray-400">Court</span>
+                        <span className="text-gray-500 dark:text-gray-400">{t("court")}</span>
                         <span className="font-medium text-gray-900 dark:text-white">{court?.name}</span>
                     </div>
                     <div className="flex justify-between text-sm">
-                        <span className="text-gray-500 dark:text-gray-400">Date</span>
+                        <span className="text-gray-500 dark:text-gray-400">{t("date")}</span>
                         <span className="font-medium text-gray-900 dark:text-white">
                             {format(new Date(booking.date), "PPP")}
                         </span>
                     </div>
                     <div className="flex justify-between text-sm">
-                        <span className="text-gray-500 dark:text-gray-400">Time</span>
+                        <span className="text-gray-500 dark:text-gray-400">{t("time")}</span>
                         <span className="font-medium text-gray-900 dark:text-white">
                             {booking.start_time.slice(0, 5)} – {booking.end_time.slice(0, 5)}
                         </span>
                     </div>
                     <div className="flex justify-between text-sm">
-                        <span className="text-gray-500 dark:text-gray-400">Players</span>
+                        <span className="text-gray-500 dark:text-gray-400">{t("players")}</span>
                         <span className="font-medium text-gray-900 dark:text-white">{booking.num_players}</span>
                     </div>
                     <div className="flex justify-between text-sm">
-                        <span className="text-gray-500 dark:text-gray-400">Total</span>
+                        <span className="text-gray-500 dark:text-gray-400">{t("total")}</span>
                         <span className="font-semibold text-gray-900 dark:text-white">
                             {booking.total_price} {booking.currency}
                         </span>
@@ -147,13 +148,13 @@ export default async function BookingPage({
                         href={`/${locale}/map`}
                         className="flex-1 px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-sm font-medium text-gray-700 dark:text-gray-300 text-center hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
                     >
-                        Find more courts
+                        {t("find_courts")}
                     </Link>
                     <Link
                         href={`/${locale}/bookings`}
                         className="flex-1 px-4 py-2.5 rounded-lg bg-gray-900 dark:bg-white text-white dark:text-gray-900 text-sm font-medium text-center hover:opacity-90 transition-opacity"
                     >
-                        My bookings
+                        {t("my_bookings")}
                     </Link>
                 </div>
             </div>

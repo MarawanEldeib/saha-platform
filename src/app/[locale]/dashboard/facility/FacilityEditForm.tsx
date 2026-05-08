@@ -8,6 +8,9 @@ import { updateFacilityAction, updateFacilitySportsAction } from "../actions";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import { CheckCircle } from "lucide-react";
+import { ImageUploader } from "@/components/facility/ImageUploader";
+import type { FacilityImage } from "@/types/database";
+import { useTranslations } from "next-intl";
 
 interface Sport { id: number; name: string }
 
@@ -24,9 +27,15 @@ interface Props {
     };
     allSports: Sport[];
     currentSportIds: number[];
+    initialImages: FacilityImage[];
 }
 
-export function FacilityEditForm({ facility, allSports, currentSportIds }: Props) {
+export function FacilityEditForm({ facility, allSports, currentSportIds, initialImages }: Props) {
+    const t = useTranslations("facility_form");
+    const tSports = useTranslations("sports");
+    const knownSports = ["Padel", "Pickleball", "Tennis", "Squash", "Badminton"] as const;
+    const sportName = (name: string) =>
+        knownSports.includes(name as typeof knownSports[number]) ? tSports(name as typeof knownSports[number]) : name;
     const [serverError, setServerError] = React.useState<string | null>(null);
     const [saved, setSaved] = React.useState(false);
     const [sportIds, setSportIds] = React.useState<number[]>(currentSportIds);
@@ -68,25 +77,25 @@ export function FacilityEditForm({ facility, allSports, currentSportIds }: Props
         <div className="space-y-8">
             {/* Basic Info */}
             <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-6">
-                <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-5">Facility Details</h2>
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-5">{t("details_section")}</h2>
                 <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <Input label="Facility name" error={errors.name?.message} {...register("name")} />
-                        <Input label="City" error={errors.city?.message} {...register("city")} />
+                        <Input label={t("name_label")} error={errors.name?.message} {...register("name")} />
+                        <Input label={t("city_label")} error={errors.city?.message} {...register("city")} />
                     </div>
-                    <Input label="Address" error={errors.address?.message} {...register("address")} />
+                    <Input label={t("address_label")} error={errors.address?.message} {...register("address")} />
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                        <Input label="Postal code" error={errors.postal_code?.message} {...register("postal_code")} />
-                        <Input label="Phone" error={errors.phone?.message} {...register("phone")} />
-                        <Input label="Website" placeholder="https://" error={errors.website?.message} {...register("website")} />
+                        <Input label={t("postal_label")} error={errors.postal_code?.message} {...register("postal_code")} />
+                        <Input label={t("phone_label")} error={errors.phone?.message} {...register("phone")} />
+                        <Input label={t("website_label")} placeholder={t("website_placeholder")} error={errors.website?.message} {...register("website")} />
                     </div>
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Description</label>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t("description_label")}</label>
                         <textarea
                             {...register("description")}
                             rows={4}
                             className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                            placeholder="Describe your facility (at least 20 characters)…"
+                            placeholder={t("description_placeholder")}
                         />
                         {errors.description && <p className="text-xs text-red-500 mt-1">{errors.description.message}</p>}
                     </div>
@@ -94,17 +103,23 @@ export function FacilityEditForm({ facility, allSports, currentSportIds }: Props
                     {serverError && <p className="text-sm text-red-500" role="alert">{serverError}</p>}
                     {saved && (
                         <p className="text-sm text-emerald-600 flex items-center gap-1">
-                            <CheckCircle className="h-4 w-4" /> Saved successfully
+                            <CheckCircle className="h-4 w-4" /> {t("saved")}
                         </p>
                     )}
-                    <Button type="submit" variant="primary" loading={isSubmitting}>Save Changes</Button>
+                    <Button type="submit" variant="primary" loading={isSubmitting}>{t("save")}</Button>
                 </form>
+            </div>
+
+            <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-6">
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">{t("photos_section")}</h2>
+                <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">{t("photos_hint")}</p>
+                <ImageUploader facilityId={facility.id} initialImages={initialImages} />
             </div>
 
             {/* Sports */}
             <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-6">
-                <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Sports Offered</h2>
-                <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">Select all sports available at your facility.</p>
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">{t("sports_section")}</h2>
+                <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">{t("sports_hint")}</p>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mb-4">
                     {allSports.map((sport) => (
                         <button
@@ -120,17 +135,17 @@ export function FacilityEditForm({ facility, allSports, currentSportIds }: Props
                                     : "border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:border-gray-300"
                                 }`}
                         >
-                            {sport.name}
+                            {sportName(sport.name)}
                         </button>
                     ))}
                 </div>
                 {sportsError && <p className="text-sm text-red-500 mb-2" role="alert">{sportsError}</p>}
                 {sportsSaved && (
                     <p className="text-sm text-emerald-600 flex items-center gap-1 mb-2">
-                        <CheckCircle className="h-4 w-4" /> Sports updated
+                        <CheckCircle className="h-4 w-4" /> {t("sports_saved")}
                     </p>
                 )}
-                <Button variant="primary" onClick={saveSports}>Save Sports</Button>
+                <Button variant="primary" onClick={saveSports}>{t("save_sports")}</Button>
             </div>
         </div>
     );

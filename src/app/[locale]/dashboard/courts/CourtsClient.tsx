@@ -13,6 +13,7 @@ import {
 } from "../actions";
 import { Pencil, Trash2, Plus, X, CheckCircle, XCircle } from "lucide-react";
 import type { Sport } from "@/types/database";
+import { useTranslations } from "next-intl";
 
 type CourtRow = {
     id: string;
@@ -34,7 +35,12 @@ type Props = {
 };
 
 export function CourtsClient({ courts, sports, facilityId }: Props) {
+    const t = useTranslations("courts");
+    const tSports = useTranslations("sports");
     const router = useRouter();
+    const knownSports = ["Padel", "Pickleball", "Tennis", "Squash", "Badminton"] as const;
+    const sportName = (name: string) =>
+        knownSports.includes(name as typeof knownSports[number]) ? tSports(name as typeof knownSports[number]) : name;
     const [editingCourt, setEditingCourt] = useState<CourtRow | null>(null);
     const [showForm, setShowForm] = useState(false);
     const [serverError, setServerError] = useState<string | null>(null);
@@ -91,7 +97,7 @@ export function CourtsClient({ courts, sports, facilityId }: Props) {
     };
 
     const handleDelete = (court: CourtRow) => {
-        if (!confirm(`Delete "${court.name}"? This cannot be undone.`)) return;
+        if (!confirm(t("delete_confirm", { name: court.name }))) return;
         startTransition(async () => {
             const result = await deleteCourtAction(court.id);
             if (result.error) alert(result.error);
@@ -103,22 +109,20 @@ export function CourtsClient({ courts, sports, facilityId }: Props) {
         <div className="space-y-6">
             {courts.length === 0 && !showForm ? (
                 <div className="text-center py-16 border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-2xl">
-                    <p className="text-gray-500 dark:text-gray-400 mb-4">
-                        No courts yet. Add your first court to start taking bookings.
-                    </p>
+                    <p className="text-gray-500 dark:text-gray-400 mb-4">{t("no_courts")}</p>
                     <button
                         onClick={openAddForm}
                         className="inline-flex items-center gap-2 bg-emerald-600 text-white hover:bg-emerald-700 font-medium px-5 py-2.5 rounded-xl text-sm transition-colors"
                     >
                         <Plus className="h-4 w-4" />
-                        Add First Court
+                        {t("add_first")}
                     </button>
                 </div>
             ) : (
                 <>
                     <div className="flex items-center justify-between">
                         <p className="text-sm text-gray-500 dark:text-gray-400">
-                            {courts.length} court{courts.length !== 1 ? "s" : ""}
+                            {courts.length} {courts.length !== 1 ? t("court_plural") : t("court_singular")}
                         </p>
                         {!showForm && (
                             <button
@@ -126,7 +130,7 @@ export function CourtsClient({ courts, sports, facilityId }: Props) {
                                 className="inline-flex items-center gap-2 bg-emerald-600 text-white hover:bg-emerald-700 font-medium px-4 py-2 rounded-xl text-sm transition-colors"
                             >
                                 <Plus className="h-4 w-4" />
-                                Add Court
+                                {t("add_court")}
                             </button>
                         )}
                     </div>
@@ -142,7 +146,7 @@ export function CourtsClient({ courts, sports, facilityId }: Props) {
                                         {court.name}
                                     </p>
                                     <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                                        {court.sports?.name ?? "No sport"} &middot; {court.capacity} players &middot; AED {Number(court.price_per_hour).toFixed(0)}/hr
+                                        {court.sports?.name ? sportName(court.sports.name) : t("no_sport")} &middot; {court.capacity} {t("players")} &middot; AED {Number(court.price_per_hour).toFixed(0)}/hr
                                     </p>
                                 </div>
 
@@ -155,13 +159,13 @@ export function CourtsClient({ courts, sports, facilityId }: Props) {
                                         {court.is_active
                                             ? <CheckCircle className="h-3 w-3" />
                                             : <XCircle className="h-3 w-3" />}
-                                        {court.is_active ? "Active" : "Inactive"}
+                                        {court.is_active ? t("active") : t("inactive")}
                                     </span>
 
                                     <button
                                         onClick={() => openEditForm(court)}
                                         className="p-1.5 text-gray-400 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 rounded-lg transition-colors"
-                                        title="Edit court"
+                                        title={t("edit_aria")}
                                     >
                                         <Pencil className="h-4 w-4" />
                                     </button>
@@ -170,7 +174,7 @@ export function CourtsClient({ courts, sports, facilityId }: Props) {
                                         onClick={() => handleToggle(court)}
                                         disabled={isPending}
                                         className="p-1.5 text-gray-400 hover:text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-900/20 rounded-lg transition-colors disabled:opacity-50"
-                                        title={court.is_active ? "Deactivate court" : "Activate court"}
+                                        title={court.is_active ? t("deactivate_aria") : t("activate_aria")}
                                     >
                                         {court.is_active
                                             ? <XCircle className="h-4 w-4" />
@@ -181,7 +185,7 @@ export function CourtsClient({ courts, sports, facilityId }: Props) {
                                         onClick={() => handleDelete(court)}
                                         disabled={isPending}
                                         className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors disabled:opacity-50"
-                                        title="Delete court"
+                                        title={t("delete_aria")}
                                     >
                                         <Trash2 className="h-4 w-4" />
                                     </button>
@@ -196,7 +200,7 @@ export function CourtsClient({ courts, sports, facilityId }: Props) {
                 <div className="border border-emerald-200 dark:border-emerald-800 bg-emerald-50/50 dark:bg-emerald-950/20 rounded-2xl p-6">
                     <div className="flex items-center justify-between mb-5">
                         <h2 className="text-base font-semibold text-gray-900 dark:text-white">
-                            {editingCourt ? `Edit "${editingCourt.name}"` : "Add New Court"}
+                            {editingCourt ? `${t("edit_aria")} "${editingCourt.name}"` : t("form_heading")}
                         </h2>
                         <button
                             onClick={closeForm}
@@ -210,11 +214,11 @@ export function CourtsClient({ courts, sports, facilityId }: Props) {
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div className="sm:col-span-2">
                                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                                    Court Name
+                                    {t("name_label")}
                                 </label>
                                 <input
                                     {...register("name")}
-                                    placeholder="e.g. Padel Court A"
+                                    placeholder={t("name_placeholder")}
                                     className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                                 />
                                 {errors.name && <p className="mt-1 text-xs text-red-500">{errors.name.message}</p>}
@@ -222,22 +226,22 @@ export function CourtsClient({ courts, sports, facilityId }: Props) {
 
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                                    Sport
+                                    {t("sport_label")}
                                 </label>
                                 <select
                                     {...register("sport_id")}
                                     className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                                 >
-                                    <option value="">No specific sport</option>
+                                    <option value="">{t("no_specific_sport")}</option>
                                     {sports.map((s) => (
-                                        <option key={s.id} value={String(s.id)}>{s.name}</option>
+                                        <option key={s.id} value={String(s.id)}>{sportName(s.name)}</option>
                                     ))}
                                 </select>
                             </div>
 
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                                    Capacity (players)
+                                    {t("capacity_label")}
                                 </label>
                                 <input
                                     {...register("capacity", { valueAsNumber: true })}
@@ -251,18 +255,18 @@ export function CourtsClient({ courts, sports, facilityId }: Props) {
 
                             <div className="sm:col-span-2 sm:max-w-xs">
                                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                                    Price per Hour (AED)
+                                    {t("price_label")}
                                 </label>
                                 <div className="relative">
-                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-gray-400 pointer-events-none">
-                                        AED
+                                    <span className="absolute start-3 top-1/2 -translate-y-1/2 text-sm text-gray-400 pointer-events-none">
+                                        {t("price_prefix")}
                                     </span>
                                     <input
                                         {...register("price_per_hour", { valueAsNumber: true })}
                                         type="number"
                                         min="0"
                                         step="1"
-                                        className="w-full pl-12 pr-3 py-2 text-sm border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                                        className="w-full ps-12 pe-3 py-2 text-sm border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                                     />
                                 </div>
                                 {errors.price_per_hour && <p className="mt-1 text-xs text-red-500">{errors.price_per_hour.message}</p>}
@@ -277,14 +281,14 @@ export function CourtsClient({ courts, sports, facilityId }: Props) {
                                 disabled={isPending}
                                 className="inline-flex items-center gap-2 bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-60 font-medium px-5 py-2 rounded-xl text-sm transition-colors"
                             >
-                                {isPending ? "Saving..." : editingCourt ? "Save Changes" : "Add Court"}
+                                {isPending ? t("saving") : editingCourt ? t("save_changes") : t("add_court")}
                             </button>
                             <button
                                 type="button"
                                 onClick={closeForm}
                                 className="px-5 py-2 border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 font-medium rounded-xl text-sm transition-colors"
                             >
-                                Cancel
+                                {t("cancel")}
                             </button>
                         </div>
                     </form>

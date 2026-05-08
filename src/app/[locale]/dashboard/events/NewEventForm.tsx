@@ -5,8 +5,10 @@ import { submitEventAction } from "../actions";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { CheckCircle } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 export function NewEventForm({ facilityId }: { facilityId: string }) {
+    const t = useTranslations("events_form");
     const [error, setError] = React.useState<string | null>(null);
     const [success, setSuccess] = React.useState(false);
     const [loading, setLoading] = React.useState(false);
@@ -28,24 +30,24 @@ export function NewEventForm({ facilityId }: { facilityId: string }) {
 
     return (
         <form ref={formRef} onSubmit={handleSubmit} className="space-y-4">
-            <Input label="Event name" name="name" placeholder="e.g. Open Basketball Night" required />
+            <Input label={t("name_label")} name="name" placeholder={t("name_placeholder")} required />
             <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Description (optional)</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t("description_label")}</label>
                 <textarea
                     name="description"
                     rows={3}
                     className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                    placeholder="Additional details about the event…"
+                    placeholder={t("description_placeholder")}
                 />
             </div>
-            <Input label="Event date & time" name="event_date" type="datetime-local" required />
+            <Input label={t("datetime_label")} name="event_date" type="datetime-local" required />
             {error && <p className="text-sm text-red-500" role="alert">{error}</p>}
             {success && (
                 <p className="text-sm text-emerald-600 flex items-center gap-1">
-                    <CheckCircle className="h-4 w-4" /> Event submitted for review!
+                    <CheckCircle className="h-4 w-4" /> {t("submitted")}
                 </p>
             )}
-            <Button type="submit" variant="primary" loading={loading}>Submit Event</Button>
+            <Button type="submit" variant="primary" loading={loading}>{t("submit")}</Button>
         </form>
     );
 }

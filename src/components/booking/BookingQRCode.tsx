@@ -3,6 +3,7 @@
 import QRCode from "react-qr-code";
 import { useState } from "react";
 import { X, Maximize2 } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 interface Props {
     token: string;
@@ -10,6 +11,7 @@ interface Props {
 }
 
 export function BookingQRCode({ token, appUrl }: Props) {
+    const t = useTranslations("booking_qr");
     const [fullscreen, setFullscreen] = useState(false);
     const shareUrl = `${appUrl}/booking/${token}`;
 
@@ -22,7 +24,7 @@ export function BookingQRCode({ token, appUrl }: Props) {
                 <QRCode value={shareUrl} size={160} className="rounded" />
                 <span className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400">
                     <Maximize2 className="h-3 w-3" />
-                    Tap to expand for scanning
+                    {t("tap_to_expand")}
                 </span>
             </button>
 
@@ -30,11 +32,11 @@ export function BookingQRCode({ token, appUrl }: Props) {
                 <div className="fixed inset-0 bg-white dark:bg-gray-950 z-50 flex flex-col items-center justify-center p-8 gap-6">
                     <button
                         onClick={() => setFullscreen(false)}
-                        className="absolute top-4 right-4 p-2 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300"
+                        className="absolute top-4 end-4 p-2 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300"
                     >
                         <X className="h-5 w-5" />
                     </button>
-                    <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Show this at reception</p>
+                    <p className="text-sm font-medium text-gray-500 dark:text-gray-400">{t("show_at_reception")}</p>
                     <QRCode value={shareUrl} size={280} className="rounded-lg" />
                     <p className="text-xs text-gray-400 dark:text-gray-600 font-mono break-all text-center max-w-xs">{token}</p>
                 </div>

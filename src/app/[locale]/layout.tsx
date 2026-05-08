@@ -21,7 +21,7 @@ export async function generateMetadata({
     return {
         alternates: {
             canonical: `/${locale}`,
-            languages: { en: "/en" },
+            languages: { en: "/en", ar: "/ar" },
         },
     };
 }
@@ -61,7 +61,7 @@ export default async function LocaleLayout({
         <NextIntlClientProvider locale={locale} messages={messages}>
             <Navbar profile={profile} />
             <main className="min-h-[calc(100vh-4rem)]">{children}</main>
-            <Footer isLoggedIn={!!user} />
+            <Footer isLoggedIn={!!user} role={profile?.role ?? null} />
             <CookieBanner />
         </NextIntlClientProvider>
     );

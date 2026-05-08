@@ -2,12 +2,14 @@
 
 import { useState, useTransition } from "react";
 import { CheckCircle, AlertCircle } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 type Props = {
     isConnected: boolean;
 };
 
 export function StripeConnectSection({ isConnected }: Props) {
+    const t = useTranslations("facility_form");
     const [isPending, startTransition] = useTransition();
     const [error, setError] = useState<string | null>(null);
 
@@ -26,21 +28,19 @@ export function StripeConnectSection({ isConnected }: Props) {
 
     return (
         <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-6">
-            <h2 className="text-base font-semibold text-gray-900 dark:text-white mb-1">Stripe Payments</h2>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
-                Connect your Stripe account to receive payments directly from players. We take a {10}% platform fee per booking.
-            </p>
+            <h2 className="text-base font-semibold text-gray-900 dark:text-white mb-1">{t("stripe_heading")}</h2>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">{t("stripe_desc")}</p>
 
             {isConnected ? (
                 <div className="flex items-center gap-2 text-sm text-emerald-600 dark:text-emerald-400">
                     <CheckCircle className="h-4 w-4" />
-                    Stripe account connected
+                    {t("stripe_connected")}
                 </div>
             ) : (
                 <div className="space-y-3">
                     <div className="flex items-start gap-2 text-sm text-amber-600 dark:text-amber-400">
                         <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
-                        <span>Not connected — players cannot book your courts until you connect Stripe.</span>
+                        <span>{t("stripe_not_connected")}</span>
                     </div>
                     {error && <p className="text-sm text-red-500">{error}</p>}
                     <button
@@ -48,7 +48,7 @@ export function StripeConnectSection({ isConnected }: Props) {
                         disabled={isPending}
                         className="px-4 py-2 rounded-lg bg-[#635BFF] text-white text-sm font-medium hover:opacity-90 disabled:opacity-50 transition-opacity"
                     >
-                        {isPending ? "Redirecting…" : "Connect Stripe"}
+                        {isPending ? t("stripe_redirecting") : t("stripe_connect")}
                     </button>
                 </div>
             )}

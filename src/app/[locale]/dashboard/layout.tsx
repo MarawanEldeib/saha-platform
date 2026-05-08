@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
-import { getLocale } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import {
@@ -14,13 +14,13 @@ import {
 } from "lucide-react";
 
 const navItems = [
-    { href: "dashboard", label: "Overview", icon: LayoutDashboard },
-    { href: "dashboard/facility", label: "My Facility", icon: Building2 },
-    { href: "dashboard/courts", label: "Courts", icon: Trophy },
-    { href: "dashboard/availability", label: "Availability", icon: CalendarDays },
-    { href: "dashboard/checkin", label: "Check-in", icon: ScanLine },
-    { href: "dashboard/events", label: "Events", icon: CalendarPlus },
-    { href: "dashboard/settings", label: "Settings", icon: Settings },
+    { href: "dashboard", labelKey: "overview", icon: LayoutDashboard },
+    { href: "dashboard/facility", labelKey: "facility", icon: Building2 },
+    { href: "dashboard/courts", labelKey: "courts", icon: Trophy },
+    { href: "dashboard/availability", labelKey: "availability", icon: CalendarDays },
+    { href: "dashboard/checkin", labelKey: "checkin", icon: ScanLine },
+    { href: "dashboard/events", labelKey: "events", icon: CalendarPlus },
+    { href: "dashboard/settings", labelKey: "settings", icon: Settings },
 ];
 
 export default async function DashboardLayout({
@@ -30,6 +30,7 @@ export default async function DashboardLayout({
 }) {
     const supabase = await createClient();
     const locale = await getLocale();
+    const t = await getTranslations("dashboard.nav");
 
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) redirect(`/${locale}/login`);
@@ -47,8 +48,8 @@ export default async function DashboardLayout({
     return (
         <div className="flex min-h-[calc(100vh-4rem)]">
             {/* Sidebar */}
-            <aside className="hidden md:flex flex-col w-56 shrink-0 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 p-4 gap-1">
-                {navItems.map(({ href, label, icon: Icon }) => (
+            <aside className="hidden md:flex flex-col w-56 shrink-0 bg-white dark:bg-gray-900 border-e border-gray-200 dark:border-gray-800 p-4 gap-1">
+                {navItems.map(({ href, labelKey, icon: Icon }) => (
                     <Link
                         key={href}
                         href={`/${locale}/${href}`}
@@ -59,7 +60,7 @@ export default async function DashboardLayout({
                         )}
                     >
                         <Icon className="h-4 w-4" />
-                        {label}
+                        {t(labelKey)}
                     </Link>
                 ))}
             </aside>

@@ -1,0 +1,471 @@
+{
+    "nav": {
+        "home": "الرئيسية",
+        "map": "اعثر على الملاعب",
+        "community": "المجتمع",
+        "events": "الفعاليات",
+        "login": "تسجيل الدخول",
+        "register": "إنشاء حساب",
+        "dashboard": "لوحة التحكم",
+        "admin": "الإدارة",
+        "logout": "تسجيل الخروج",
+        "language": "اللغة",
+        "bookings": "حجوزاتي",
+        "settings": "الإعدادات"
+    },
+    "home": {
+        "hero": {
+            "badge": "بادل · بيكلبول · تنس · سكواش · بادمنتون",
+            "title": "اعثر على ملاعب رياضات المضرب بالقرب منك",
+            "subtitle": "أسهل طريقة للعثور على وحجز ملاعب البادل والبيكلبول والتنس والسكواش والبادمنتون في دبي وعبر الإمارات.",
+            "cta_primary": "اعثر على الملاعب",
+            "cta_secondary": "ابحث عن شريك",
+            "tagline": "دبي · أبوظبي · الإمارات"
+        },
+        "features": {
+            "title": "كل ما تحتاجه للعب أكثر",
+            "map": {
+                "title": "خريطة تفاعلية",
+                "desc": "اعثر على الملاعب والأندية القريبة ببحث يعتمد على الموقع وبيانات جغرافية دقيقة."
+            },
+            "community": {
+                "title": "مطابقة اللاعبين",
+                "desc": "انشر طلباً أو تصفح الإعلانات للعثور على شركاء تدريب أو لعب مزدوج."
+            },
+            "events": {
+                "title": "فعاليات محلية",
+                "desc": "اكتشف البطولات والأيام المفتوحة والجلسات الاجتماعية في المنشآت القريبة."
+            },
+            "reviews": {
+                "title": "مراجعات موثوقة",
+                "desc": "اقرأ مراجعات صادقة من لاعبين حقيقيين قبل حجز ملعبك."
+            }
+        },
+        "stats": {
+            "facilities": "عدد المنشآت المدرجة",
+            "sports": "عدد الرياضات",
+            "players": "عدد اللاعبين",
+            "cities": "المدن"
+        },
+        "cta_section": {
+            "title": "هل تملك منشأة لرياضات المضرب؟",
+            "subtitle": "أدرج ملاعبك مجاناً. وصل إلى آلاف اللاعبين الباحثين عن ملاعب في دبي والإمارات.",
+            "button": "أدرج منشأتك"
+        }
+    },
+    "map": {
+        "title": "اعثر على الملاعب والأندية",
+        "search_placeholder": "ابحث بالاسم أو الرياضة أو الموقع...",
+        "filter_sport": "كل الرياضات",
+        "no_results": "لا توجد منشآت. جرّب تعديل عوامل التصفية.",
+        "loading": "جارٍ تحميل المنشآت...",
+        "details_button": "عرض التفاصيل",
+        "sidebar_title": "المنشآت القريبة",
+        "km_away": "كم",
+        "outside_uae": "سها متاح حالياً في الإمارات العربية المتحدة فقط. قريباً في منطقتك!"
+    },
+    "facility": {
+        "hours": "ساعات العمل",
+        "sports": "الرياضات المتاحة",
+        "reviews_title": "المراجعات",
+        "no_reviews": "لا توجد مراجعات بعد. كن أول من يكتب مراجعة!",
+        "write_review": "اكتب مراجعة",
+        "your_rating": "تقييمك",
+        "your_comment": "تعليقك",
+        "submit_review": "إرسال المراجعة",
+        "events_title": "الفعاليات القادمة",
+        "no_events": "لا توجد فعاليات قادمة.",
+        "status_active": "نشطة",
+        "status_pending": "بانتظار الموافقة",
+        "status_suspended": "معلقة",
+        "closed": "مغلق"
+    },
+    "community": {
+        "title": "مطابقة اللاعبين",
+        "subtitle": "اعثر على شركاء تدريب ولاعبين للمباريات المزدوجة في منطقتك.",
+        "new_post": "نشر طلب",
+        "sport_label": "الرياضة",
+        "date_label": "التاريخ",
+        "message_label": "الرسالة",
+        "level_label": "مستوى المهارة",
+        "level_beginner": "مبتدئ",
+        "level_intermediate": "متوسط",
+        "level_advanced": "متقدم",
+        "submit": "نشر",
+        "login_prompt": "سجّل الدخول لنشر طلب مباراة.",
+        "no_posts": "لا توجد منشورات بعد. كن أول من ينشر!",
+        "any_sport": "أي رياضة",
+        "location_label": "الموقع (اختياري)",
+        "location_placeholder": "مثل: دبي مارينا",
+        "message_placeholder": "صف ما تبحث عنه...",
+        "anonymous": "مجهول"
+    },
+    "events": {
+        "title": "الفعاليات القادمة",
+        "subtitle": "بطولات وأيام مفتوحة وجلسات اجتماعية بالقرب منك.",
+        "no_events": "لا توجد فعاليات قادمة.",
+        "date": "التاريخ",
+        "venue": "المكان",
+        "organizer": "المنظّم"
+    },
+    "auth": {
+        "login": {
+            "title": "مرحباً بعودتك",
+            "subtitle": "سجّل الدخول إلى حسابك",
+            "email": "البريد الإلكتروني",
+            "password": "كلمة المرور",
+            "submit": "تسجيل الدخول",
+            "forgot_password": "هل نسيت كلمة المرور؟",
+            "no_account": "ليس لديك حساب؟",
+            "sign_up_link": "إنشاء حساب",
+            "error_invalid": "البريد الإلكتروني أو كلمة المرور غير صحيحة.",
+            "loading": "جارٍ تسجيل الدخول..."
+        },
+        "register": {
+            "title": "إنشاء حساب",
+            "subtitle": "انضم إلى مجتمع ساحة",
+            "name": "الاسم الكامل",
+            "email": "البريد الإلكتروني",
+            "password": "كلمة المرور",
+            "confirm_password": "تأكيد كلمة المرور",
+            "account_type": "نوع الحساب",
+            "type_user": "لاعب",
+            "type_business": "مالك منشأة / شركة",
+            "submit": "إنشاء حساب",
+            "already_account": "لديك حساب بالفعل؟",
+            "login_link": "تسجيل الدخول",
+            "error_email_taken": "هذا البريد الإلكتروني مستخدم بالفعل.",
+            "loading": "جارٍ إنشاء الحساب...",
+            "success": "تم إنشاء الحساب! يرجى التحقق من بريدك الإلكتروني للتأكيد."
+        },
+        "forgot_password": {
+            "title": "إعادة تعيين كلمة المرور",
+            "subtitle": "سنرسل لك رابط إعادة التعيين",
+            "email": "البريد الإلكتروني",
+            "submit": "إرسال رابط إعادة التعيين",
+            "back_to_login": "العودة لتسجيل الدخول",
+            "success": "تحقق من بريدك الإلكتروني لرابط إعادة التعيين."
+        },
+        "reset_password": {
+            "title": "تعيين كلمة مرور جديدة",
+            "new_password": "كلمة المرور الجديدة",
+            "confirm_password": "تأكيد كلمة المرور",
+            "submit": "تحديث كلمة المرور",
+            "success": "تم تحديث كلمة المرور. يمكنك تسجيل الدخول الآن."
+        }
+    },
+    "dashboard": {
+        "nav": {
+            "overview": "نظرة عامة",
+            "facility": "منشأتي",
+            "courts": "الملاعب",
+            "availability": "التوافر",
+            "checkin": "تسجيل الحضور",
+            "events": "الفعاليات",
+            "settings": "الإعدادات"
+        },
+        "overview": {
+            "title": "لوحة التحكم",
+            "welcome": "مرحباً بعودتك",
+            "status_label": "حالة الإدراج",
+            "status_pending": "بانتظار الموافقة",
+            "status_active": "نشطة",
+            "status_suspended": "معلقة",
+            "complete_onboarding": "أكمل إعداد منشأتك لتظهر في القائمة.",
+            "start_onboarding": "ابدأ الإعداد"
+        },
+        "onboarding": {
+            "title": "إعداد المنشأة",
+            "step1_title": "تفاصيل المنشأة",
+            "step2_title": "الرياضات المتاحة",
+            "success_title": "تم إرسال الطلب!",
+            "success_desc": "سيقوم فريقنا بمراجعة منشأتك خلال يومي عمل والتواصل معك.",
+            "go_dashboard": "الانتقال إلى لوحة التحكم",
+            "next": "التالي",
+            "back": "رجوع"
+        },
+        "facility": {
+            "title": "إدارة المنشأة",
+            "description": "الوصف",
+            "images": "الصور",
+            "hours": "ساعات العمل",
+            "sports": "الرياضات",
+            "save": "حفظ التغييرات",
+            "saving": "جارٍ الحفظ...",
+            "saved": "تم حفظ التغييرات.",
+            "add_image": "إضافة صورة",
+            "remove_image": "إزالة"
+        },
+        "events": {
+            "title": "إرسال فعالية",
+            "event_name": "اسم الفعالية",
+            "event_date": "التاريخ",
+            "event_description": "الوصف",
+            "submit": "إرسال للموافقة",
+            "status_pending": "بانتظار المراجعة",
+            "status_approved": "مقبولة",
+            "status_rejected": "مرفوضة",
+            "no_events": "لا توجد فعاليات مُرسلة بعد."
+        },
+        "settings": {
+            "title": "إعدادات الحساب",
+            "display_name": "الاسم المعروض",
+            "email": "البريد الإلكتروني",
+            "save": "حفظ التغييرات"
+        }
+    },
+    "admin": {
+        "title": "لوحة الإدارة",
+        "stat_pending_facilities": "منشآت بانتظار الموافقة",
+        "stat_pending_events": "فعاليات بانتظار الموافقة",
+        "stat_users": "إجمالي المستخدمين",
+        "pending_facilities": "منشآت بانتظار الموافقة",
+        "pending_events": "فعاليات بانتظار الموافقة",
+        "view_all": "عرض الكل",
+        "none": "لا يوجد أي شيء. كل شيء على ما يرام!",
+        "review_action": "قرار المراجعة",
+        "nav": {
+            "overview": "نظرة عامة",
+            "verifications": "قائمة التحقق",
+            "events": "قائمة الفعاليات"
+        },
+        "verifications": {
+            "title": "قائمة التحقق من المنشآت",
+            "no_pending": "لا توجد طلبات تحقق معلقة.",
+            "approve": "موافقة",
+            "decline": "رفض",
+            "view_doc": "عرض المستند",
+            "business_name": "اسم المنشأة",
+            "submitted_at": "تاريخ الإرسال",
+            "status": "الحالة",
+            "confirm_approve": "هل توافق على إدراج هذه المنشأة؟",
+            "confirm_decline": "هل ترفض هذا الطلب؟",
+            "decline_reason": "سبب الرفض (اختياري)"
+        },
+        "events": {
+            "title": "قائمة الموافقة على الفعاليات",
+            "no_pending": "لا توجد فعاليات معلقة.",
+            "approve": "موافقة",
+            "reject": "رفض",
+            "event_name": "الفعالية",
+            "submitted_by": "مقدم الطلب",
+            "event_date": "التاريخ"
+        }
+    },
+    "bookings": {
+        "title": "حجوزاتي",
+        "subtitle": "سجل حجوزات الملاعب",
+        "no_bookings": "لا توجد حجوزات بعد",
+        "find_court": "ابحث عن ملعب",
+        "players": "لاعبين",
+        "view_details": "عرض التفاصيل",
+        "status_confirmed": "مؤكد",
+        "status_pending": "قيد الانتظار",
+        "status_cancelled": "ملغى",
+        "status_completed": "مكتمل",
+        "status_no_show": "غياب"
+    },
+    "booking_detail": {
+        "confirmed_heading": "تم تأكيد الحجز",
+        "confirmed_desc": "ملعبك محجوز. نراك هناك!",
+        "cancelled_heading": "تم إلغاء الحجز",
+        "cancelled_desc": "لم تكتمل عملية الدفع. تم تحرير الموعد.",
+        "pending_heading": "في انتظار الدفع",
+        "pending_desc": "أكمل الدفع لتأكيد حجزك.",
+        "court": "الملعب",
+        "date": "التاريخ",
+        "time": "الوقت",
+        "players": "اللاعبون",
+        "total": "المجموع",
+        "find_courts": "ابحث عن ملاعب أخرى",
+        "my_bookings": "حجوزاتي"
+    },
+    "booking_widget": {
+        "sign_in_prompt": "سجّل الدخول لحجز ملعب",
+        "sign_in": "تسجيل الدخول",
+        "no_courts": "لا توجد ملاعب متاحة للحجز.",
+        "heading": "احجز ملعباً",
+        "court_label": "الملعب",
+        "price_suffix": "درهم/ساعة",
+        "date_label": "التاريخ",
+        "checking": "جارٍ التحقق…",
+        "check_availability": "تحقق من الإتاحة",
+        "no_slots": "لا توجد مواعيد متاحة في هذا التاريخ.",
+        "total": "المجموع",
+        "processing": "جارٍ المعالجة…",
+        "book_now": "احجز الآن"
+    },
+    "booking_share": {
+        "whatsapp": "مشاركة عبر واتساب",
+        "link_copied": "تم نسخ الرابط!",
+        "copy_link": "نسخ رابط الحجز",
+        "google_calendar": "تقويم Google",
+        "apple_calendar": "تقويم Apple",
+        "split_cost": "تقسيم التكلفة بين اللاعبين",
+        "hide": "إخفاء",
+        "show": "إظهار"
+    },
+    "booking_qr": {
+        "tap_to_expand": "اضغط للتكبير للمسح",
+        "show_at_reception": "اعرض هذا عند الاستقبال"
+    },
+    "complete_payment": {
+        "redirecting": "جارٍ التحويل…",
+        "button": "إتمام الدفع"
+    },
+    "account": {
+        "title": "إعدادات الحساب",
+        "subtitle": "إدارة ملفك الشخصي وتفضيلات الإشعارات.",
+        "profile_section": "معلومات الملف الشخصي",
+        "display_name": "الاسم المعروض",
+        "phone_label": "رقم واتساب",
+        "phone_placeholder": "+971501234567",
+        "phone_hint": "أدخل رمز البلد. يُستخدم لإرسال تأكيدات الحجز والتذكيرات عبر واتساب.",
+        "save": "حفظ التغييرات",
+        "saved": "تم تحديث الملف الشخصي بنجاح!",
+        "change_avatar": "تغيير الصورة",
+        "uploading_avatar": "جارٍ الرفع..."
+    },
+    "facility_form": {
+        "heading": "إدارة المنشأة",
+        "subheading": "تحديث تفاصيل منشأتك والرياضات المتاحة وساعات العمل.",
+        "details_section": "تفاصيل المنشأة",
+        "name_label": "اسم المنشأة",
+        "city_label": "المدينة",
+        "address_label": "العنوان",
+        "postal_label": "الرمز البريدي",
+        "phone_label": "الهاتف",
+        "website_label": "الموقع الإلكتروني",
+        "website_placeholder": "https://",
+        "description_label": "الوصف",
+        "description_placeholder": "صف منشأتك (20 حرفاً على الأقل)…",
+        "no_photos": "لم يتم إضافة صور بعد.",
+        "saved": "تم الحفظ بنجاح",
+        "save": "حفظ التغييرات",
+        "photos_section": "صور المنشأة",
+        "photos_hint": "ارفع صور ملاعبك ومنشأتك. يمكنك إعادة ترتيب الصور أو حذفها بعد الرفع.",
+        "sports_section": "الرياضات المتاحة",
+        "sports_hint": "اختر جميع الرياضات المتاحة في منشأتك.",
+        "sports_saved": "تم تحديث الرياضات",
+        "save_sports": "حفظ الرياضات",
+        "stripe_heading": "مدفوعات Stripe",
+        "stripe_desc": "اربط حساب Stripe الخاص بك لاستلام المدفوعات مباشرةً من اللاعبين. نأخذ رسوم منصة 10% على كل حجز.",
+        "stripe_connected": "تم ربط حساب Stripe",
+        "stripe_not_connected": "غير مرتبط — لا يستطيع اللاعبون حجز ملاعبك حتى تربط Stripe.",
+        "stripe_redirecting": "جارٍ التحويل…",
+        "stripe_connect": "ربط Stripe"
+    },
+    "hours_form": {
+        "heading": "ساعات العمل",
+        "subheading": "حدد جدول منشأتك الأسبوعي. سيرى اللاعبون هذه الساعات في ملفك الشخصي.",
+        "closed_label": "مغلق",
+        "closed_all_day": "مغلق طوال اليوم",
+        "to": "إلى",
+        "saved": "تم حفظ الساعات.",
+        "saving": "جارٍ الحفظ…",
+        "save": "حفظ الساعات"
+    },
+    "courts": {
+        "delete_confirm": "حذف \"{name}\"؟ لا يمكن التراجع عن هذا.",
+        "no_courts": "لا توجد ملاعب بعد. أضف ملعبك الأول لبدء قبول الحجوزات.",
+        "add_first": "إضافة أول ملعب",
+        "add_court": "إضافة ملعب",
+        "court_singular": "ملعب",
+        "court_plural": "ملاعب",
+        "no_sport": "لا رياضة محددة",
+        "active": "نشط",
+        "inactive": "غير نشط",
+        "edit_aria": "تعديل الملعب",
+        "deactivate_aria": "إلغاء تفعيل الملعب",
+        "activate_aria": "تفعيل الملعب",
+        "delete_aria": "حذف الملعب",
+        "form_heading": "إضافة ملعب جديد",
+        "name_label": "اسم الملعب",
+        "name_placeholder": "مثال: ملعب بادل أ",
+        "sport_label": "الرياضة",
+        "no_specific_sport": "بدون رياضة محددة",
+        "capacity_label": "السعة (لاعبون)",
+        "price_label": "السعر بالساعة (درهم)",
+        "price_prefix": "درهم",
+        "players": "لاعبين",
+        "saving": "جارٍ الحفظ...",
+        "save_changes": "حفظ التغييرات",
+        "cancel": "إلغاء"
+    },
+    "checkin": {
+        "loading": "...",
+        "button": "تسجيل الحضور"
+    },
+    "image_uploader": {
+        "max_images_error": "يمكنك رفع حتى {max} صور.",
+        "invalid_type_error": "يُقبل فقط JPEG وPNG وWebP.",
+        "drag_drop": "اسحب وأفلت الصور هنا",
+        "or_browse": "أو انقر للتصفح",
+        "format_hint": "JPEG، PNG، WebP. حتى {max} صور.",
+        "size_hint": "موصى به: 1200×800 أو أكبر",
+        "uploading": "جارٍ الرفع",
+        "uploaded": "تم الرفع",
+        "failed": "فشل"
+    },
+    "events_form": {
+        "name_label": "اسم الفعالية",
+        "name_placeholder": "مثال: ليلة كرة السلة المفتوحة",
+        "description_label": "الوصف (اختياري)",
+        "description_placeholder": "تفاصيل إضافية حول الفعالية…",
+        "datetime_label": "تاريخ ووقت الفعالية",
+        "submitted": "تم تقديم الفعالية للمراجعة!",
+        "submit": "تقديم الفعالية"
+    },
+    "common": {
+        "loading": "جارٍ التحميل...",
+        "error": "حدث خطأ ما. يرجى المحاولة مرة أخرى.",
+        "save": "حفظ",
+        "cancel": "إلغاء",
+        "delete": "حذف",
+        "edit": "تعديل",
+        "back": "رجوع",
+        "close": "إغلاق",
+        "confirm": "تأكيد",
+        "yes": "نعم",
+        "no": "لا",
+        "search": "بحث",
+        "filter": "تصفية",
+        "all": "الكل",
+        "none": "لا شيء",
+        "monday": "الاثنين",
+        "tuesday": "الثلاثاء",
+        "wednesday": "الأربعاء",
+        "thursday": "الخميس",
+        "friday": "الجمعة",
+        "saturday": "السبت",
+        "sunday": "الأحد",
+        "closed": "مغلق",
+        "open": "مفتوح",
+        "cookie_banner": {
+            "message": "نستخدم ملفات تعريف الارتباط لتحسين تجربتك. لا نستخدم ملفات التتبع دون موافقتك.",
+            "accept": "قبول",
+            "reject": "رفض"
+        }
+    },
+    "sports": {
+        "Padel": "بادل",
+        "Pickleball": "بيكلبول",
+        "Tennis": "تنس",
+        "Squash": "سكواش",
+        "Badminton": "بادمنتون"
+    },
+    "footer": {
+        "tagline": "دليل المرافق الرياضية في الإمارات.",
+        "explore": "استكشف",
+        "business": "الأعمال",
+        "legal": "قانوني",
+        "list_facility": "أضف منشأتك",
+        "business_dashboard": "لوحة تحكم الأعمال",
+        "privacy_policy": "سياسة الخصوصية",
+        "terms_of_service": "شروط الخدمة",
+        "impressum": "بيانات النشر",
+        "contact": "اتصل بنا",
+        "copyright": "© {year} منصة صحة. جميع الحقوق محفوظة.",
+        "business_login": "تسجيل الدخول لحساب الأعمال"
+    }
+}
