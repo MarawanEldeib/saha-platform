@@ -49,6 +49,12 @@ export default async function DashboardLayout({
         redirect(`/${locale}`);
     }
 
+    // SAH-108: admins shouldn't land on the facility-owner dashboard. Send
+    // them to the dedicated admin panel instead.
+    if (profile.role === "admin") {
+        redirect(`/${locale}/admin`);
+    }
+
     const facilities = await listOwnerFacilities(supabase, user.id);
     const active = await getActiveFacility(supabase, user.id);
 

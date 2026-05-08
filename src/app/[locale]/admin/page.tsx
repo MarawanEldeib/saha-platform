@@ -5,10 +5,16 @@ import Link from "next/link";
 import { Button } from "@/components/ui/Button";
 import { FacilityStatusBadge, EventStatusBadge } from "@/components/ui/Badge";
 import { format } from "date-fns";
-import { Users, Building2, CalendarDays } from "lucide-react";
+import {
+    Users,
+    Building2,
+    CalendarDays,
+    BookOpen,
+    DollarSign,
+    AlertTriangle,
+} from "lucide-react";
 import type { FacilityStatus, EventStatus } from "@/types/database";
 
-// Local typed interfaces for complex join queries (Supabase join types require explicit casts)
 interface ProfileRow { role: string }
 interface PendingFacility {
     id: string;
@@ -28,12 +34,13 @@ interface PendingEvent {
 
 export const metadata = { title: "Admin Panel" };
 
+const aedFmt = new Intl.NumberFormat("en-AE", { style: "currency", currency: "AED", maximumFractionDigits: 0 });
+
 export default async function AdminPage() {
     const t = await getTranslations("admin");
     const locale = await getLocale();
     const supabase = await createClient();
 
-    // Auth guard
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) redirect(`/${locale}/login`);
 
@@ -41,17 +48,48 @@ export default async function AdminPage() {
     const profile = profileResult.data as unknown as ProfileRow | null;
     if (profile?.role !== "admin") redirect(`/${locale}`);
 
-    // Fetch counts
+    const now = new Date();
+    const today = now.toISOString().slice(0, 10);
+    const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+    const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+
     const [
         { count: pendingFacilities },
         { count: pendingEvents },
         { count: totalUsers },
-        facilitiesResult,
-        eventsResult,
+        { count: totalFacilities },
+        { count: activeFacilities },
+        { count: bookings7d },
+        { count: bookings30d },
+        { count: bookingsToday },
+        { count: openDisputes },
+        { data: revenue30dRows },
+        { data: profilesByRole },
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        ...rest
     ] = await Promise.all([
         supabase.from("facilities").select("*", { count: "exact", head: true }).eq("status", "pending"),
         supabase.from("events").select("*", { count: "exact", head: true }).eq("status", "pending"),
         supabase.from("profiles").select("*", { count: "exact", head: true }),
+        supabase.from("facilities").select("*", { count: "exact", head: true }),
+        supabase.from("facilities").select("*", { count: "exact", head: true }).eq("status", "active"),
+        supabase.from("bookings").select("*", { count: "exact", head: true })
+            .gte("date", sevenDaysAgo)
+            .in("status", ["confirmed", "completed"]),
+        supabase.from("bookings").select("*", { count: "exact", head: true })
+            .gte("date", thirtyDaysAgo)
+            .in("status", ["confirmed", "completed"]),
+        supabase.from("bookings").select("*", { count: "exact", head: true })
+            .eq("date", today)
+            .in("status", ["confirmed", "completed"]),
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (supabase as any).from("audit_log").select("*", { count: "exact", head: true })
+            .eq("action", "stripe.dispute.created")
+            .gte("created_at", thirtyDaysAgo),
+        supabase.from("bookings").select("total_price")
+            .gte("date", thirtyDaysAgo)
+            .in("status", ["confirmed", "completed"]),
+        supabase.from("profiles").select("role"),
         supabase
             .from("facilities")
             .select("id, name, status, city, created_at, profiles(display_name)")
@@ -66,37 +104,94 @@ export default async function AdminPage() {
             .limit(8),
     ]);
 
-    const recentFacilities = (facilitiesResult.data ?? []) as unknown as PendingFacility[];
-    const recentEvents = (eventsResult.data ?? []) as unknown as PendingEvent[];
+    const recentFacilities = (rest[0]?.data ?? []) as unknown as PendingFacility[];
+    const recentEvents = (rest[1]?.data ?? []) as unknown as PendingEvent[];
 
-    const stats = [
-        { label: t("stat_pending_facilities"), value: pendingFacilities ?? 0, icon: Building2, color: "text-amber-500" },
-        { label: t("stat_pending_events"), value: pendingEvents ?? 0, icon: CalendarDays, color: "text-blue-500" },
-        { label: t("stat_users"), value: totalUsers ?? 0, icon: Users, color: "text-emerald-500" },
-    ] as const;
+    const grossRevenue30d = (revenue30dRows ?? []).reduce(
+        (sum: number, row: { total_price: number }) => sum + Number(row.total_price ?? 0),
+        0,
+    );
+    // Platform fee is 10%; net to owners is 90%.
+    const platformFee30d = grossRevenue30d * 0.10;
+
+    const roleCounts = (profilesByRole ?? []).reduce<Record<string, number>>((acc, row) => {
+        const r = (row as { role: string }).role;
+        acc[r] = (acc[r] ?? 0) + 1;
+        return acc;
+    }, {});
+
+    const cards = [
+        {
+            label: "Total users",
+            value: (totalUsers ?? 0).toLocaleString(),
+            sub: `${roleCounts.user ?? 0} players · ${roleCounts.business ?? 0} owners · ${roleCounts.admin ?? 0} admins`,
+            icon: Users,
+            tone: "text-emerald-600",
+        },
+        {
+            label: "Facilities",
+            value: (totalFacilities ?? 0).toLocaleString(),
+            sub: `${activeFacilities ?? 0} active · ${pendingFacilities ?? 0} pending review`,
+            icon: Building2,
+            tone: "text-blue-600",
+        },
+        {
+            label: "Bookings today",
+            value: (bookingsToday ?? 0).toLocaleString(),
+            sub: `${bookings7d ?? 0} this week · ${bookings30d ?? 0} this month`,
+            icon: BookOpen,
+            tone: "text-purple-600",
+        },
+        {
+            label: "Revenue (30d)",
+            value: aedFmt.format(grossRevenue30d),
+            sub: `Platform fees: ${aedFmt.format(platformFee30d)}`,
+            icon: DollarSign,
+            tone: "text-amber-600",
+        },
+        {
+            label: "Pending events",
+            value: (pendingEvents ?? 0).toLocaleString(),
+            sub: "Awaiting approval",
+            icon: CalendarDays,
+            tone: "text-indigo-600",
+        },
+        {
+            label: "Open disputes",
+            value: (openDisputes ?? 0).toLocaleString(),
+            sub: "Last 30 days",
+            icon: AlertTriangle,
+            tone: openDisputes && openDisputes > 0 ? "text-red-600" : "text-gray-500",
+        },
+    ];
 
     return (
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-10">
+        <div className="space-y-8">
             <div>
-                <h1 className="text-3xl font-bold text-gray-900 dark:text-white">{t("title")}</h1>
+                <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{t("title")}</h1>
+                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                    Platform overview · {format(now, "EEEE, MMMM d, yyyy")}
+                </p>
             </div>
 
-            {/* Stats */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-                {stats.map(({ label, value, icon: Icon, color }) => (
-                    <div key={label} className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-5 flex items-center gap-4">
-                        <div className="w-12 h-12 rounded-xl bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
-                            <Icon className={`h-6 w-6 ${color}`} />
-                        </div>
-                        <div>
-                            <p className="text-2xl font-extrabold text-gray-900 dark:text-white">{value}</p>
+            {/* KPI Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {cards.map(({ label, value, sub, icon: Icon, tone }) => (
+                    <div
+                        key={label}
+                        className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-5"
+                    >
+                        <div className="flex items-center justify-between mb-3">
                             <p className="text-sm text-gray-500 dark:text-gray-400">{label}</p>
+                            <Icon className={`h-5 w-5 ${tone}`} />
                         </div>
+                        <p className="text-3xl font-bold text-gray-900 dark:text-white">{value}</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">{sub}</p>
                     </div>
                 ))}
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* Pending Facilities */}
                 <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 overflow-hidden">
                     <div className="p-5 border-b border-gray-200 dark:border-gray-800 flex items-center justify-between">
@@ -159,7 +254,6 @@ export default async function AdminPage() {
                     </div>
                 </div>
             </div>
-
         </div>
     );
 }
