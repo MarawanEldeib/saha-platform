@@ -566,7 +566,14 @@ export async function createBookingAndCheckoutAction(
         };
     }
 
-    const session = await getStripe().checkout.sessions.create(sessionParams);
+    let session: Stripe.Checkout.Session;
+    try {
+        session = await getStripe().checkout.sessions.create(sessionParams);
+    } catch {
+        // Connected account not ready — fall back to direct charge without transfer
+        delete sessionParams.payment_intent_data;
+        session = await getStripe().checkout.sessions.create(sessionParams);
+    }
 
     return { checkoutUrl: session.url };
 }
