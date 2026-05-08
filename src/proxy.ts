@@ -19,7 +19,7 @@ function matchesAny(pathname: string, patterns: string[]): boolean {
     return patterns.some((p) => stripped.startsWith(p));
 }
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
     const { pathname } = request.nextUrl;
 
     const intlResponse = intlMiddleware(request);

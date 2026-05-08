@@ -166,7 +166,7 @@ export default function CommunityPage() {
                                         <Badge variant="outline">{post.sports.name}</Badge>
                                     )}
                                     <Badge variant={skillBadgeVariant[post.skill_level] ?? "default"}>
-                                        {post.skill_level}
+                                        {t(`level_${post.skill_level}` as "level_beginner" | "level_intermediate" | "level_advanced")}
                                     </Badge>
                                 </div>
                             </div>

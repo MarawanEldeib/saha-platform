@@ -249,6 +249,11 @@
         "title": "My Bookings",
         "subtitle": "Your court booking history",
         "no_bookings": "No bookings yet",
+        "status_confirmed": "Confirmed",
+        "status_pending": "Pending",
+        "status_cancelled": "Cancelled",
+        "status_completed": "Completed",
+        "status_no_show": "No Show",
         "find_court": "Find a court",
         "players": "players",
         "view_details": "View details"
@@ -432,5 +437,18 @@
             "accept": "Accept",
             "reject": "Reject"
         }
+    },
+    "footer": {
+        "tagline": "The sports facility directory in the UAE.",
+        "explore": "Explore",
+        "business": "Business",
+        "legal": "Legal",
+        "list_facility": "List Your Facility",
+        "business_dashboard": "Business Dashboard",
+        "privacy_policy": "Privacy Policy",
+        "terms_of_service": "Terms of Service",
+        "impressum": "Impressum",
+        "contact": "Contact",
+        "copyright": "© {year} Saha Platform. All rights reserved."
     }
 }

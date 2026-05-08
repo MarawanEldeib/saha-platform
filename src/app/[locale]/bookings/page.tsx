@@ -11,11 +11,11 @@ import { CompletePaymentButton } from "@/components/booking/CompletePaymentButto
 export const metadata = { title: "My Bookings – Saha" };
 
 const STATUS_CONFIG = {
-    confirmed: { icon: CheckCircle, color: "text-emerald-500", label: "Confirmed" },
-    pending: { icon: Clock, color: "text-amber-400", label: "Pending" },
-    cancelled: { icon: XCircle, color: "text-red-400", label: "Cancelled" },
-    completed: { icon: CheckCircle, color: "text-gray-400", label: "Completed" },
-    no_show: { icon: XCircle, color: "text-gray-400", label: "No Show" },
+    confirmed: { icon: CheckCircle, color: "text-emerald-500", labelKey: "status_confirmed" },
+    pending: { icon: Clock, color: "text-amber-400", labelKey: "status_pending" },
+    cancelled: { icon: XCircle, color: "text-red-400", labelKey: "status_cancelled" },
+    completed: { icon: CheckCircle, color: "text-gray-400", labelKey: "status_completed" },
+    no_show: { icon: XCircle, color: "text-gray-400", labelKey: "status_no_show" },
 } as const;
 
 export default async function MyBookingsPage() {
@@ -65,7 +65,7 @@ export default async function MyBookingsPage() {
                         const court = (booking as any).courts;
                         const facility = court?.facilities;
                         const status = booking.status as keyof typeof STATUS_CONFIG;
-                        const { icon: Icon, color, label } = STATUS_CONFIG[status] ?? STATUS_CONFIG.pending;
+                        const { icon: Icon, color, labelKey } = STATUS_CONFIG[status] ?? STATUS_CONFIG.pending;
                         const isConfirmed = booking.status === "confirmed";
 
                         return (
@@ -80,7 +80,7 @@ export default async function MyBookingsPage() {
                                     </div>
                                     <span className={`flex items-center gap-1 text-xs font-medium ${color}`}>
                                         <Icon className="h-3.5 w-3.5" />
-                                        {label}
+                                        {t(labelKey)}
                                     </span>
                                 </div>
 

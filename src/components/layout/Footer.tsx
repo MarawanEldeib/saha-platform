@@ -3,7 +3,8 @@ import { useLocale, useTranslations } from "next-intl";
 import { MapPin, Mail } from "lucide-react";
 
 export function Footer({ isLoggedIn = false }: { isLoggedIn?: boolean }) {
-    const t = useTranslations("nav");
+    const tn = useTranslations("nav");
+    const tf = useTranslations("footer");
     const locale = useLocale();
 
     const year = new Date().getFullYear();
@@ -19,46 +20,46 @@ export function Footer({ isLoggedIn = false }: { isLoggedIn?: boolean }) {
                             Saha
                         </Link>
                         <p className="mt-3 text-sm text-gray-500 dark:text-gray-400">
-                            The sports facility directory for students in Stuttgart and Baden-Württemberg.
+                            {tf("tagline")}
                         </p>
                     </div>
 
                     {/* Explore */}
                     <div>
-                        <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3">Explore</h3>
+                        <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3">{tf("explore")}</h3>
                         <ul className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
-                            <li><Link href={`/${locale}/map`} className="hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors">{t("map")}</Link></li>
-                            <li><Link href={`/${locale}/community`} className="hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors">{t("community")}</Link></li>
-                            <li><Link href={`/${locale}/events`} className="hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors">{t("events")}</Link></li>
+                            <li><Link href={`/${locale}/map`} className="hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors">{tn("map")}</Link></li>
+                            <li><Link href={`/${locale}/community`} className="hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors">{tn("community")}</Link></li>
+                            <li><Link href={`/${locale}/events`} className="hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors">{tn("events")}</Link></li>
                         </ul>
                     </div>
 
                     {/* Business */}
                     <div>
-                        <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3">Business</h3>
+                        <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3">{tf("business")}</h3>
                         <ul className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
-                            <li><Link href={isLoggedIn ? `/${locale}/dashboard` : `/${locale}/register?role=business`} className="hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors">List Your Facility</Link></li>
-                            <li><Link href={isLoggedIn ? `/${locale}/dashboard` : `/${locale}/login`} className="hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors">Business Dashboard</Link></li>
+                            <li><Link href={isLoggedIn ? `/${locale}/dashboard` : `/${locale}/register?role=business`} className="hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors">{tf("list_facility")}</Link></li>
+                            <li><Link href={isLoggedIn ? `/${locale}/dashboard` : `/${locale}/login`} className="hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors">{tf("business_dashboard")}</Link></li>
                         </ul>
                     </div>
 
                     {/* Legal */}
                     <div>
-                        <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3">Legal</h3>
+                        <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3">{tf("legal")}</h3>
                         <ul className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
-                            <li><Link href={`/${locale}/privacy`} className="hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors">Privacy Policy</Link></li>
-                            <li><Link href={`/${locale}/terms`} className="hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors">Terms of Service</Link></li>
-                            <li><Link href={`/${locale}/imprint`} className="hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors">Impressum</Link></li>
+                            <li><Link href={`/${locale}/privacy`} className="hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors">{tf("privacy_policy")}</Link></li>
+                            <li><Link href={`/${locale}/terms`} className="hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors">{tf("terms_of_service")}</Link></li>
+                            <li><Link href={`/${locale}/imprint`} className="hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors">{tf("impressum")}</Link></li>
                         </ul>
                     </div>
                 </div>
 
                 <div className="mt-10 pt-6 border-t border-gray-200 dark:border-gray-800 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-gray-500 dark:text-gray-500">
-                    <p>© {year} Saha Platform. All rights reserved.</p>
+                    <p>{tf("copyright", { year })}</p>
                     <div className="flex items-center gap-4">
-                        <a href="mailto:hello@saha.app" className="flex items-center gap-1 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors">
+                        <a href="mailto:hello@saha.ae" className="flex items-center gap-1 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors">
                             <Mail className="h-3.5 w-3.5" />
-                            Contact
+                            {tf("contact")}
                         </a>
                     </div>
                 </div>

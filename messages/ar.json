@@ -251,7 +251,12 @@
         "no_bookings": "لا توجد حجوزات بعد",
         "find_court": "ابحث عن ملعب",
         "players": "لاعبين",
-        "view_details": "عرض التفاصيل"
+        "view_details": "عرض التفاصيل",
+        "status_confirmed": "مؤكد",
+        "status_pending": "قيد الانتظار",
+        "status_cancelled": "ملغى",
+        "status_completed": "مكتمل",
+        "status_no_show": "غياب"
     },
     "booking_detail": {
         "confirmed_heading": "تم تأكيد الحجز",
@@ -432,5 +437,18 @@
             "accept": "قبول",
             "reject": "رفض"
         }
+    },
+    "footer": {
+        "tagline": "دليل المرافق الرياضية في الإمارات.",
+        "explore": "استكشف",
+        "business": "الأعمال",
+        "legal": "قانوني",
+        "list_facility": "أضف منشأتك",
+        "business_dashboard": "لوحة تحكم الأعمال",
+        "privacy_policy": "سياسة الخصوصية",
+        "terms_of_service": "شروط الخدمة",
+        "impressum": "بيانات النشر",
+        "contact": "اتصل بنا",
+        "copyright": "© {year} منصة صحة. جميع الحقوق محفوظة."
     }
 }
