@@ -8,6 +8,8 @@ import { updateFacilityAction, updateFacilitySportsAction } from "../actions";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import { CheckCircle } from "lucide-react";
+import { ImageUploader } from "@/components/facility/ImageUploader";
+import type { FacilityImage } from "@/types/database";
 
 interface Sport { id: number; name: string }
 
@@ -24,9 +26,10 @@ interface Props {
     };
     allSports: Sport[];
     currentSportIds: number[];
+    initialImages: FacilityImage[];
 }
 
-export function FacilityEditForm({ facility, allSports, currentSportIds }: Props) {
+export function FacilityEditForm({ facility, allSports, currentSportIds, initialImages }: Props) {
     const [serverError, setServerError] = React.useState<string | null>(null);
     const [saved, setSaved] = React.useState(false);
     const [sportIds, setSportIds] = React.useState<number[]>(currentSportIds);
@@ -99,6 +102,14 @@ export function FacilityEditForm({ facility, allSports, currentSportIds }: Props
                     )}
                     <Button type="submit" variant="primary" loading={isSubmitting}>Save Changes</Button>
                 </form>
+            </div>
+
+            <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-6">
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Facility Photos</h2>
+                <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+                    Upload photos of your courts and facility. You can reorder or remove images after upload.
+                </p>
+                <ImageUploader facilityId={facility.id} initialImages={initialImages} />
             </div>
 
             {/* Sports */}

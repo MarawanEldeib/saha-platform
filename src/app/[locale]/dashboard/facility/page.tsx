@@ -16,7 +16,7 @@ export default async function FacilityPage() {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data: facilityRows } = await (supabase as any)
         .from("facilities")
-        .select("id, name, description, address, city, postal_code, phone, website, stripe_account_id")
+        .select("id, name, description, address, city, postal_code, phone, website, stripe_account_id, facility_images(id, storage_path, display_order)")
         .eq("owner_id", user.id)
         .order("created_at", { ascending: false })
         .limit(1);
@@ -51,6 +51,7 @@ export default async function FacilityPage() {
                 facility={facility}
                 allSports={allSports ?? []}
                 currentSportIds={currentSportIds}
+                initialImages={facility.facility_images ?? []}
             />
             <HoursForm
                 facilityId={facility.id}

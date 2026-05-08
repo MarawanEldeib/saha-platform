@@ -6,7 +6,7 @@ import { StarRating } from "@/components/ui/StarRating";
 import { ReviewForm } from "@/components/facility/ReviewForm";
 import { MapPin, Globe, Phone, Clock, Calendar } from "lucide-react";
 import { format } from "date-fns";
-import { DAY_KEYS, formatTime } from "@/lib/utils";
+import { DAY_KEYS, formatTime, getStorageUrl } from "@/lib/utils";
 import Image from "next/image";
 import type { Metadata } from "next";
 import { BookingWidget } from "./BookingWidget";
@@ -64,6 +64,11 @@ export default async function FacilityDetailPage({
             facility.reviews.length
             : 0;
 
+    const images = [...(facility.facility_images ?? [])].sort(
+        (a: { display_order?: number | null }, b: { display_order?: number | null }) =>
+            (a.display_order ?? 0) - (b.display_order ?? 0)
+    );
+
     return (
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-10">
             {/* Header */}
@@ -89,18 +94,22 @@ export default async function FacilityDetailPage({
             </div>
 
             {/* Images */}
-            {facility.facility_images?.length > 0 && (
+            {images.length > 0 ? (
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                    {facility.facility_images.slice(0, 6).map((img: { id: string; storage_path: string }) => (
+                    {images.map((img: { id: string; storage_path: string }) => (
                         <div key={img.id} className="aspect-video relative rounded-xl overflow-hidden bg-gray-100 dark:bg-gray-800">
                             <Image
-                                src={`${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/facility-images/${img.storage_path}`}
+                                src={getStorageUrl("facility-images", img.storage_path)}
                                 alt={facility.name}
                                 fill
                                 className="object-cover"
                             />
                         </div>
                     ))}
+                </div>
+            ) : (
+                <div className="rounded-xl border border-dashed border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900 px-4 py-10 text-center text-sm text-gray-500 dark:text-gray-400">
+                    No photos have been added yet.
                 </div>
             )}
 
