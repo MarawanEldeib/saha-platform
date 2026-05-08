@@ -2,7 +2,6 @@ import { createClient } from "@/lib/supabase/server";
 import { getLocale, getTranslations } from "next-intl/server";
 import { redirect } from "next/navigation";
 import { FacilityEditForm } from "./FacilityEditForm";
-import { HoursForm } from "./HoursForm";
 import { StripeConnectSection } from "./StripeConnectSection";
 import { ShareableLinkCard } from "./ShareableLinkCard";
 import { getActiveFacility } from "@/lib/facility-context";
@@ -58,9 +57,6 @@ export default async function FacilityPage() {
                 allSports={allSports ?? []}
                 currentSportIds={currentSportIds}
                 initialImages={facility.facility_images ?? []}
-            />
-            <HoursForm
-                facilityId={facility.id}
                 initialHours={hours ?? []}
             />
             <StripeConnectSection isConnected={!!facility.stripe_account_id} />
