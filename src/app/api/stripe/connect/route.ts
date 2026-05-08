@@ -19,26 +19,31 @@ export async function POST() {
 
     let accountId = facility.stripe_account_id as string | null;
 
-    // Create a new Express connected account if not already connected
-    if (!accountId) {
-        const account = await getStripe().accounts.create({
-            type: "express",
-            business_profile: { name: facility.name },
+    try {
+        // Create a new Express connected account if not already connected
+        if (!accountId) {
+            const account = await getStripe().accounts.create({
+                type: "express",
+                business_profile: { name: facility.name },
+            });
+            accountId = account.id;
+            await supabase
+                .from("facilities")
+                .update({ stripe_account_id: accountId } as never)
+                .eq("id", facility.id);
+        }
+
+        const appUrl = process.env.NEXT_PUBLIC_APP_URL!;
+        const link = await getStripe().accountLinks.create({
+            account: accountId,
+            refresh_url: `${appUrl}/en/dashboard/facility?stripe=refresh`,
+            return_url: `${appUrl}/en/dashboard/facility?stripe=success`,
+            type: "account_onboarding",
         });
-        accountId = account.id;
-        await supabase
-            .from("facilities")
-            .update({ stripe_account_id: accountId } as never)
-            .eq("id", facility.id);
+
+        return NextResponse.json({ url: link.url });
+    } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : "Stripe error";
+        return NextResponse.json({ error: message }, { status: 500 });
     }
-
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL!;
-    const link = await getStripe().accountLinks.create({
-        account: accountId,
-        refresh_url: `${appUrl}/en/dashboard/facility?stripe=refresh`,
-        return_url: `${appUrl}/en/dashboard/facility?stripe=success`,
-        type: "account_onboarding",
-    });
-
-    return NextResponse.json({ url: link.url });
 }

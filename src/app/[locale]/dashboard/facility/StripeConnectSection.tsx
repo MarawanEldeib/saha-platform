@@ -16,12 +16,16 @@ export function StripeConnectSection({ isConnected }: Props) {
     function handleConnect() {
         setError(null);
         startTransition(async () => {
-            const res = await fetch("/api/stripe/connect", { method: "POST" });
-            const json = await res.json();
-            if (json.url) {
-                window.location.href = json.url;
-            } else {
-                setError(json.error ?? "Something went wrong");
+            try {
+                const res = await fetch("/api/stripe/connect", { method: "POST" });
+                const json = await res.json();
+                if (json.url) {
+                    window.location.href = json.url;
+                } else {
+                    setError(json.error ?? "Something went wrong");
+                }
+            } catch {
+                setError("Something went wrong. Please try again.");
             }
         });
     }
