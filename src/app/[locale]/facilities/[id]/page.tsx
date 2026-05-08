@@ -33,7 +33,12 @@ export default async function FacilityDetailPage({
     const { id } = await params;
     const t = await getTranslations("facility");
     const tf = await getTranslations("facility_form");
+    const tc = await getTranslations("common");
     const tSports = await getTranslations("sports");
+    const sportName = (name: string) =>
+        (["Padel", "Pickleball", "Tennis", "Squash", "Badminton"] as const).includes(name as never)
+            ? tSports(name as Parameters<typeof tSports>[0])
+            : name;
     const locale = await getLocale();
     const supabase = await createClient();
 
@@ -79,8 +84,8 @@ export default async function FacilityDetailPage({
                     <h1 className="text-3xl font-bold text-gray-900 dark:text-white">{facility.name}</h1>
                     <div className="flex items-center gap-2 mt-2 text-gray-500 dark:text-gray-400">
                         <MapPin className="h-4 w-4" />
-                        <span className="text-sm">
-                            {facility.address}, {facility.city}, {facility.postal_code}
+                        <span className="text-sm" dir="ltr">
+                            {facility.address}, {facility.city}{facility.postal_code ? `, ${facility.postal_code}` : ""}
                         </span>
                     </div>
                     <div className="flex items-center gap-3 mt-3">
@@ -132,7 +137,7 @@ export default async function FacilityDetailPage({
                             <div className="flex flex-wrap gap-2">
                                 {facility.facility_sports.map((fs: { sport_id: number; sports: { name: string } }) => (
                                     <span key={fs.sport_id} className="px-3 py-1 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 text-sm rounded-full font-medium">
-                                        {tSports(fs.sports.name as Parameters<typeof tSports>[0])}
+                                        {sportName(fs.sports.name)}
                                     </span>
                                 ))}
                             </div>
@@ -215,7 +220,7 @@ export default async function FacilityDetailPage({
                                     const dayKey = DAY_KEYS[h.day_of_week];
                                     return (
                                         <div key={h.id} className="flex justify-between text-sm">
-                                            <span className="capitalize text-gray-600 dark:text-gray-400">{dayKey}</span>
+                                            <span className="capitalize text-gray-600 dark:text-gray-400">{tc(dayKey as Parameters<typeof tc>[0])}</span>
                                             {h.is_closed ? (
                                                 <span className="text-gray-400 dark:text-gray-600">{t("closed")}</span>
                                             ) : (

@@ -61,7 +61,7 @@ export default async function LocaleLayout({
         <NextIntlClientProvider locale={locale} messages={messages}>
             <Navbar profile={profile} />
             <main className="min-h-[calc(100vh-4rem)]">{children}</main>
-            <Footer isLoggedIn={!!user} />
+            <Footer isLoggedIn={!!user} role={profile?.role ?? null} />
             <CookieBanner />
         </NextIntlClientProvider>
     );

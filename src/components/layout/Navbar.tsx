@@ -88,22 +88,21 @@ export function Navbar({ profile }: NavbarProps) {
 
                     {/* Right Actions */}
                     <div className="hidden md:flex items-center gap-3">
-                        <div className="flex items-center gap-2">
-                            <span className="text-xs text-gray-500 dark:text-gray-400">
-                                {t("language")}
-                            </span>
-                            <select
-                                value={locale}
-                                onChange={(event) => handleLocaleChange(event.target.value)}
-                                className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-sm text-gray-700 dark:text-gray-200 ps-3 pe-8 py-1.5 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                                aria-label={t("language")}
-                            >
-                                {localeOptions.map((option) => (
-                                    <option key={option.value} value={option.value}>
-                                        {option.label}
-                                    </option>
-                                ))}
-                            </select>
+                        <div className="flex items-center rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+                            {localeOptions.map((option) => (
+                                <button
+                                    key={option.value}
+                                    onClick={() => handleLocaleChange(option.value)}
+                                    className={`px-3 py-1.5 text-xs font-medium transition-colors ${
+                                        locale === option.value
+                                            ? "bg-emerald-600 text-white"
+                                            : "text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800"
+                                    }`}
+                                    aria-label={option.label}
+                                >
+                                    {option.value.toUpperCase()}
+                                </button>
+                            ))}
                         </div>
                         {profile ? (
                             <>
@@ -176,26 +175,23 @@ export function Navbar({ profile }: NavbarProps) {
             {/* Mobile menu */}
             {menuOpen && (
                 <div className="md:hidden border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 px-4 py-3 space-y-1">
-                    <div className="px-3 py-2">
-                        <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1" htmlFor="language-select-mobile">
-                            {t("language")}
-                        </label>
-                        <select
-                            id="language-select-mobile"
-                            value={locale}
-                            onChange={(event) => {
-                                handleLocaleChange(event.target.value);
-                                setMenuOpen(false);
-                            }}
-                            className="w-full rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-sm text-gray-700 dark:text-gray-200 ps-3 pe-8 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                            aria-label={t("language")}
-                        >
+                    <div className="px-3 py-2 flex items-center gap-2">
+                        <span className="text-xs text-gray-500 dark:text-gray-400">{t("language")}</span>
+                        <div className="flex items-center rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
                             {localeOptions.map((option) => (
-                                <option key={option.value} value={option.value}>
-                                    {option.label}
-                                </option>
+                                <button
+                                    key={option.value}
+                                    onClick={() => { handleLocaleChange(option.value); setMenuOpen(false); }}
+                                    className={`px-3 py-1.5 text-xs font-medium transition-colors ${
+                                        locale === option.value
+                                            ? "bg-emerald-600 text-white"
+                                            : "text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800"
+                                    }`}
+                                >
+                                    {option.value.toUpperCase()}
+                                </button>
                             ))}
-                        </select>
+                        </div>
                     </div>
                     {navLinks.map((link) => (
                         <Link

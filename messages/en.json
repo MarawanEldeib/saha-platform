@@ -93,7 +93,12 @@
         "level_advanced": "Advanced",
         "submit": "Post",
         "login_prompt": "Log in to post a matchmaking request.",
-        "no_posts": "No posts yet. Be the first!"
+        "no_posts": "No posts yet. Be the first!",
+        "any_sport": "Any sport",
+        "location_label": "Location (optional)",
+        "location_placeholder": "e.g. Dubai Marina",
+        "message_placeholder": "Describe what you're looking for...",
+        "anonymous": "Anonymous"
     },
     "events": {
         "title": "Upcoming Events",
@@ -460,6 +465,7 @@
         "terms_of_service": "Terms of Service",
         "impressum": "Impressum",
         "contact": "Contact",
-        "copyright": "© {year} Saha Platform. All rights reserved."
+        "copyright": "© {year} Saha Platform. All rights reserved.",
+        "business_login": "Business account login"
     }
 }

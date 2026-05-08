@@ -73,6 +73,9 @@ export function AvailabilityClient({ courts, slots, selectedCourtId, selectedDat
     const router = useRouter();
     const pathname = usePathname();
     const tSports = useTranslations("sports");
+    const knownSports = ["Padel", "Pickleball", "Tennis", "Squash", "Badminton"] as const;
+    const sportName = (name: string) =>
+        knownSports.includes(name as typeof knownSports[number]) ? tSports(name as typeof knownSports[number]) : name;
     const [isPending, startTransition] = useTransition();
 
     const [showAddForm, setShowAddForm] = useState(false);
@@ -155,7 +158,7 @@ export function AvailabilityClient({ courts, slots, selectedCourtId, selectedDat
                 >
                     {courts.map((c) => (
                         <option key={c.id} value={c.id}>
-                            {c.name}{c.sports ? ` — ${tSports(c.sports.name as Parameters<typeof tSports>[0])}` : ""}
+                            {c.name}{c.sports ? ` — ${sportName(c.sports.name)}` : ""}
                         </option>
                     ))}
                 </select>

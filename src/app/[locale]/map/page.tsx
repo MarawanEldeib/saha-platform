@@ -30,6 +30,9 @@ export default function MapPage() {
     const t = useTranslations("map");
     const tSports = useTranslations("sports");
     const locale = useLocale();
+    const knownSports = ["Padel", "Pickleball", "Tennis", "Squash", "Badminton"] as const;
+    const sportName = (name: string) =>
+        knownSports.includes(name as typeof knownSports[number]) ? tSports(name as typeof knownSports[number]) : name;
 
     const [sports, setSports] = React.useState<Sport[]>([]);
     const [facilities, setFacilities] = React.useState<FacilityResult[]>([]);
@@ -137,7 +140,7 @@ export default function MapPage() {
                         <option value="">{t("filter_sport")}</option>
                         {sports.map((s) => (
                             <option key={s.id} value={s.id}>
-                                {tSports(s.name as Parameters<typeof tSports>[0])}
+                                {sportName(s.name)}
                             </option>
                         ))}
                     </select>

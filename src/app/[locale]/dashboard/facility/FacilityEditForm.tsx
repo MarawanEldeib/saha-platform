@@ -33,6 +33,9 @@ interface Props {
 export function FacilityEditForm({ facility, allSports, currentSportIds, initialImages }: Props) {
     const t = useTranslations("facility_form");
     const tSports = useTranslations("sports");
+    const knownSports = ["Padel", "Pickleball", "Tennis", "Squash", "Badminton"] as const;
+    const sportName = (name: string) =>
+        knownSports.includes(name as typeof knownSports[number]) ? tSports(name as typeof knownSports[number]) : name;
     const [serverError, setServerError] = React.useState<string | null>(null);
     const [saved, setSaved] = React.useState(false);
     const [sportIds, setSportIds] = React.useState<number[]>(currentSportIds);
@@ -132,7 +135,7 @@ export function FacilityEditForm({ facility, allSports, currentSportIds, initial
                                     : "border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:border-gray-300"
                                 }`}
                         >
-                            {tSports(sport.name as Parameters<typeof tSports>[0])}
+                            {sportName(sport.name)}
                         </button>
                     ))}
                 </div>

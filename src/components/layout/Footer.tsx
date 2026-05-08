@@ -2,7 +2,7 @@ import Link from "next/link";
 import { useLocale, useTranslations } from "next-intl";
 import { MapPin, Mail } from "lucide-react";
 
-export function Footer({ isLoggedIn = false }: { isLoggedIn?: boolean }) {
+export function Footer({ isLoggedIn = false, role = null }: { isLoggedIn?: boolean; role?: string | null }) {
     const tn = useTranslations("nav");
     const tf = useTranslations("footer");
     const locale = useLocale();
@@ -34,14 +34,25 @@ export function Footer({ isLoggedIn = false }: { isLoggedIn?: boolean }) {
                         </ul>
                     </div>
 
-                    {/* Business */}
-                    <div>
-                        <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3">{tf("business")}</h3>
-                        <ul className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
-                            <li><Link href={isLoggedIn ? `/${locale}/dashboard` : `/${locale}/register?role=business`} className="hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors">{tf("list_facility")}</Link></li>
-                            <li><Link href={isLoggedIn ? `/${locale}/dashboard` : `/${locale}/login`} className="hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors">{tf("business_dashboard")}</Link></li>
-                        </ul>
-                    </div>
+                    {/* Business — only show to business/admin users or guests; hide for regular players */}
+                    {(role === "business" || role === "admin" || !isLoggedIn) && (
+                        <div>
+                            <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3">{tf("business")}</h3>
+                            <ul className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
+                                {(role === "business" || role === "admin") ? (
+                                    <>
+                                        <li><Link href={`/${locale}/dashboard`} className="hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors">{tf("list_facility")}</Link></li>
+                                        <li><Link href={`/${locale}/dashboard`} className="hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors">{tf("business_dashboard")}</Link></li>
+                                    </>
+                                ) : (
+                                    <>
+                                        <li><Link href={`/${locale}/register?role=business`} className="hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors">{tf("list_facility")}</Link></li>
+                                        <li><Link href={`/${locale}/login`} className="hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors">{tf("business_login")}</Link></li>
+                                    </>
+                                )}
+                            </ul>
+                        </div>
+                    )}
 
                     {/* Legal */}
                     <div>
