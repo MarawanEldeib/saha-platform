@@ -546,8 +546,8 @@ export async function createBookingAndCheckoutAction(
                 currency: "aed",
                 unit_amount: Math.round(totalAed * 100),
                 product_data: {
-                    name: `${court.name} — ${date} ${startTime}–${endTime}`,
-                    description: facilityData?.name ?? undefined,
+                    name: facilityData?.name ? `${facilityData.name} — ${court.name}` : court.name,
+                    description: `${date} · ${startTime}–${endTime}`,
                 },
             },
         }],
