@@ -64,26 +64,11 @@ CREATE TABLE public.sports (
 );
 
 INSERT INTO public.sports (name, icon) VALUES
-  ('Football', 'circle-dot'),
-  ('Basketball', 'dribbble'),
+  ('Padel', 'circle'),
   ('Tennis', 'circle'),
-  ('Volleyball', 'circle'),
-  ('Swimming', 'waves'),
-  ('Badminton', 'circle'),
-  ('Table Tennis', 'table'),
-  ('Gym / Fitness', 'dumbbell'),
-  ('Running / Track', 'footprints'),
-  ('Climbing', 'mountain'),
-  ('Yoga', 'flower'),
-  ('Martial Arts', 'shield'),
-  ('Hockey', 'hockey-puck'),
-  ('Baseball / Softball', 'baseball'),
-  ('Rugby', 'oval'),
-  ('Handball', 'hand'),
   ('Squash', 'square'),
-  ('Golf', 'golf'),
-  ('Cycling', 'bike'),
-  ('Other', 'activity');
+  ('Badminton', 'circle'),
+  ('Pickleball', 'circle');
 
 -- ---------------------------------------------------------------------------
 -- 4. Facilities

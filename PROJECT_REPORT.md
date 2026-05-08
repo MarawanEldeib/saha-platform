@@ -104,7 +104,7 @@ The Supabase PostgreSQL database contains the following tables (all with Row Lev
 | Table | Description |
 |---|---|
 | `profiles` | Extends `auth.users`. One row per user. Stores `role`, `display_name`, `avatar_url`. Auto-created on sign-up via a PostgreSQL trigger. |
-| `sports` | Reference table of 20 sport types (Football, Basketball, Swimming, Gym, etc.) with icon names. |
+| `sports` | Reference table of racket sports: Padel, Tennis, Squash, Badminton, Pickleball. |
 | `facilities` | Core facility listings. Includes name, address, city, postal code, phone, website, PostGIS `GEOGRAPHY(POINT, 4326)` location, and approval status. |
 | `facility_sports` | Many-to-many join between facilities and sports. |
 | `facility_hours` | Operating hours per day of week (0–6 = Mon–Sun) with open/close times and `is_closed` flag. |
