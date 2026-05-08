@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { CalendarDays, TrendingUp, CheckCircle, AlertCircle } from "lucide-react";
 import { ExportButton } from "./ExportButton";
 import { OwnerCancelButton } from "./OwnerCancelButton";
+import { getActiveFacility } from "@/lib/facility-context";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = { title: "Bookings & Revenue – Saha" };
@@ -24,13 +25,7 @@ export default async function OwnerBookingsPage() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) redirect(`/${locale}/login`);
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: facility } = await (supabase as any)
-        .from("facilities")
-        .select("id, name, stripe_account_id")
-        .eq("owner_id", user.id)
-        .single();
-
+    const facility = await getActiveFacility(supabase, user.id);
     if (!facility) redirect(`/${locale}/dashboard/onboarding`);
 
     // Get all court IDs for this facility

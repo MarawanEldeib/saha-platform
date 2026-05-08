@@ -1,18 +1,23 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { getStripe } from "@/lib/stripe";
+import { getActiveFacility } from "@/lib/facility-context";
 
 export async function POST() {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    // Fetch the facility owned by this user
+    // Connect/disconnect operate on the owner's currently-active facility.
+    // Multi-facility owners switch via the dashboard sidebar; the cookie
+    // tells us which one to act on.
+    const active = await getActiveFacility(supabase, user.id);
+    if (!active) return NextResponse.json({ error: "Facility not found" }, { status: 404 });
+
     const { data: facility } = await supabase
         .from("facilities")
         .select("id, name, stripe_account_id")
-        .eq("owner_id", user.id)
-        .limit(1)
+        .eq("id", active.id)
         .single();
 
     if (!facility) return NextResponse.json({ error: "Facility not found" }, { status: 404 });

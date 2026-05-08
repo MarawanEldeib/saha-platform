@@ -13,6 +13,8 @@ import {
     ScanLine,
     BookOpen,
 } from "lucide-react";
+import { FacilitySwitcher } from "@/components/layout/FacilitySwitcher";
+import { getActiveFacility, listOwnerFacilities } from "@/lib/facility-context";
 
 const navItems = [
     { href: "dashboard", labelKey: "overview", icon: LayoutDashboard },
@@ -47,10 +49,20 @@ export default async function DashboardLayout({
         redirect(`/${locale}`);
     }
 
+    const facilities = await listOwnerFacilities(supabase, user.id);
+    const active = await getActiveFacility(supabase, user.id);
+
     return (
         <div className="flex min-h-[calc(100vh-4rem)]">
             {/* Sidebar */}
             <aside className="hidden md:flex flex-col w-56 shrink-0 bg-white dark:bg-gray-900 border-e border-gray-200 dark:border-gray-800 p-4 gap-1">
+                <div className="mb-3">
+                    <FacilitySwitcher
+                        facilities={facilities.map((f) => ({ id: f.id, name: f.name }))}
+                        activeFacilityId={active?.id ?? null}
+                        locale={locale}
+                    />
+                </div>
                 {navItems.map(({ href, labelKey, icon: Icon }) => (
                     <Link
                         key={href}

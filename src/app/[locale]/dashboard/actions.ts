@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { headers } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { getLocale } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import { facilityUpdateSchema, profileUpdateSchema, courtSchema, type CourtInput, availabilitySlotSchema, facilityHoursSchema } from "@/lib/validations";
@@ -9,6 +9,11 @@ import type { Database } from "@/types/database";
 import type Stripe from "stripe";
 import { getStripe, PLATFORM_FEE_PERCENT } from "@/lib/stripe";
 import { logAuditEvent } from "@/lib/audit";
+import {
+    FACILITY_COOKIE_NAME,
+    FACILITY_COOKIE_MAX_AGE,
+    getActiveFacility,
+} from "@/lib/facility-context";
 
 type FacilityUpdate = Database["public"]["Tables"]["facilities"]["Update"];
 type FacilityInsert = Database["public"]["Tables"]["facility_sports"]["Insert"];
@@ -36,13 +41,58 @@ async function geocodeAddress(address: string, city: string): Promise<string | n
 }
 
 // ---------------------------------------------------------------------------
-// Facility: update core details
+// Facility selection: set the cookie that scopes dashboard pages to a
+// specific facility owned by the caller. SAH-65.
+// ---------------------------------------------------------------------------
+export async function setActiveFacilityAction(facilityId: string) {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { error: "Not authenticated" };
+
+    // Verify the caller owns this facility before trusting the cookie value.
+    const { data: facility } = await supabase
+        .from("facilities")
+        .select("id")
+        .eq("id", facilityId)
+        .eq("owner_id", user.id)
+        .single();
+    if (!facility) return { error: "Access denied" };
+
+    const cookieStore = await cookies();
+    cookieStore.set(FACILITY_COOKIE_NAME, facilityId, {
+        path: "/",
+        maxAge: FACILITY_COOKIE_MAX_AGE,
+        httpOnly: true,
+        sameSite: "lax",
+        secure: process.env.NODE_ENV === "production",
+    });
+
+    revalidatePath("/", "layout");
+    return { success: true };
+}
+
+// ---------------------------------------------------------------------------
+// Facility: update core details — scoped to a specific facility id passed
+// in the form (SAH-65). Previously updated every facility owned by the
+// caller, which would have been wrong as soon as a single owner had two.
 // ---------------------------------------------------------------------------
 export async function updateFacilityAction(formData: FormData) {
     const supabase = await createClient();
     const locale = await getLocale();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return { error: "Not authenticated" };
+
+    const facilityId = formData.get("facility_id") as string;
+    if (!facilityId) return { error: "Facility id missing" };
+
+    // Verify ownership before updating.
+    const { data: own } = await supabase
+        .from("facilities")
+        .select("id")
+        .eq("id", facilityId)
+        .eq("owner_id", user.id)
+        .single();
+    if (!own) return { error: "Access denied" };
 
     const raw = {
         name: formData.get("name") as string,
@@ -70,7 +120,7 @@ export async function updateFacilityAction(formData: FormData) {
     const { error } = await supabase
         .from("facilities")
         .update(update)
-        .eq("owner_id", user.id);
+        .eq("id", facilityId);
 
     if (error) return { error: error.message };
     revalidatePath(`/${locale}/dashboard/facility`);

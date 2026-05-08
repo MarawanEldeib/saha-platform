@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { NewEventForm } from "./NewEventForm";
 import { Badge } from "@/components/ui/Badge";
 import { Calendar } from "lucide-react";
+import { getActiveFacility } from "@/lib/facility-context";
 
 export const metadata = { title: "Events – Saha" };
 
@@ -13,15 +14,7 @@ export default async function EventsPage() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) redirect(`/${locale}/login`);
 
-    // Get facility ID for the user (most recent, tolerates duplicates from testing)
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: facilityRows } = await (supabase as any)
-        .from("facilities")
-        .select("id")
-        .eq("owner_id", user.id)
-        .order("created_at", { ascending: false })
-        .limit(1);
-    const facility = facilityRows?.[0] ?? null;
+    const facility = await getActiveFacility(supabase, user.id);
 
     if (!facility) {
         return (

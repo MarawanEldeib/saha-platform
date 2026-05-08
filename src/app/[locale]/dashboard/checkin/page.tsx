@@ -4,6 +4,7 @@ import { getLocale } from "next-intl/server";
 import { format } from "date-fns";
 import { CheckCircle2, Clock, Users, QrCode } from "lucide-react";
 import { CheckInButton } from "./CheckInButton";
+import { getActiveFacility } from "@/lib/facility-context";
 
 export const metadata = { title: "Check-in – Saha" };
 
@@ -14,12 +15,7 @@ export default async function CheckInPage() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) redirect(`/${locale}/login`);
 
-    const { data: facility } = await supabase
-        .from("facilities")
-        .select("id, name")
-        .eq("owner_id", user.id)
-        .single();
-
+    const facility = await getActiveFacility(supabase, user.id);
     if (!facility) redirect(`/${locale}/dashboard`);
 
     const today = new Date().toISOString().split("T")[0];

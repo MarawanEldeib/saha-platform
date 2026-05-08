@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { getLocale } from "next-intl/server";
 import { CourtsClient } from "./CourtsClient";
 import type { Sport } from "@/types/database";
+import { getActiveFacility } from "@/lib/facility-context";
 
 export const metadata = { title: "Courts" };
 
@@ -26,14 +27,7 @@ export default async function CourtsPage() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) redirect(`/${locale}/login`);
 
-    const { data: facilityRows } = await supabase
-        .from("facilities")
-        .select("id, name")
-        .eq("owner_id", user.id)
-        .order("created_at", { ascending: false })
-        .limit(1);
-
-    const facility = facilityRows?.[0] ?? null;
+    const facility = await getActiveFacility(supabase, user.id);
     if (!facility) redirect(`/${locale}/dashboard/onboarding`);
 
     const [{ data: courts }, { data: sports }] = await Promise.all([
