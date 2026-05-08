@@ -7,10 +7,6 @@
         {
             "path": "/api/cron/mark-no-shows",
             "schedule": "0 23 * * *"
-        },
-        {
-            "path": "/api/cron/review-prompts",
-            "schedule": "0 * * * *"
         }
     ]
 }

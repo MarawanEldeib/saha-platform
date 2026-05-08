@@ -1,11 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { logAuditEvent } from "@/lib/audit";
+import { GET as runReviewPrompts } from "../review-prompts/route";
 
 /**
  * SAH-86: Mark yesterday's confirmed bookings as no_show and increment the
  * player's reliability counter. Idempotent — re-running on the same day is a
  * no-op because the matching set narrows after the first run.
+ *
+ * Also chains the SAH-94 review-prompts pass at the end so we stay within
+ * Vercel's free-tier cron-count limit. Both jobs operate on yesterday's
+ * bookings, so a single nightly invocation makes sense.
  *
  * Schedule via vercel.json — runs daily at 23:00 UTC (03:00 GST).
  */
@@ -72,5 +77,16 @@ export async function GET(req: NextRequest) {
             .eq("id", playerId);
     }
 
-    return NextResponse.json({ marked, players_affected: playerCounts.size });
+    // Chain the daily review-prompts pass. Either result is fine — log on
+    // failure but never block the no-show cron's success.
+    let reviewPrompts: { sent?: number; skipped?: number; error?: string } = {};
+    try {
+        const res = await runReviewPrompts(req);
+        reviewPrompts = await res.json();
+    } catch (err) {
+        console.error("[mark-no-shows] chained review-prompts failed", err);
+        reviewPrompts = { error: "review_prompts_failed" };
+    }
+
+    return NextResponse.json({ marked, players_affected: playerCounts.size, review_prompts: reviewPrompts });
 }
