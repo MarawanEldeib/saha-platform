@@ -779,6 +779,78 @@ export async function cancelBookingAction(bookingId: string) {
     return { success: true, refunded };
 }
 
+// ---------------------------------------------------------------------------
+// Booking: cancel by facility owner — full refund regardless of 24h window.
+// SAH-87: closes the gap where RLS allows owners to UPDATE bookings but no
+// action handles the refund + notification side. If we let an owner just
+// flip status='cancelled' the player loses money silently.
+// ---------------------------------------------------------------------------
+export async function ownerCancelBookingAction(bookingId: string, reason: string) {
+    const supabase = await createClient();
+    const locale = await getLocale();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { error: "Not authenticated" };
+
+    // Verify caller owns the facility containing the court for this booking.
+    const { data: booking } = await supabase
+        .from("bookings")
+        .select(`
+            id, status, availability_id, court_id,
+            courts(facility_id, facilities(owner_id))
+        `)
+        .eq("id", bookingId)
+        .single();
+
+    if (!booking) return { error: "Booking not found" };
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const ownerId = (booking as any).courts?.facilities?.owner_id;
+    if (ownerId !== user.id) return { error: "Access denied" };
+
+    if (!["confirmed", "pending"].includes(booking.status)) {
+        return { error: "This booking cannot be cancelled" };
+    }
+
+    // Issue full refund regardless of window — owner-initiated cancellations
+    // should never punish the player.
+    const { data: payment } = await supabase
+        .from("payments")
+        .select("stripe_payment_intent_id, status")
+        .eq("booking_id", bookingId)
+        .single();
+
+    let refunded = false;
+    if (payment?.stripe_payment_intent_id && payment.status === "succeeded") {
+        try {
+            await getStripe().refunds.create({ payment_intent: payment.stripe_payment_intent_id });
+            await supabase.from("payments").update({ status: "refunded" } as never).eq("booking_id", bookingId);
+            refunded = true;
+        } catch (err) {
+            console.error("[ownerCancel] refund failed for", bookingId, err);
+            // Continue cancelling so the slot is released. Refund will be
+            // retried via the audit trail / Stripe dashboard.
+        }
+    }
+
+    await supabase.from("bookings").update({ status: "cancelled" } as never).eq("id", bookingId);
+    await supabase
+        .from("court_availability")
+        .update({ is_booked: false } as never)
+        .eq("id", booking.availability_id);
+
+    await logAuditEvent({
+        actorId: user.id,
+        actorRole: "business",
+        action: "booking.cancel.owner",
+        targetType: "booking",
+        targetId: bookingId,
+        metadata: { reason: reason || null, refunded, prior_status: booking.status },
+    });
+
+    revalidatePath(`/${locale}/dashboard/bookings`);
+    revalidatePath(`/${locale}/bookings`);
+    return { success: true, refunded };
+}
+
 export async function markCheckedInAction(bookingId: string) {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
