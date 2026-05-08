@@ -1,5 +1,4 @@
 import { format, parse } from "date-fns";
-import QRCode from "qrcode";
 
 interface BookingConfirmationEmailProps {
   bookingId: string;
@@ -52,7 +51,8 @@ export async function generateBookingConfirmationEmail(
   const endDateTime = new Date(bookingDate);
   endDateTime.setHours(parseInt(endHour), parseInt(endMin));
 
-  // Generate QR code as base64
+  // Generate QR code as base64 using dynamic import
+  const QRCode = await import("qrcode");
   const qrCodeDataUrl = await QRCode.toDataURL(
     `${appUrl}/en/bookings/${bookingId}`,
     {
