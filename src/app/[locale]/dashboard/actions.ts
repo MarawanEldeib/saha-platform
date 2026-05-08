@@ -660,6 +660,55 @@ export async function retryPaymentAction(bookingId: string) {
     return { error: "Your payment session has expired. The slot has been released — please book again." };
 }
 
+// ---------------------------------------------------------------------------
+// Booking: cancel by player (refund if paid and within 24h of booking date)
+// ---------------------------------------------------------------------------
+export async function cancelBookingAction(bookingId: string) {
+    const supabase = await createClient();
+    const locale = await getLocale();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { error: "Not authenticated" };
+
+    const { data: booking } = await supabase
+        .from("bookings")
+        .select("id, status, date, start_time, availability_id")
+        .eq("id", bookingId)
+        .eq("player_id", user.id)
+        .single();
+
+    if (!booking) return { error: "Booking not found" };
+    if (!["confirmed", "pending"].includes(booking.status)) return { error: "This booking cannot be cancelled" };
+
+    // Check cancellation window: must be >24h before the booking start
+    const bookingStart = new Date(`${booking.date}T${booking.start_time}`);
+    const hoursUntil = (bookingStart.getTime() - Date.now()) / 3_600_000;
+    const withinWindow = hoursUntil > 24;
+
+    // Get payment record for refund
+    const { data: payment } = await supabase
+        .from("payments")
+        .select("stripe_payment_intent_id, amount, status")
+        .eq("booking_id", bookingId)
+        .single();
+
+    // Issue Stripe refund if paid and within window
+    if (withinWindow && payment?.stripe_payment_intent_id && payment.status === "paid") {
+        try {
+            await getStripe().refunds.create({ payment_intent: payment.stripe_payment_intent_id });
+            await supabase.from("payments").update({ status: "refunded" } as never).eq("booking_id", bookingId);
+        } catch {
+            // refund failed — still cancel the booking
+        }
+    }
+
+    // Cancel booking + release slot
+    await supabase.from("bookings").update({ status: "cancelled" } as never).eq("id", bookingId);
+    await supabase.from("court_availability").update({ is_booked: false } as never).eq("id", booking.availability_id);
+
+    revalidatePath(`/${locale}/bookings`);
+    return { success: true, refunded: withinWindow && payment?.status === "paid" };
+}
+
 export async function markCheckedInAction(bookingId: string) {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
