@@ -21,6 +21,21 @@ export async function POST(req: NextRequest) {
 
     const supabase = createAdminClient();
 
+    // Idempotency: insert the event id first. If it already exists, this is
+    // a retry — return 200 without re-running side effects (WhatsApp + email).
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error: dedupError } = await (supabase as any)
+        .from("stripe_events")
+        .insert({ id: event.id, type: event.type });
+    if (dedupError) {
+        // 23505 = unique_violation — already processed, ack and skip.
+        if (dedupError.code === "23505") {
+            return NextResponse.json({ received: true, duplicate: true });
+        }
+        // Anything else: let Stripe retry.
+        return NextResponse.json({ error: "Database error" }, { status: 500 });
+    }
+
     if (event.type === "checkout.session.completed") {
         const session = event.data.object as Stripe.Checkout.Session;
         const bookingId = session.metadata?.booking_id;
