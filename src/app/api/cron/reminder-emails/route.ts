@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { sendWhatsApp } from "@/lib/twilio";
 import { Resend } from "resend";
 import { format } from "date-fns";
@@ -11,44 +11,58 @@ export async function GET(req: NextRequest) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const supabase = await createClient();
+    // Use the admin (service-role) client. The cron runs without a session
+    // cookie, so the regular cookie-bound server client would have no auth
+    // user and RLS would hide every booking row.
+    const supabase = createAdminClient();
     const today = new Date().toISOString().split("T")[0];
 
     const { data: bookings } = await supabase
         .from("bookings")
         .select(`
             id, date, start_time, end_time, num_players, total_price, currency,
+            player_id,
             courts(name, facilities(name, address, city)),
-            profiles(display_name, email:id, phone)
+            profiles(display_name, phone)
         `)
         .eq("status", "confirmed")
         .eq("date", today)
         .eq("reminder_sent", false);
 
     let sent = 0;
+    let failed = 0;
 
     for (const booking of bookings ?? []) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const court = (booking as any).courts;
+        const b = booking as any;
+        const court = b.courts;
         const facility = court?.facilities;
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const profile = (booking as any).profiles;
+        const profile = b.profiles;
+
+        // The actual email lives on auth.users, not profiles. The previous
+        // version used a PostgREST alias `email:id` that aliased the UUID
+        // column AS email and tried to send mail to a UUID-shaped string.
+        let playerEmail: string | null = null;
+        if (b.player_id) {
+            const { data: { user } } = await supabase.auth.admin.getUserById(b.player_id);
+            playerEmail = user?.email ?? null;
+        }
 
         const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "";
         const bookingUrl = `${appUrl}/en/bookings/${booking.id}`;
         const readableDate = format(new Date(booking.date), "EEEE, MMMM d, yyyy");
 
         // Send email reminder
-        if (profile?.email) {
+        if (playerEmail) {
             await resend.emails.send({
                 from: "Saha <noreply@saha.ae>",
-                to: profile.email,
+                to: playerEmail,
                 subject: `Reminder: Your booking is today – ${court?.name}`,
                 html: `
                     <div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:24px">
                         <h2 style="font-size:20px;font-weight:700;margin-bottom:4px">Your booking is today!</h2>
                         <p style="color:#6b7280;margin-bottom:24px">
-                            Hi ${profile.display_name ?? "there"}, here's a reminder for your booking today.
+                            Hi ${profile?.display_name ?? "there"}, here's a reminder for your booking today.
                         </p>
                         <div style="background:#f9fafb;border-radius:12px;padding:20px;margin-bottom:24px">
                             <p style="margin:0 0 8px"><strong>Court:</strong> ${court?.name}</p>
@@ -63,7 +77,7 @@ export async function GET(req: NextRequest) {
                         </a>
                     </div>
                 `,
-            }).catch(() => {/* non-blocking */});
+            }).catch((err) => { console.error("reminder email failed", err); failed++; });
         }
 
         // Send WhatsApp reminder
@@ -76,7 +90,7 @@ export async function GET(req: NextRequest) {
                 `⏰ ${booking.start_time.slice(0, 5)} – ${booking.end_time.slice(0, 5)}\n` +
                 `📍 ${facility?.address}, ${facility?.city}\n\n` +
                 `View QR code: ${bookingUrl}`
-            ).catch(() => {/* non-blocking */});
+            ).catch((err) => { console.error("reminder whatsapp failed", err); failed++; });
         }
 
         await supabase
@@ -87,5 +101,5 @@ export async function GET(req: NextRequest) {
         sent++;
     }
 
-    return NextResponse.json({ sent });
+    return NextResponse.json({ sent, failed });
 }
