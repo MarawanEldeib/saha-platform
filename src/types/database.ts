@@ -54,6 +54,7 @@ export interface Database {
                     id: string;
                     owner_id: string;
                     name: string;
+                    slug: string;
                     description: string | null;
                     address: string;
                     city: string;
@@ -72,6 +73,7 @@ export interface Database {
                     id?: string;
                     owner_id: string;
                     name: string;
+                    slug?: string;
                     description?: string | null;
                     address: string;
                     city: string;
@@ -85,6 +87,7 @@ export interface Database {
                 };
                 Update: {
                     name?: string;
+                    slug?: string;
                     description?: string | null;
                     address?: string;
                     city?: string;
