@@ -691,8 +691,8 @@ export async function cancelBookingAction(bookingId: string) {
         .eq("booking_id", bookingId)
         .single();
 
-    // Issue Stripe refund if paid and within window
-    if (withinWindow && payment?.stripe_payment_intent_id && payment.status === "paid") {
+    // Issue Stripe refund if payment succeeded and within window
+    if (withinWindow && payment?.stripe_payment_intent_id && payment.status === "succeeded") {
         try {
             await getStripe().refunds.create({ payment_intent: payment.stripe_payment_intent_id });
             await supabase.from("payments").update({ status: "refunded" } as never).eq("booking_id", bookingId);
@@ -706,7 +706,7 @@ export async function cancelBookingAction(bookingId: string) {
     await supabase.from("court_availability").update({ is_booked: false } as never).eq("id", booking.availability_id);
 
     revalidatePath(`/${locale}/bookings`);
-    return { success: true, refunded: withinWindow && payment?.status === "paid" };
+    return { success: true, refunded: withinWindow && payment?.status === "succeeded" };
 }
 
 export async function markCheckedInAction(bookingId: string) {
