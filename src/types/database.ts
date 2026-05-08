@@ -66,6 +66,7 @@ export interface Database {
                     status: FacilityStatus;
                     rejection_reason: string | null;
                     stripe_account_id: string | null;
+                    currency: string;
                     created_at: string;
                     updated_at: string;
                 };
@@ -84,6 +85,7 @@ export interface Database {
                     location?: unknown | null;
                     status?: FacilityStatus;
                     stripe_account_id?: string | null;
+                    currency?: string;
                 };
                 Update: {
                     name?: string;
@@ -99,6 +101,7 @@ export interface Database {
                     status?: FacilityStatus;
                     rejection_reason?: string | null;
                     stripe_account_id?: string | null;
+                    currency?: string;
                     updated_at?: string;
                 };
                 Relationships: [
