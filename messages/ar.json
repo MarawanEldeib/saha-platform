@@ -353,7 +353,9 @@
         "stripe_connected": "تم ربط حساب Stripe",
         "stripe_not_connected": "غير مرتبط — لا يستطيع اللاعبون حجز ملاعبك حتى تربط Stripe.",
         "stripe_redirecting": "جارٍ التحويل…",
-        "stripe_connect": "ربط Stripe"
+        "stripe_connect": "ربط Stripe",
+        "stripe_disconnect": "قطع الاتصال",
+        "stripe_disconnect_confirm": "هل تريد قطع اتصال حساب Stripe؟ لن يتمكن اللاعبون من حجز ملاعبك حتى تعيد الاتصال."
     },
     "hours_form": {
         "heading": "ساعات العمل",

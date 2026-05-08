@@ -353,7 +353,9 @@
         "stripe_connected": "Stripe account connected",
         "stripe_not_connected": "Not connected — players cannot book your courts until you connect Stripe.",
         "stripe_redirecting": "Redirecting…",
-        "stripe_connect": "Connect Stripe"
+        "stripe_connect": "Connect Stripe",
+        "stripe_disconnect": "Disconnect",
+        "stripe_disconnect_confirm": "Disconnect your Stripe account? Players will not be able to book your courts until you reconnect."
     },
     "hours_form": {
         "heading": "Opening Hours",

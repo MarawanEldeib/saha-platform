@@ -8,12 +8,30 @@ type Props = {
     isConnected: boolean;
 };
 
-export function StripeConnectSection({ isConnected }: Props) {
+export function StripeConnectSection({ isConnected: initialConnected }: Props) {
     const t = useTranslations("facility_form");
+    const [connected, setConnected] = useState(initialConnected);
     const [showOnboarding, setShowOnboarding] = useState(false);
     const [loading, setLoading] = useState(false);
+    const [disconnecting, setDisconnecting] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const containerRef = useRef<HTMLDivElement>(null);
+
+    async function handleDisconnect() {
+        if (!confirm(t("stripe_disconnect_confirm"))) return;
+        setDisconnecting(true);
+        setError(null);
+        try {
+            const res = await fetch("/api/stripe/disconnect", { method: "POST" });
+            const json = await res.json();
+            if (json.error) setError(json.error);
+            else setConnected(false);
+        } catch {
+            setError("Something went wrong. Please try again.");
+        } finally {
+            setDisconnecting(false);
+        }
+    }
 
     useEffect(() => {
         if (!showOnboarding || !containerRef.current) return;
@@ -72,10 +90,21 @@ export function StripeConnectSection({ isConnected }: Props) {
             <h2 className="text-base font-semibold text-gray-900 dark:text-white mb-1">{t("stripe_heading")}</h2>
             <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">{t("stripe_desc")}</p>
 
-            {isConnected ? (
-                <div className="flex items-center gap-2 text-sm text-emerald-600 dark:text-emerald-400">
-                    <CheckCircle className="h-4 w-4" />
-                    {t("stripe_connected")}
+            {error && <p className="text-sm text-red-500 mb-3">{error}</p>}
+
+            {connected ? (
+                <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 text-sm text-emerald-600 dark:text-emerald-400">
+                        <CheckCircle className="h-4 w-4" />
+                        {t("stripe_connected")}
+                    </div>
+                    <button
+                        onClick={handleDisconnect}
+                        disabled={disconnecting}
+                        className="text-xs text-gray-400 hover:text-red-500 dark:hover:text-red-400 transition-colors disabled:opacity-50"
+                    >
+                        {disconnecting ? "…" : t("stripe_disconnect")}
+                    </button>
                 </div>
             ) : (
                 <div className="space-y-4">
@@ -83,8 +112,6 @@ export function StripeConnectSection({ isConnected }: Props) {
                         <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
                         <span>{t("stripe_not_connected")}</span>
                     </div>
-
-                    {error && <p className="text-sm text-red-500">{error}</p>}
 
                     {!showOnboarding && (
                         <button
