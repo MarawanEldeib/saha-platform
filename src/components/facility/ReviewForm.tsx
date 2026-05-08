@@ -54,6 +54,9 @@ export function ReviewForm({ facilityId, locale }: ReviewFormProps) {
         if (error) {
             if (error.code === "23505") {
                 setServerError("You have already reviewed this facility.");
+            } else if (error.code === "42501") {
+                // RLS denial — user has no completed booking at this facility.
+                setServerError("You can leave a review after your first completed booking here.");
             } else {
                 setServerError(error.message);
             }
