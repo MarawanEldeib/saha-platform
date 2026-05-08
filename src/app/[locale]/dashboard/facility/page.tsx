@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { FacilityEditForm } from "./FacilityEditForm";
 import { HoursForm } from "./HoursForm";
 import { StripeConnectSection } from "./StripeConnectSection";
+import { ShareableLinkCard } from "./ShareableLinkCard";
 
 export const metadata = { title: "Manage Facility – Saha" };
 
@@ -17,7 +18,7 @@ export default async function FacilityPage() {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data: facilityRows } = await (supabase as any)
         .from("facilities")
-        .select("id, name, description, address, city, postal_code, phone, website, stripe_account_id, facility_images(id, storage_path, display_order)")
+        .select("id, name, slug, description, address, city, postal_code, phone, website, stripe_account_id, facility_images(id, storage_path, display_order)")
         .eq("owner_id", user.id)
         .order("created_at", { ascending: false })
         .limit(1);
@@ -48,6 +49,7 @@ export default async function FacilityPage() {
                 <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{t("heading")}</h1>
                 <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{t("subheading")}</p>
             </div>
+            <ShareableLinkCard slug={facility.slug} locale={locale} />
             <FacilityEditForm
                 facility={facility}
                 allSports={allSports ?? []}
