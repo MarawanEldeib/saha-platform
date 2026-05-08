@@ -418,6 +418,7 @@ export interface Database {
                     qr_code_token: string;
                     notes: string | null;
                     reminder_sent: boolean;
+                    review_prompt_sent_at: string | null;
                     created_at: string;
                     updated_at: string;
                 };
