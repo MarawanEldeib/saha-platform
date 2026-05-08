@@ -76,16 +76,6 @@ export async function generateBookingConfirmationEmail(
     description: `Your booking at ${facilityName}\nCourt: ${courtName}\nPlayers: ${numPlayers}`,
   });
 
-  // Generate iCal for Apple Calendar
-  const iCalString = generateICalString({
-    title: `Court Booking - ${courtName}`,
-    startTime: startDateTime,
-    endTime: endDateTime,
-    location: `${facilityName}, ${facilityAddress}`,
-    description: `Your booking at ${facilityName}\nCourt: ${courtName}\nPlayers: ${numPlayers}`,
-    uid: `booking-${bookingId}@saha-platform.com`,
-  });
-
   // Generate WhatsApp share link
   const whatsappMessage = encodeURIComponent(
     `✅ Booking Confirmed!\n\n` +
@@ -371,37 +361,6 @@ function generateGoogleCalendarLink(params: CalendarLinkParams): string {
   return url.toString();
 }
 
-interface ICalParams {
-  title: string;
-  startTime: Date;
-  endTime: Date;
-  location: string;
-  description: string;
-  uid: string;
-}
-
-function generateICalString(params: ICalParams): string {
-  const formatDateTime = (date: Date): string => {
-    return date.toISOString().replace(/[-:]/g, "").split(".")[0] + "Z";
-  };
-
-  return `BEGIN:VCALENDAR
-VERSION:2.0
-PRODID:-//Saha Platform//EN
-CALSCALE:GREGORIAN
-METHOD:PUBLISH
-BEGIN:VEVENT
-UID:${params.uid}
-DTSTAMP:${formatDateTime(new Date())}
-DTSTART:${formatDateTime(params.startTime)}
-DTEND:${formatDateTime(params.endTime)}
-SUMMARY:${params.title}
-LOCATION:${params.location}
-DESCRIPTION:${params.description}
-END:VEVENT
-END:VCALENDAR`;
-}
-
 export async function sendBookingConfirmationEmail(
   props: BookingConfirmationEmailProps & { resendApiKey?: string }
 ): Promise<{ success: boolean; error?: string }> {
@@ -414,7 +373,7 @@ export async function sendBookingConfirmationEmail(
     const resend = new Resend(resendApiKey || process.env.RESEND_API_KEY);
 
     const result = await resend.emails.send({
-      from: "noreply@saha-platform.com",
+      from: "Saha <noreply@saha.ae>",
       to: props.playerEmail,
       subject: `Booking Confirmed - ${props.courtName} on ${props.date}`,
       html,
