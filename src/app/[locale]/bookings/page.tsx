@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
-import { getLocale } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
 import { format } from "date-fns";
 import { CheckCircle, Clock, XCircle, MapPin, Calendar } from "lucide-react";
 import Link from "next/link";
@@ -21,6 +21,7 @@ const STATUS_CONFIG = {
 export default async function MyBookingsPage() {
     const supabase = await createClient();
     const locale = await getLocale();
+    const t = await getTranslations("bookings");
 
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) redirect(`/${locale}/login`);
@@ -42,19 +43,19 @@ export default async function MyBookingsPage() {
     return (
         <div className="max-w-2xl mx-auto px-4 py-10 space-y-6">
             <div>
-                <h1 className="text-2xl font-bold text-gray-900 dark:text-white">My Bookings</h1>
-                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Your court booking history</p>
+                <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{t("title")}</h1>
+                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{t("subtitle")}</p>
             </div>
 
             {!bookings?.length ? (
                 <div className="text-center py-16 space-y-3">
                     <Calendar className="h-12 w-12 text-gray-300 dark:text-gray-600 mx-auto" />
-                    <p className="text-gray-500 dark:text-gray-400">No bookings yet</p>
+                    <p className="text-gray-500 dark:text-gray-400">{t("no_bookings")}</p>
                     <Link
                         href={`/${locale}/map`}
                         className="inline-block px-4 py-2 rounded-lg bg-gray-900 dark:bg-white text-white dark:text-gray-900 text-sm font-medium hover:opacity-90 transition-opacity"
                     >
-                        Find a court
+                        {t("find_court")}
                     </Link>
                 </div>
             ) : (
@@ -92,12 +93,12 @@ export default async function MyBookingsPage() {
                                         </div>
                                     )}
                                     <div className="flex justify-between text-sm">
-                                        <span className="text-gray-500 dark:text-gray-400">{booking.num_players} players · {booking.total_price} {booking.currency}</span>
+                                        <span className="text-gray-500 dark:text-gray-400">{booking.num_players} {t("players")} · {booking.total_price} {booking.currency}</span>
                                         <Link
                                             href={`/${locale}/bookings/${booking.id}`}
                                             className="text-emerald-600 dark:text-emerald-400 font-medium hover:underline"
                                         >
-                                            View details
+                                            {t("view_details")}
                                         </Link>
                                     </div>
                                 </div>

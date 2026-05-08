@@ -5,7 +5,7 @@ import { createServerClient } from "@supabase/ssr";
 
 const intlMiddleware = createMiddleware(routing);
 
-const LOCALE_PATTERN = /^\/(en|de)/;
+const LOCALE_PATTERN = /^\/(en|ar)/;
 const AUTH_PROTECTED = ["/dashboard", "/admin"];
 const ADMIN_ONLY = ["/admin"];
 const BUSINESS_OR_ADMIN = ["/dashboard"];

@@ -5,6 +5,7 @@ import { updateProfileAction } from "../actions";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { CheckCircle } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 interface Props {
     initialName: string;
@@ -12,6 +13,7 @@ interface Props {
 }
 
 export function ProfileForm({ initialName, initialPhone }: Props) {
+    const t = useTranslations("account");
     const [error, setError] = React.useState<string | null>(null);
     const [success, setSuccess] = React.useState(false);
     const [loading, setLoading] = React.useState(false);
@@ -31,30 +33,30 @@ export function ProfileForm({ initialName, initialPhone }: Props) {
     return (
         <form onSubmit={handleSubmit} className="space-y-4 max-w-sm">
             <Input
-                label="Display Name"
+                label={t("display_name")}
                 name="display_name"
                 defaultValue={initialName}
                 required
             />
             <div className="space-y-1">
                 <Input
-                    label="WhatsApp Phone Number"
+                    label={t("phone_label")}
                     name="phone"
                     type="tel"
-                    placeholder="+971501234567"
+                    placeholder={t("phone_placeholder")}
                     defaultValue={initialPhone}
                 />
                 <p className="text-xs text-gray-500 dark:text-gray-400">
-                    Include country code. Used to send booking confirmations and reminders via WhatsApp.
+                    {t("phone_hint")}
                 </p>
             </div>
             {error && <p className="text-sm text-red-500" role="alert">{error}</p>}
             {success && (
                 <p className="text-sm text-emerald-600 flex items-center gap-1">
-                    <CheckCircle className="h-4 w-4" /> Profile updated successfully!
+                    <CheckCircle className="h-4 w-4" /> {t("saved")}
                 </p>
             )}
-            <Button type="submit" variant="primary" loading={loading}>Save Changes</Button>
+            <Button type="submit" variant="primary" loading={loading}>{t("save")}</Button>
         </form>
     );
 }

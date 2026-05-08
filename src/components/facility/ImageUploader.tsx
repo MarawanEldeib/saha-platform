@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/client";
 import { cn, getStorageUrl } from "@/lib/utils";
 import { Button } from "@/components/ui/Button";
 import type { FacilityImage } from "@/types/database";
+import { useTranslations } from "next-intl";
 
 const ACCEPTED_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
 const DEFAULT_MAX_IMAGES = 10;
@@ -51,6 +52,7 @@ function getReadableName(item: ImageItem): string {
 }
 
 export function ImageUploader({ facilityId, initialImages = [], maxImages = DEFAULT_MAX_IMAGES }: ImageUploaderProps) {
+    const t = useTranslations("image_uploader");
     const supabase = React.useMemo(() => createClient(), []);
     const [items, setItems] = React.useState<ImageItem[]>(() => {
         const sorted = [...initialImages].sort(
@@ -221,7 +223,7 @@ export function ImageUploader({ facilityId, initialImages = [], maxImages = DEFA
 
             const availableSlots = maxImages - itemsRef.current.length;
             if (availableSlots <= 0) {
-                setError(`You can upload up to ${maxImages} images.`);
+                setError(t("max_images_error", { max: maxImages }));
                 return;
             }
 
@@ -229,12 +231,12 @@ export function ImageUploader({ facilityId, initialImages = [], maxImages = DEFA
             const rejected = files.filter((file) => !ACCEPTED_TYPES.has(file.type));
 
             if (rejected.length > 0) {
-                setError("Only JPEG, PNG, and WebP images are supported.");
+                setError(t("invalid_type_error"));
             }
 
             const nextFiles = accepted.slice(0, availableSlots);
             if (accepted.length > availableSlots) {
-                setError(`You can upload up to ${maxImages} images.`);
+                setError(t("max_images_error", { max: maxImages }));
             }
             if (nextFiles.length === 0) return;
 
@@ -360,16 +362,16 @@ export function ImageUploader({ facilityId, initialImages = [], maxImages = DEFA
                 <div className="flex flex-col items-center gap-2">
                     <UploadCloud className="h-6 w-6 text-emerald-500" />
                     <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                        Drag and drop images here
+                        {t("drag_drop")}
                     </p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">or click to browse</p>
-                    <p className="text-xs text-gray-400">JPEG, PNG, WebP. Up to {maxImages} images.</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">{t("or_browse")}</p>
+                    <p className="text-xs text-gray-400">{t("format_hint", { max: maxImages })}</p>
                 </div>
             </div>
 
             <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
-                <span>{items.length} / {maxImages} images</span>
-                <span>Recommended: 1200x800 or larger</span>
+                <span>{items.length} / {maxImages}</span>
+                <span>{t("size_hint")}</span>
             </div>
 
             {error && (
@@ -405,9 +407,9 @@ export function ImageUploader({ facilityId, initialImages = [], maxImages = DEFA
                                         {getReadableName(item)}
                                     </p>
                                     <span className="text-xs text-gray-500 dark:text-gray-400">
-                                        {item.status === "uploading" && "Uploading"}
-                                        {item.status === "uploaded" && "Uploaded"}
-                                        {item.status === "error" && "Failed"}
+                                        {item.status === "uploading" && t("uploading")}
+                                        {item.status === "uploaded" && t("uploaded")}
+                                        {item.status === "error" && t("failed")}
                                     </span>
                                 </div>
 

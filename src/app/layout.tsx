@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Cairo } from "next/font/google";
 import { getLocale } from "next-intl/server";
 import "./globals.css";
 
-const inter = Inter({ subsets: ["latin"] });
+// Cairo supports both Arabic and Latin scripts
+const cairo = Cairo({ subsets: ["latin", "arabic"] });
 
 export const metadata: Metadata = {
   title: {
@@ -35,7 +36,7 @@ export default async function RootLayout({
 
   return (
     <html lang={locale} dir={locale === "ar" ? "rtl" : "ltr"} suppressHydrationWarning>
-      <body suppressHydrationWarning className={`${inter.className} antialiased`}>{children}</body>
+      <body suppressHydrationWarning className={`${cairo.className} antialiased`}>{children}</body>
     </html>
   );
 }

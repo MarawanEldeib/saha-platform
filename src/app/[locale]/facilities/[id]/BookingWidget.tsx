@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { getAvailableSlotsAction, createBookingAndCheckoutAction } from "@/app/[locale]/dashboard/actions";
 import { format } from "date-fns";
+import { useTranslations } from "next-intl";
 
 type Court = {
     id: string;
@@ -26,6 +27,7 @@ type Props = {
 };
 
 export function BookingWidget({ courts, isLoggedIn, locale }: Props) {
+    const t = useTranslations("booking_widget");
     const router = useRouter();
     const [isPending, startTransition] = useTransition();
     const [courtId, setCourtId] = useState(courts[0]?.id ?? "");
@@ -72,12 +74,12 @@ export function BookingWidget({ courts, isLoggedIn, locale }: Props) {
     if (!isLoggedIn) {
         return (
             <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-4 text-center space-y-3">
-                <p className="text-sm text-gray-600 dark:text-gray-400">Sign in to book a court</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">{t("sign_in_prompt")}</p>
                 <a
                     href={`/${locale}/login`}
                     className="block w-full px-4 py-2 rounded-lg bg-gray-900 dark:bg-white text-white dark:text-gray-900 text-sm font-medium hover:opacity-90 transition-opacity"
                 >
-                    Sign in
+                    {t("sign_in")}
                 </a>
             </div>
         );
@@ -86,7 +88,7 @@ export function BookingWidget({ courts, isLoggedIn, locale }: Props) {
     if (courts.length === 0) {
         return (
             <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-4">
-                <p className="text-sm text-gray-500 dark:text-gray-400">No courts available for booking.</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">{t("no_courts")}</p>
             </div>
         );
     }
@@ -102,11 +104,11 @@ export function BookingWidget({ courts, isLoggedIn, locale }: Props) {
 
     return (
         <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-4 space-y-4">
-            <h3 className="font-semibold text-gray-900 dark:text-white">Book a Court</h3>
+            <h3 className="font-semibold text-gray-900 dark:text-white">{t("heading")}</h3>
 
             {/* Court selector */}
             <div>
-                <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Court</label>
+                <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">{t("court_label")}</label>
                 <select
                     value={courtId}
                     onChange={(e) => { setCourtId(e.target.value); setSlots(null); setSelectedSlot(null); }}
@@ -114,7 +116,7 @@ export function BookingWidget({ courts, isLoggedIn, locale }: Props) {
                 >
                     {courts.map((c) => (
                         <option key={c.id} value={c.id}>
-                            {c.name} — {c.price_per_hour} AED/hr
+                            {c.name} — {c.price_per_hour} {t("price_suffix")}
                         </option>
                     ))}
                 </select>
@@ -122,7 +124,7 @@ export function BookingWidget({ courts, isLoggedIn, locale }: Props) {
 
             {/* Date picker */}
             <div>
-                <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Date</label>
+                <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">{t("date_label")}</label>
                 <input
                     type="date"
                     value={date}
@@ -138,14 +140,14 @@ export function BookingWidget({ courts, isLoggedIn, locale }: Props) {
                 disabled={loadingSlots}
                 className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 disabled:opacity-50 transition-colors"
             >
-                {loadingSlots ? "Checking…" : "Check Availability"}
+                {loadingSlots ? t("checking") : t("check_availability")}
             </button>
 
             {/* Slots */}
             {slots !== null && (
                 <div>
                     {slots.length === 0 ? (
-                        <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-2">No slots available on this date.</p>
+                        <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-2">{t("no_slots")}</p>
                     ) : (
                         <div className="grid grid-cols-2 gap-2">
                             {slots.map((slot) => (
@@ -169,7 +171,7 @@ export function BookingWidget({ courts, isLoggedIn, locale }: Props) {
             {selectedSlot && selectedCourt && (
                 <div className="border-t border-gray-200 dark:border-gray-700 pt-3 space-y-3">
                     <div className="flex justify-between text-sm">
-                        <span className="text-gray-500 dark:text-gray-400">Total</span>
+                        <span className="text-gray-500 dark:text-gray-400">{t("total")}</span>
                         <span className="font-semibold text-gray-900 dark:text-white">{totalPrice} AED</span>
                     </div>
                     {error && <p className="text-xs text-red-500">{error}</p>}
@@ -178,7 +180,7 @@ export function BookingWidget({ courts, isLoggedIn, locale }: Props) {
                         disabled={isPending}
                         className="w-full px-4 py-2.5 rounded-lg bg-gray-900 dark:bg-white text-white dark:text-gray-900 text-sm font-medium hover:opacity-90 disabled:opacity-50 transition-opacity"
                     >
-                        {isPending ? "Processing…" : "Book Now"}
+                        {isPending ? t("processing") : t("book_now")}
                     </button>
                 </div>
             )}

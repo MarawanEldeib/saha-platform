@@ -32,6 +32,7 @@ export default async function FacilityDetailPage({
 }) {
     const { id } = await params;
     const t = await getTranslations("facility");
+    const tf = await getTranslations("facility_form");
     const locale = await getLocale();
     const supabase = await createClient();
 
@@ -109,7 +110,7 @@ export default async function FacilityDetailPage({
                 </div>
             ) : (
                 <div className="rounded-xl border border-dashed border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900 px-4 py-10 text-center text-sm text-gray-500 dark:text-gray-400">
-                    No photos have been added yet.
+                    {tf("no_photos")}
                 </div>
             )}
 

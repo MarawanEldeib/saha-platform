@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
-import { getLocale } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
 import { redirect } from "next/navigation";
 import { FacilityEditForm } from "./FacilityEditForm";
 import { HoursForm } from "./HoursForm";
@@ -10,6 +10,7 @@ export const metadata = { title: "Manage Facility – Saha" };
 export default async function FacilityPage() {
     const supabase = await createClient();
     const locale = await getLocale();
+    const t = await getTranslations("facility_form");
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) redirect(`/${locale}/login`);
 
@@ -44,8 +45,8 @@ export default async function FacilityPage() {
     return (
         <div className="max-w-2xl space-y-6">
             <div className="mb-2">
-                <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Manage Facility</h1>
-                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Update your facility details, sports offered, and opening hours.</p>
+                <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{t("heading")}</h1>
+                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{t("subheading")}</p>
             </div>
             <FacilityEditForm
                 facility={facility}
