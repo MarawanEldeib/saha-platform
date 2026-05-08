@@ -32,6 +32,22 @@ export function Navbar({ profile }: NavbarProps) {
         { href: `/${locale}/events`, label: t("events") },
     ];
 
+    const localeOptions = [
+        { value: "en", label: "English" },
+        { value: "ar", label: "العربية" },
+    ];
+
+    const getPathWithLocale = (nextLocale: string) => {
+        const withoutLocale = pathname.replace(new RegExp(`^/${locale}(?=/|$)`), "");
+        return withoutLocale ? `/${nextLocale}${withoutLocale}` : `/${nextLocale}`;
+    };
+
+    const handleLocaleChange = (nextLocale: string) => {
+        if (nextLocale === locale) return;
+        router.push(getPathWithLocale(nextLocale));
+        router.refresh();
+    };
+
     const handleLogout = async () => {
         const supabase = createClient();
         await supabase.auth.signOut();
@@ -71,7 +87,24 @@ export function Navbar({ profile }: NavbarProps) {
                     </nav>
 
                     {/* Right Actions */}
-                    <div className="hidden md:flex items-center gap-2">
+                    <div className="hidden md:flex items-center gap-3">
+                        <div className="flex items-center gap-2">
+                            <span className="text-xs text-gray-500 dark:text-gray-400">
+                                {t("language")}
+                            </span>
+                            <select
+                                value={locale}
+                                onChange={(event) => handleLocaleChange(event.target.value)}
+                                className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-sm text-gray-700 dark:text-gray-200 ps-3 pe-8 py-1.5 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                                aria-label={t("language")}
+                            >
+                                {localeOptions.map((option) => (
+                                    <option key={option.value} value={option.value}>
+                                        {option.label}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
                         {profile ? (
                             <>
                                 {profile.role === "admin" && (
@@ -90,11 +123,11 @@ export function Navbar({ profile }: NavbarProps) {
                                     <>
                                         <Link href={`/${locale}/bookings`} className={ghostBtn}>
                                             <CalendarDays className="h-4 w-4" />
-                                            My Bookings
+                                            {t("bookings")}
                                         </Link>
                                         <Link href={`/${locale}/account/settings`} className={ghostBtn}>
                                             <Settings className="h-4 w-4" />
-                                            Settings
+                                            {t("settings")}
                                         </Link>
                                     </>
                                 )}
@@ -133,6 +166,27 @@ export function Navbar({ profile }: NavbarProps) {
             {/* Mobile menu */}
             {menuOpen && (
                 <div className="md:hidden border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 px-4 py-3 space-y-1">
+                    <div className="px-3 py-2">
+                        <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1" htmlFor="language-select-mobile">
+                            {t("language")}
+                        </label>
+                        <select
+                            id="language-select-mobile"
+                            value={locale}
+                            onChange={(event) => {
+                                handleLocaleChange(event.target.value);
+                                setMenuOpen(false);
+                            }}
+                            className="w-full rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-sm text-gray-700 dark:text-gray-200 ps-3 pe-8 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                            aria-label={t("language")}
+                        >
+                            {localeOptions.map((option) => (
+                                <option key={option.value} value={option.value}>
+                                    {option.label}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
                     {navLinks.map((link) => (
                         <Link
                             key={link.href}
@@ -155,11 +209,11 @@ export function Navbar({ profile }: NavbarProps) {
                                     <>
                                         <Link href={`/${locale}/bookings`} onClick={() => setMenuOpen(false)} className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800">
                                             <CalendarDays className="h-4 w-4" />
-                                            My Bookings
+                                            {t("bookings")}
                                         </Link>
                                         <Link href={`/${locale}/account/settings`} onClick={() => setMenuOpen(false)} className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800">
                                             <Settings className="h-4 w-4" />
-                                            Settings
+                                            {t("settings")}
                                         </Link>
                                     </>
                                 )}

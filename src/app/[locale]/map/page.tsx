@@ -91,19 +91,19 @@ export default function MapPage() {
     return (
         <div className="h-[calc(100vh-4rem)] flex flex-col md:flex-row">
             {/* ── Sidebar ─────────────────────────────────────────────── */}
-            <aside className="w-full md:w-80 lg:w-96 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 flex flex-col shrink-0 overflow-hidden">
+            <aside className="w-full md:w-80 lg:w-96 bg-white dark:bg-gray-900 border-e border-gray-200 dark:border-gray-800 flex flex-col shrink-0 overflow-hidden">
                 <div className="p-4 border-b border-gray-200 dark:border-gray-800 space-y-3">
                     <h1 className="font-bold text-lg text-gray-900 dark:text-white">{t("title")}</h1>
 
                     {/* Search */}
                     <div className="relative">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
+                        <Search className="absolute start-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
                         <input
                             type="search"
                             placeholder={t("search_placeholder")}
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
-                            className="w-full pl-9 pr-4 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                            className="w-full ps-9 pe-4 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-emerald-500"
                         />
                     </div>
 

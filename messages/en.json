@@ -9,7 +9,9 @@
         "dashboard": "Dashboard",
         "admin": "Admin",
         "logout": "Log Out",
-        "language": "Language"
+        "language": "Language",
+        "bookings": "My Bookings",
+        "settings": "Settings"
     },
     "home": {
         "hero": {
@@ -149,6 +151,9 @@
         "nav": {
             "overview": "Overview",
             "facility": "My Facility",
+            "courts": "Courts",
+            "availability": "Availability",
+            "checkin": "Check-in",
             "events": "Events",
             "settings": "Settings"
         },

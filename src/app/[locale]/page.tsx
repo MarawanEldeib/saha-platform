@@ -60,8 +60,8 @@ export default async function HomePage() {
             {/* ── Hero ────────────────────────────────────────────────────────── */}
             <section className="relative bg-gradient-to-br from-emerald-50 via-white to-teal-50 dark:from-gray-950 dark:via-gray-900 dark:to-gray-900 overflow-hidden">
                 {/* Background decorative circles */}
-                <div className="absolute -top-24 -right-24 w-96 h-96 rounded-full bg-emerald-200/30 dark:bg-emerald-900/20 blur-3xl pointer-events-none" />
-                <div className="absolute -bottom-24 -left-24 w-96 h-96 rounded-full bg-teal-200/30 dark:bg-teal-900/20 blur-3xl pointer-events-none" />
+                <div className="absolute -top-24 -end-24 w-96 h-96 rounded-full bg-emerald-200/30 dark:bg-emerald-900/20 blur-3xl pointer-events-none" />
+                <div className="absolute -bottom-24 -start-24 w-96 h-96 rounded-full bg-teal-200/30 dark:bg-teal-900/20 blur-3xl pointer-events-none" />
 
                 <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 sm:py-32 text-center">
                     <span className="inline-flex items-center gap-2 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 text-sm font-medium px-4 py-1.5 rounded-full mb-6">

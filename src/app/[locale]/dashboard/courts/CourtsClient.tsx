@@ -254,7 +254,7 @@ export function CourtsClient({ courts, sports, facilityId }: Props) {
                                     Price per Hour (AED)
                                 </label>
                                 <div className="relative">
-                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-gray-400 pointer-events-none">
+                                    <span className="absolute start-3 top-1/2 -translate-y-1/2 text-sm text-gray-400 pointer-events-none">
                                         AED
                                     </span>
                                     <input
@@ -262,7 +262,7 @@ export function CourtsClient({ courts, sports, facilityId }: Props) {
                                         type="number"
                                         min="0"
                                         step="1"
-                                        className="w-full pl-12 pr-3 py-2 text-sm border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                                        className="w-full ps-12 pe-3 py-2 text-sm border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                                     />
                                 </div>
                                 {errors.price_per_hour && <p className="mt-1 text-xs text-red-500">{errors.price_per_hour.message}</p>}

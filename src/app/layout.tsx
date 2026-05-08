@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
+import { getLocale } from "next-intl/server";
 import "./globals.css";
 
 const inter = Inter({ subsets: ["latin"] });
@@ -20,13 +21,20 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  let locale = "en";
+  try {
+    locale = await getLocale();
+  } catch {
+    locale = "en";
+  }
+
   return (
-    <html suppressHydrationWarning>
+    <html lang={locale} dir={locale === "ar" ? "rtl" : "ltr"} suppressHydrationWarning>
       <body suppressHydrationWarning className={`${inter.className} antialiased`}>{children}</body>
     </html>
   );

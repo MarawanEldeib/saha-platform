@@ -30,7 +30,7 @@ export function BookingQRCode({ token, appUrl }: Props) {
                 <div className="fixed inset-0 bg-white dark:bg-gray-950 z-50 flex flex-col items-center justify-center p-8 gap-6">
                     <button
                         onClick={() => setFullscreen(false)}
-                        className="absolute top-4 right-4 p-2 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300"
+                        className="absolute top-4 end-4 p-2 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300"
                     >
                         <X className="h-5 w-5" />
                     </button>
