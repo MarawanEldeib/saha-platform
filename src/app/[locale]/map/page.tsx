@@ -85,7 +85,6 @@ export default function MapPage() {
                 lng: userLng,
                 radius_km: 15,
                 sport_filter: selectedSport,
-                discount_only: false,
             });
 
             if (!error && data) {

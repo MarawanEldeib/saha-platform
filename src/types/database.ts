@@ -534,7 +534,6 @@ export interface Database {
                     lng: number;
                     radius_km?: number;
                     sport_filter?: number | null;
-                    discount_only?: boolean;
                 };
                 Returns: Array<{
                     id: string;
