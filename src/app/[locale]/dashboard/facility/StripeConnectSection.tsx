@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useTransition } from "react";
-import { CheckCircle, AlertCircle } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { CheckCircle, AlertCircle, X } from "lucide-react";
 import { useTranslations } from "next-intl";
 
 type Props = {
@@ -10,25 +10,62 @@ type Props = {
 
 export function StripeConnectSection({ isConnected }: Props) {
     const t = useTranslations("facility_form");
-    const [isPending, startTransition] = useTransition();
+    const [showOnboarding, setShowOnboarding] = useState(false);
+    const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const containerRef = useRef<HTMLDivElement>(null);
 
-    function handleConnect() {
-        setError(null);
-        startTransition(async () => {
+    useEffect(() => {
+        if (!showOnboarding || !containerRef.current) return;
+
+        let cancelled = false;
+        containerRef.current.innerHTML = "";
+
+        async function init() {
+            setLoading(true);
+            setError(null);
             try {
-                const res = await fetch("/api/stripe/connect", { method: "POST" });
-                const json = await res.json();
-                if (json.url) {
-                    window.location.href = json.url;
-                } else {
-                    setError(json.error ?? "Something went wrong");
+                const { loadConnectAndInitialize } = await import("@stripe/connect-js");
+
+                const stripeConnect = loadConnectAndInitialize({
+                    publishableKey: process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!,
+                    fetchClientSecret: async () => {
+                        const res = await fetch("/api/stripe/account-session", { method: "POST" });
+                        const json = await res.json();
+                        if (json.error) throw new Error(json.error);
+                        return json.clientSecret;
+                    },
+                    appearance: {
+                        overlays: "dialog",
+                        variables: { colorPrimary: "#059669" },
+                    },
+                });
+
+                if (cancelled) return;
+
+                const onboarding = stripeConnect.create("account-onboarding");
+                onboarding.setOnExit(() => setShowOnboarding(false));
+
+                if (containerRef.current) {
+                    containerRef.current.appendChild(onboarding);
                 }
-            } catch {
-                setError("Something went wrong. Please try again.");
+            } catch (err) {
+                if (!cancelled) {
+                    setError(err instanceof Error ? err.message : "Something went wrong");
+                    setShowOnboarding(false);
+                }
+            } finally {
+                if (!cancelled) setLoading(false);
             }
-        });
-    }
+        }
+
+        init();
+
+        return () => {
+            cancelled = true;
+            if (containerRef.current) containerRef.current.innerHTML = "";
+        };
+    }, [showOnboarding]);
 
     return (
         <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-6">
@@ -41,19 +78,43 @@ export function StripeConnectSection({ isConnected }: Props) {
                     {t("stripe_connected")}
                 </div>
             ) : (
-                <div className="space-y-3">
+                <div className="space-y-4">
                     <div className="flex items-start gap-2 text-sm text-amber-600 dark:text-amber-400">
                         <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
                         <span>{t("stripe_not_connected")}</span>
                     </div>
+
                     {error && <p className="text-sm text-red-500">{error}</p>}
-                    <button
-                        onClick={handleConnect}
-                        disabled={isPending}
-                        className="px-4 py-2 rounded-lg bg-[#635BFF] text-white text-sm font-medium hover:opacity-90 disabled:opacity-50 transition-opacity"
-                    >
-                        {isPending ? t("stripe_redirecting") : t("stripe_connect")}
-                    </button>
+
+                    {!showOnboarding && (
+                        <button
+                            onClick={() => setShowOnboarding(true)}
+                            disabled={loading}
+                            className="px-4 py-2 rounded-lg bg-[#635BFF] text-white text-sm font-medium hover:opacity-90 disabled:opacity-50 transition-opacity"
+                        >
+                            {loading ? t("stripe_redirecting") : t("stripe_connect")}
+                        </button>
+                    )}
+
+                    {showOnboarding && (
+                        <div className="border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden">
+                            <div className="flex items-center justify-between px-4 py-2 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
+                                <span className="text-xs font-medium text-gray-500 dark:text-gray-400">Stripe Connect</span>
+                                <button
+                                    onClick={() => setShowOnboarding(false)}
+                                    className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                                >
+                                    <X className="h-4 w-4" />
+                                </button>
+                            </div>
+                            {loading && (
+                                <div className="flex items-center justify-center py-12 text-sm text-gray-500 dark:text-gray-400">
+                                    {t("stripe_redirecting")}
+                                </div>
+                            )}
+                            <div ref={containerRef} />
+                        </div>
+                    )}
                 </div>
             )}
         </div>
