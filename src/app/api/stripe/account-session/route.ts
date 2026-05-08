@@ -22,7 +22,9 @@ export async function POST() {
         if (!accountId) {
             const account = await getStripe().accounts.create({
                 type: "express",
+                country: "AE",
                 business_profile: { name: facility.name },
+                default_currency: "aed",
             });
             accountId = account.id;
             await supabase
