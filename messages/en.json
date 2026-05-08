@@ -278,6 +278,10 @@
         "title": "My Bookings",
         "subtitle": "Your court booking history",
         "no_bookings": "No bookings yet",
+        "no_upcoming": "No upcoming bookings.",
+        "no_past": "No past bookings.",
+        "tab_upcoming": "Upcoming",
+        "tab_past": "Past",
         "status_confirmed": "Confirmed",
         "status_pending": "Pending",
         "status_cancelled": "Cancelled",
@@ -285,7 +289,12 @@
         "status_no_show": "No Show",
         "find_court": "Find a court",
         "players": "players",
-        "view_details": "View details"
+        "view_details": "View details",
+        "cancel": "Cancel booking",
+        "cancel_confirm": "Cancel this booking? If it's more than 24 hours away, you'll get a full refund.",
+        "cancelled_ok": "Booking cancelled.",
+        "refunded": "Your payment has been refunded.",
+        "cancelling": "Cancelling…"
     },
     "booking_detail": {
         "confirmed_heading": "Booking Confirmed",
@@ -346,7 +355,11 @@
         "save": "Save Changes",
         "saved": "Profile updated successfully!",
         "change_avatar": "Change photo",
-        "uploading_avatar": "Uploading..."
+        "uploading_avatar": "Uploading...",
+        "view_all": "View all",
+        "all_bookings": "My Bookings",
+        "community_posts": "Community Posts",
+        "settings": "Account Settings"
     },
     "facility_form": {
         "heading": "Manage Facility",

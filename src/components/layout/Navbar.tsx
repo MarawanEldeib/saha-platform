@@ -127,7 +127,7 @@ export function Navbar({ profile }: NavbarProps) {
                                     </>
                                 )}
                                 <Link
-                                    href={`/${locale}/account/settings`}
+                                    href={`/${locale}/account`}
                                     className="shrink-0 w-8 h-8 rounded-full overflow-hidden bg-emerald-100 dark:bg-emerald-900/30 border border-gray-200 dark:border-gray-700 hover:ring-2 hover:ring-emerald-500 hover:ring-offset-1 transition-all flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-1"
                                     aria-label={t("settings")}
                                 >
@@ -219,7 +219,7 @@ export function Navbar({ profile }: NavbarProps) {
                                         </Link>
                                     </>
                                 )}
-                                <Link href={`/${locale}/account/settings`} onClick={() => setMenuOpen(false)} className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800">
+                                <Link href={`/${locale}/account`} onClick={() => setMenuOpen(false)} className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800">
                                     <Settings className="h-4 w-4" />
                                     {t("settings")}
                                 </Link>

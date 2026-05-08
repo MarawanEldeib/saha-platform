@@ -281,6 +281,15 @@
         "find_court": "ابحث عن ملعب",
         "players": "لاعبين",
         "view_details": "عرض التفاصيل",
+        "no_upcoming": "لا توجد حجوزات قادمة.",
+        "no_past": "لا توجد حجوزات سابقة.",
+        "tab_upcoming": "القادمة",
+        "tab_past": "السابقة",
+        "cancel": "إلغاء الحجز",
+        "cancel_confirm": "هل تريد إلغاء هذا الحجز؟ إذا كان موعده بعد أكثر من 24 ساعة، ستحصل على استرداد كامل.",
+        "cancelled_ok": "تم إلغاء الحجز.",
+        "refunded": "تم استرداد مبلغ الدفع.",
+        "cancelling": "جارٍ الإلغاء…",
         "status_confirmed": "مؤكد",
         "status_pending": "قيد الانتظار",
         "status_cancelled": "ملغى",
@@ -346,7 +355,11 @@
         "save": "حفظ التغييرات",
         "saved": "تم تحديث الملف الشخصي بنجاح!",
         "change_avatar": "تغيير الصورة",
-        "uploading_avatar": "جارٍ الرفع..."
+        "uploading_avatar": "جارٍ الرفع...",
+        "view_all": "عرض الكل",
+        "all_bookings": "حجوزاتي",
+        "community_posts": "منشورات المجتمع",
+        "settings": "إعدادات الحساب"
     },
     "facility_form": {
         "heading": "إدارة المنشأة",
