@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getStripe } from "@/lib/stripe";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { sendWhatsApp } from "@/lib/twilio";
+import { sendBookingConfirmationEmail } from "@/lib/emails/booking-confirmation-email";
 import { format } from "date-fns";
 import Stripe from "stripe";
 
@@ -40,13 +41,13 @@ export async function POST(req: NextRequest) {
             .update({ status: "succeeded", stripe_checkout_session_id: session.id } as never)
             .eq("booking_id", bookingId);
 
-        // Send WhatsApp confirmation
+        // Send WhatsApp confirmation and email
         const { data: booking } = await supabase
             .from("bookings")
             .select(`
-                id, date, start_time, end_time, qr_code_token,
+                id, date, start_time, end_time, num_players, total_price, currency, qr_code_token,
                 courts(name, facilities(name, address, city)),
-                profiles(display_name, phone)
+                profiles(id, display_name, phone)
             `)
             .eq("id", bookingId)
             .single();
@@ -71,6 +72,40 @@ export async function POST(req: NextRequest) {
                 `📍 ${facility?.address}, ${facility?.city}\n\n` +
                 `View your booking & QR code:\n${bookingUrl}`
             ).catch(() => {/* WhatsApp not blocking — fire and forget */});
+        }
+
+        // Send confirmation email (fire and forget)
+        if (booking && profile) {
+            try {
+                // Fetch player email from auth
+                const { data: { user } } = await supabase.auth.admin.getUserById(profile.id);
+                const playerEmail = user?.email;
+
+                if (playerEmail) {
+                    await sendBookingConfirmationEmail({
+                        bookingId: booking.id,
+                        playerName: profile.display_name || "Player",
+                        playerEmail,
+                        facilityName: facility?.name || "Facility",
+                        facilityAddress: facility?.address || "",
+                        facilityCity: facility?.city || "",
+                        courtName: court?.name || "Court",
+                        date: booking.date,
+                        startTime: booking.start_time.slice(0, 5),
+                        endTime: booking.end_time.slice(0, 5),
+                        numPlayers: booking.num_players || 1,
+                        totalPrice: booking.total_price || 0,
+                        currency: booking.currency || "USD",
+                        appUrl: process.env.NEXT_PUBLIC_APP_URL ?? "",
+                    }).catch((error) => {
+                        console.error("Error sending booking confirmation email:", error);
+                        /* Email not blocking — fire and forget */
+                    });
+                }
+            } catch (error) {
+                console.error("Error in booking confirmation email flow:", error);
+                /* Continue webhook processing */
+            }
         }
     }
 
