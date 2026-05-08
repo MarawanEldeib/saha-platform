@@ -11,6 +11,7 @@ import {
     Trophy,
     CalendarDays,
     ScanLine,
+    BookOpen,
 } from "lucide-react";
 
 const navItems = [
@@ -18,6 +19,7 @@ const navItems = [
     { href: "dashboard/facility", labelKey: "facility", icon: Building2 },
     { href: "dashboard/courts", labelKey: "courts", icon: Trophy },
     { href: "dashboard/availability", labelKey: "availability", icon: CalendarDays },
+    { href: "dashboard/bookings", labelKey: "bookings", icon: BookOpen },
     { href: "dashboard/checkin", labelKey: "checkin", icon: ScanLine },
     { href: "dashboard/events", labelKey: "events", icon: CalendarPlus },
     { href: "dashboard/settings", labelKey: "settings", icon: Settings },

@@ -160,6 +160,7 @@
             "facility": "My Facility",
             "courts": "Courts",
             "availability": "Availability",
+            "bookings": "Bookings",
             "checkin": "Check-in",
             "events": "Events",
             "settings": "Settings"
@@ -195,6 +196,27 @@
             "saved": "Changes saved.",
             "add_image": "Add Photo",
             "remove_image": "Remove"
+        },
+        "bookings": {
+            "title": "Bookings & Revenue",
+            "today": "Today's Bookings",
+            "no_today": "No bookings today.",
+            "upcoming": "Upcoming Bookings",
+            "no_upcoming": "No upcoming bookings.",
+            "revenue_week": "This Week",
+            "revenue_month": "This Month",
+            "total_bookings": "Total Bookings",
+            "confirmed": "Confirmed",
+            "export_csv": "Export CSV",
+            "court_label": "Court",
+            "player_label": "Player",
+            "date_label": "Date",
+            "time_label": "Time",
+            "amount_label": "Amount",
+            "status_label": "Status",
+            "stripe_status": "Stripe Status",
+            "stripe_connected": "Connected — payouts active",
+            "stripe_not_connected": "Not connected — connect Stripe to receive payouts"
         },
         "events": {
             "title": "Submit an Event",

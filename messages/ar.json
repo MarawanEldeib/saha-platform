@@ -160,6 +160,7 @@
             "facility": "منشأتي",
             "courts": "الملاعب",
             "availability": "التوافر",
+            "bookings": "الحجوزات",
             "checkin": "تسجيل الحضور",
             "events": "الفعاليات",
             "settings": "الإعدادات"
@@ -195,6 +196,27 @@
             "saved": "تم حفظ التغييرات.",
             "add_image": "إضافة صورة",
             "remove_image": "إزالة"
+        },
+        "bookings": {
+            "title": "الحجوزات والإيرادات",
+            "today": "حجوزات اليوم",
+            "no_today": "لا توجد حجوزات اليوم.",
+            "upcoming": "الحجوزات القادمة",
+            "no_upcoming": "لا توجد حجوزات قادمة.",
+            "revenue_week": "هذا الأسبوع",
+            "revenue_month": "هذا الشهر",
+            "total_bookings": "إجمالي الحجوزات",
+            "confirmed": "مؤكد",
+            "export_csv": "تصدير CSV",
+            "court_label": "الملعب",
+            "player_label": "اللاعب",
+            "date_label": "التاريخ",
+            "time_label": "الوقت",
+            "amount_label": "المبلغ",
+            "status_label": "الحالة",
+            "stripe_status": "حالة Stripe",
+            "stripe_connected": "متصل — المدفوعات نشطة",
+            "stripe_not_connected": "غير متصل — اربط Stripe لاستقبال المدفوعات"
         },
         "events": {
             "title": "إرسال فعالية",
