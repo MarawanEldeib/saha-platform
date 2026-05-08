@@ -488,7 +488,7 @@ export async function createBookingAndCheckoutAction(
 
     const { data: court } = await supabase
         .from("courts")
-        .select("id, name, price_per_hour, capacity, facility_id, facilities(id, name, stripe_account_id)")
+        .select("id, name, price_per_hour, capacity, facility_id, facilities(id, name, stripe_account_id, currency)")
         .eq("id", slot.court_id)
         .single();
     if (!court) return { error: "Court not found" };
@@ -500,6 +500,7 @@ export async function createBookingAndCheckoutAction(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const facilityData = (court as any).facilities;
     const stripeAccountId = facilityData?.stripe_account_id as string | null;
+    const currency = (facilityData?.currency as string) ?? "AED";
 
     // Block if facility hasn't connected Stripe — funds would otherwise land
     // in the platform account.
@@ -524,7 +525,7 @@ export async function createBookingAndCheckoutAction(
     const [eh, em] = slot.end_time.split(":").map(Number);
     const durationHours = ((eh * 60 + em) - (sh * 60 + sm)) / 60;
     if (durationHours <= 0) return { error: "Invalid slot" };
-    const totalAed = Math.round(court.price_per_hour * durationHours * 100) / 100;
+    const totalPrice = Math.round(court.price_per_hour * durationHours * 100) / 100;
 
     // Lock the slot to prevent double-booking. Conditional on is_booked=false
     // makes this a CAS — if a concurrent caller locked it first, this returns
@@ -551,8 +552,8 @@ export async function createBookingAndCheckoutAction(
             start_time: slot.start_time,
             end_time: slot.end_time,
             num_players: numPlayers,
-            total_price: totalAed,
-            currency: "AED",
+            total_price: totalPrice,
+            currency,
             status: "pending",
         } as never)
         .select("id")
@@ -566,8 +567,8 @@ export async function createBookingAndCheckoutAction(
     // Create pending payment record
     await supabase.from("payments").insert({
         booking_id: booking.id,
-        amount: totalAed,
-        currency: "AED",
+        amount: totalPrice,
+        currency,
         status: "pending",
     } as never);
 
@@ -575,14 +576,14 @@ export async function createBookingAndCheckoutAction(
     const host = headersList.get("host") ?? "localhost:3000";
     const appUrl = host.startsWith("localhost") ? `http://${host}` : `https://${host}`;
 
-    const feeAmount = Math.round(totalAed * 100 * PLATFORM_FEE_PERCENT / 100);
+    const feeAmount = Math.round(totalPrice * 100 * PLATFORM_FEE_PERCENT / 100);
     const sessionParams: Stripe.Checkout.SessionCreateParams = {
         mode: "payment",
         line_items: [{
             quantity: 1,
             price_data: {
-                currency: "aed",
-                unit_amount: Math.round(totalAed * 100),
+                currency: currency.toLowerCase(),
+                unit_amount: Math.round(totalPrice * 100),
                 product_data: {
                     name: facilityData?.name ? `${facilityData.name} — ${court.name}` : court.name,
                     description: `${slot.date} · ${slot.start_time}–${slot.end_time}`,
