@@ -201,7 +201,7 @@ export default async function InvoicePage({ params }: { params: Promise<{ id: st
                     {/* Footer */}
                     <footer className="mt-10 pt-6 border-t border-gray-200 text-xs text-gray-500 space-y-1">
                         <p>
-                            Payment processed via Stripe. Saha takes a 10% platform fee; remainder is settled to the facility's connected account.
+                            Payment processed via Stripe. Saha takes a 10% platform fee; remainder is settled to the facility&apos;s connected account.
                         </p>
                         <p>
                             For invoice queries, contact the facility{facility?.phone ? ` at ${facility.phone}` : ""}.
