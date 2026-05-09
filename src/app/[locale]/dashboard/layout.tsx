@@ -14,6 +14,7 @@ import {
     BookOpen,
 } from "lucide-react";
 import { FacilitySwitcher } from "@/components/layout/FacilitySwitcher";
+import { MobileNavDrawer } from "@/components/layout/MobileNavDrawer";
 import { getActiveFacility, listOwnerFacilities } from "@/lib/facility-context";
 
 const navItems = [
@@ -58,9 +59,30 @@ export default async function DashboardLayout({
     const facilities = await listOwnerFacilities(supabase, user.id);
     const active = await getActiveFacility(supabase, user.id);
 
+    const mobileItems = navItems.map(({ href, labelKey, icon }) => ({
+        href,
+        label: t(labelKey),
+        icon,
+    }));
+    const mobileTitle = active?.name ?? t("overview");
+
     return (
-        <div className="flex min-h-[calc(100vh-4rem)]">
-            {/* Sidebar */}
+        <div className="flex flex-col md:flex-row min-h-[calc(100vh-4rem)]">
+            {/* Mobile drawer + top bar (SAH-31) */}
+            <MobileNavDrawer
+                title={mobileTitle}
+                items={mobileItems}
+                locale={locale}
+                headerSlot={
+                    <FacilitySwitcher
+                        facilities={facilities.map((f) => ({ id: f.id, name: f.name }))}
+                        activeFacilityId={active?.id ?? null}
+                        locale={locale}
+                    />
+                }
+            />
+
+            {/* Desktop sidebar */}
             <aside className="hidden md:flex flex-col w-56 shrink-0 bg-white dark:bg-gray-900 border-e border-gray-200 dark:border-gray-800 p-4 gap-1">
                 <div className="mb-3">
                     <FacilitySwitcher
@@ -85,7 +107,7 @@ export default async function DashboardLayout({
                 ))}
             </aside>
 
-            <main className="flex-1 p-6 lg:p-8 overflow-auto">{children}</main>
+            <main className="flex-1 p-4 sm:p-6 lg:p-8 overflow-auto">{children}</main>
         </div>
     );
 }

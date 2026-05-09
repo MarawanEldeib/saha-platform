@@ -14,6 +14,7 @@ import {
     Settings,
     ShieldCheck,
 } from "lucide-react";
+import { MobileNavDrawer } from "@/components/layout/MobileNavDrawer";
 
 interface NavItem {
     href: string;
@@ -56,7 +57,14 @@ export default async function AdminLayout({
     }
 
     return (
-        <div className="flex min-h-[calc(100vh-4rem)]">
+        <div className="flex flex-col md:flex-row min-h-[calc(100vh-4rem)]">
+            {/* Mobile drawer + top bar (SAH-31) */}
+            <MobileNavDrawer
+                title="Super Admin"
+                items={navItems}
+                locale={locale}
+            />
+
             <aside className="hidden md:flex flex-col w-56 shrink-0 bg-white dark:bg-gray-900 border-e border-gray-200 dark:border-gray-800 p-4 gap-1">
                 <div className="flex items-center gap-2 px-3 py-2 mb-2 text-emerald-700 dark:text-emerald-400">
                     <ShieldCheck className="h-4 w-4" />
@@ -95,7 +103,7 @@ export default async function AdminLayout({
                 ))}
             </aside>
 
-            <main className="flex-1 p-6 lg:p-8 overflow-auto">{children}</main>
+            <main className="flex-1 p-4 sm:p-6 lg:p-8 overflow-auto">{children}</main>
         </div>
     );
 }
