@@ -4,14 +4,25 @@
 
 | Service | Purpose |
 | --- | --- |
-| Vercel | Hosting (Next.js) |
+| Vercel | Hosting (Next.js 16, Fluid Compute) |
 | Supabase | Database, Auth, Storage |
+| Stripe + Stripe Connect | Payments + per-facility payouts |
 | Resend | Transactional email |
-| Stripe | Payments (pending — SAH-16) |
-| Twilio | WhatsApp notifications (pending — SAH-27) |
-| Doppler | Secrets management (pending — SAH-53) |
+| Twilio Verify + WhatsApp | Phone OTP + booking confirmations/reminders |
+| Mapbox | Map tiles (used through MapLibre GL) |
+| Upstash Redis | Rate limiting (sliding-window) |
+| Sentry | Error tracking + source maps |
+| Vercel Analytics | Web vitals + traffic |
+
+## Production URLs
+
+- Primary: [sahasports.vercel.app](https://sahasports.vercel.app)
+- Legacy alias (307 → primary): `saha-platform.vercel.app`
+- Custom domain `saha.ae` planned — not yet attached.
 
 ## First Deploy to Vercel
+
+If you're setting up a fresh deployment from scratch.
 
 ### 1. Install Vercel CLI
 
@@ -22,73 +33,82 @@ npm i -g vercel
 ### 2. Link the project
 
 ```bash
-vercel
+vercel login
+vercel link
 ```
 
-Follow the prompts to link to your Vercel account and create a new project.
+Pick the existing `saha` project (Vercel team `marawans-projects-568c78f5`).
 
-### 3. Add environment variables
+### 3. Pull existing env vars to local
 
-In the Vercel dashboard → Project → Settings → Environment Variables, add:
+```bash
+npm run env:pull
+```
 
-- `NEXT_PUBLIC_SUPABASE_URL`
-- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-- `SUPABASE_SERVICE_ROLE_KEY`
-- `NEXT_PUBLIC_APP_URL` (set to your production domain)
-- `RESEND_API_KEY`
+This writes `.env.local` from Vercel's "Development" environment. The shared-secrets workflow is documented in [OPS.md](../OPS.md) under SAH-50.
 
 ### 4. Deploy
+
+Master pushes auto-deploy to production via the GitHub integration. To deploy manually from the CLI:
 
 ```bash
 vercel --prod
 ```
 
-### 5. Add team member
+## Environment Variables
 
-In Vercel dashboard → Project → Settings → Members, invite Abu Zar (abazeradamwork@gmail.com).
+The full list lives in `.env.example`. Set every variable in Vercel Dashboard → Project Settings → Environment Variables, scoped to **Development**, **Preview**, and **Production** as appropriate.
 
-## Preview Deployments
+### Required for the app to boot
 
-Every push to any branch automatically creates a preview deployment. The preview URL is posted in GitHub PRs.
+- `NEXT_PUBLIC_SUPABASE_URL`
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+- `SUPABASE_SERVICE_ROLE_KEY` — server-only, never exposed to the browser
+- `NEXT_PUBLIC_APP_URL` — different per environment (e.g. `https://sahasports.vercel.app` in prod, `http://localhost:3000` in dev)
+- `STRIPE_SECRET_KEY` + `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`
+- `STRIPE_WEBHOOK_SECRET` — matches the webhook endpoint registered in Stripe Dashboard
+- `RESEND_API_KEY`
+- `NEXT_PUBLIC_MAPBOX_TOKEN` — URL-restricted in the Mapbox dashboard ([OPS.md SAH-74](../OPS.md))
 
-## Environment Tiers
+### Required in production
 
-| Tier | Branch | URL |
+- `CRON_SECRET` — `Authorization: Bearer <CRON_SECRET>` is enforced on every `/api/cron/*` route
+- `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_VERIFY_SERVICE_SID`, `TWILIO_WHATSAPP_FROM` — phone OTP + WhatsApp messages
+- `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN` — rate limiting (auth, booking, public API)
+
+### Optional but recommended
+
+- `SENTRY_DSN`, `NEXT_PUBLIC_SENTRY_DSN`, `SENTRY_AUTH_TOKEN` — error tracking + source maps
+- `SENTRY_ORG`, `SENTRY_PROJECT` — Sentry build integration
+
+## Vercel Cron Jobs
+
+Configured in `vercel.json`:
+
+| Path | Schedule | Purpose |
 | --- | --- | --- |
-| Local | any | http://localhost:3000 |
-| Preview | any non-main | `*.vercel.app` auto URL |
-| Production | main | your custom domain |
+| `/api/cron/reminder-emails` | Daily 07:00 UTC | Email + WhatsApp 24h-out reminders |
+| `/api/cron/mark-no-shows` | Daily 23:00 UTC | Flip un-checked-in confirmed bookings to `no_show`; chains review prompts |
+| `/api/cron/review-prompts` | Triggered by mark-no-shows | Email completed-booking players for reviews |
 
-## Doppler (planned)
+Each route requires `Authorization: Bearer $CRON_SECRET`.
 
-Once Doppler is set up (SAH-53), env vars will be managed centrally:
+## Branch Strategy
 
-```bash
-# Local development
-doppler run -- npm run dev
-
-# Both developers pull the same vars automatically
-doppler setup
-```
-
-Doppler also syncs directly with Vercel so production secrets stay in one place.
+- `master` is the only long-lived branch — merging deploys to production via the Vercel GitHub integration.
+- Feature branches deploy to preview URLs (`*.vercel.app`) automatically.
+- `staging` environment + branch is tracked in [OPS.md SAH-100](../OPS.md) (manual setup pending).
 
 ## Database Migrations
 
-Migrations are not automatically applied on deploy. Run them manually in the Supabase SQL Editor or via the Supabase CLI:
+Migrations are **not** applied automatically on deploy. They are run manually:
 
 ```bash
 supabase db push
 ```
 
-## Vercel Cron Jobs
+Or paste SQL into Supabase Dashboard → SQL Editor for one-offs. See [docs/database.md](database.md) for the schema reference.
 
-Booking reminders (SAH-26) will use Vercel Cron. Add to `vercel.json`:
+## Source-map Upload
 
-```json
-{
-  "crons": [
-    { "path": "/api/cron/reminders", "schedule": "0 * * * *" }
-  ]
-}
-```
+Sentry source maps are uploaded during the Vercel build when `SENTRY_AUTH_TOKEN` is set. Builds without the token still succeed — uploads are silently skipped (see `next.config.ts`).

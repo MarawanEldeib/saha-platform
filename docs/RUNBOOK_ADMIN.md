@@ -79,7 +79,7 @@ INSERT INTO public.audit_log (actor_id, actor_role, action, target_type, target_
 VALUES (auth.uid(), 'admin', 'admin.promote', 'profile', '<user_id>', '{}');
 ```
 
-A new admin should set up 2FA on first login (when SAH-80 lands).
+A new admin must set up TOTP 2FA on first login — `proxy.ts` blocks `/admin/*` until the session is `aal2` (SAH-80).
 
 ---
 

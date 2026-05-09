@@ -105,11 +105,11 @@ UAE-first court-booking platform for racket sports (Padel, Tennis, Squash, Badmi
                            │
                   guests   ▼
                   ┌──────────────────┐
-                  │  booking_guests  │ (split-pay stub for SAH-92)
+                  │  booking_guests  │ (per-guest split-pay via Stripe Payment Links — SAH-92)
                   └──────────────────┘
 ```
 
-Plus `events`, `audit_log`, `stripe_events`, `matchmaking_posts`, `facility_hours`, `facility_images`, `sports`.
+Plus `events`, `audit_log`, `stripe_events`, `matchmaking_posts` (kill-or-ship pending in SAH-96), `facility_hours`, `facility_images`, `sports`, `wallet_balances`, `wallet_transactions`, `vat_invoices`.
 
 ## Routing
 
@@ -119,7 +119,9 @@ Plus `events`, `audit_log`, `stripe_events`, `matchmaking_posts`, `facility_hour
 - `/[locale]/dashboard/...` — owner workspace, redirects admins to `/admin`.
 - `/[locale]/admin/...` — super-admin panel with its own sidebar (SAH-108).
 - `/api/stripe/{webhook,connect,disconnect,account-session}` — Stripe integration.
-- `/api/cron/{reminder-emails,mark-no-shows}` — scheduled jobs.
+- `/api/cron/{reminder-emails,mark-no-shows,review-prompts}` — scheduled jobs.
+- `/api/v1/facilities`, `/api/v1/facilities/{id}`, `/api/v1/facilities/{id}/availability` — public REST API for AI agents (SAH-35); booking endpoints stubbed at 501 pending SAH-118.
+- `/api/openapi.json` + `/llms.txt` — OpenAPI 3.1 spec and llmstxt.org discovery doc (SAH-36).
 
 ## Trust boundaries
 
