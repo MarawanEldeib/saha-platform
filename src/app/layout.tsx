@@ -15,10 +15,22 @@ export const metadata: Metadata = {
     "Discover and book Padel, Pickleball, Tennis, Squash, and Badminton courts in Dubai and Abu Dhabi. Find facilities, check availability, and play today.",
   keywords: ["padel", "pickleball", "tennis", "squash", "badminton", "court booking", "Dubai", "Abu Dhabi", "UAE", "racket sports"],
   authors: [{ name: "Saha Platform" }],
+  icons: {
+    icon: "/saha-logo-512.png",
+    apple: "/saha-logo-512.png",
+  },
   openGraph: {
     siteName: "Saha",
     type: "website",
     locale: "en_US",
+    images: [
+      {
+        url: "/saha-logo-512.png",
+        width: 512,
+        height: 512,
+        alt: "Saha – Racket Sports Court Booking",
+      },
+    ],
   },
 };
 
