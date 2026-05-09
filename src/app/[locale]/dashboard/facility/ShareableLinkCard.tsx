@@ -104,13 +104,19 @@ export function ShareableLinkCard({ slug, locale }: Props) {
 
             {qrOpen && (
                 <div className="pt-3 border-t border-gray-100 dark:border-gray-800 flex flex-col sm:flex-row items-center gap-4">
-                    <div
-                        className="bg-white p-2 rounded-lg border border-gray-200 dark:border-gray-700 w-48 h-48 flex items-center justify-center"
-                        // eslint-disable-next-line react/no-danger
-                        dangerouslySetInnerHTML={qrSvg ? { __html: qrSvg } : undefined}
-                    >
-                        {!qrSvg && <span className="text-xs text-gray-400">Generating…</span>}
-                    </div>
+                    {/* React forbids dangerouslySetInnerHTML + children on the
+                        same element — render two separate branches. */}
+                    {qrSvg ? (
+                        <div
+                            className="bg-white p-2 rounded-lg border border-gray-200 dark:border-gray-700 w-48 h-48 flex items-center justify-center"
+                            // eslint-disable-next-line react/no-danger
+                            dangerouslySetInnerHTML={{ __html: qrSvg }}
+                        />
+                    ) : (
+                        <div className="bg-white p-2 rounded-lg border border-gray-200 dark:border-gray-700 w-48 h-48 flex items-center justify-center">
+                            <span className="text-xs text-gray-400">Generating…</span>
+                        </div>
+                    )}
                     <div className="flex flex-col gap-2 items-start">
                         <p className="text-sm text-gray-700 dark:text-gray-300">
                             Print this on flyers, table cards, or your reception desk. Players scan to land directly on your booking page.
