@@ -13,13 +13,14 @@ export async function POST() {
 
     const { data: facility } = await supabase
         .from("facilities")
-        .select("id, name, stripe_account_id")
+        .select("id, name, stripe_account_id, currency")
         .eq("id", active.id)
         .single();
 
     if (!facility) return NextResponse.json({ error: "Facility not found" }, { status: 404 });
 
     let accountId = facility.stripe_account_id as string | null;
+    const currency = ((facility as { currency?: string }).currency ?? "AED").toLowerCase();
 
     try {
         if (!accountId) {
@@ -27,7 +28,7 @@ export async function POST() {
                 type: "express",
                 country: "AE",
                 business_profile: { name: facility.name },
-                default_currency: "aed",
+                default_currency: currency,
             });
             accountId = account.id;
             await supabase

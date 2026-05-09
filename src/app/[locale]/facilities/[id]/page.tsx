@@ -241,6 +241,7 @@ export default async function FacilityDetailPage({
                         courts={(facility.courts ?? []).filter((c: { is_active: boolean }) => c.is_active)}
                         isLoggedIn={!!user}
                         locale={locale}
+                        currency={(facility as { currency?: string }).currency}
                     />
                 </aside>
             </div>

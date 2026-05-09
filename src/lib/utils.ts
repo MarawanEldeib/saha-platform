@@ -33,6 +33,29 @@ export function truncate(str: string, maxLen: number): string {
     return str.slice(0, maxLen - 1) + "…";
 }
 
+/**
+ * Format a numeric price using the facility's currency. Falls back to AED
+ * when the currency code isn't supported by Intl.NumberFormat.
+ */
+export function formatPrice(
+    amount: number | string,
+    currency: string = "AED",
+    locale: string = "en",
+    options: { minimumFractionDigits?: number; maximumFractionDigits?: number } = {},
+): string {
+    const value = typeof amount === "string" ? Number(amount) : amount;
+    try {
+        return new Intl.NumberFormat(locale, {
+            style: "currency",
+            currency,
+            minimumFractionDigits: options.minimumFractionDigits ?? 0,
+            maximumFractionDigits: options.maximumFractionDigits ?? 2,
+        }).format(value);
+    } catch {
+        return `${value.toFixed(options.maximumFractionDigits ?? 0)} ${currency}`;
+    }
+}
+
 /** Convert 0-based day index to day name key in i18n messages */
 export const DAY_KEYS = [
     "monday",
