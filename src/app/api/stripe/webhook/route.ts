@@ -41,6 +41,43 @@ export async function POST(req: NextRequest) {
         const session = event.data.object as Stripe.Checkout.Session;
         const bookingId = session.metadata?.booking_id;
         const recurringGroupId = session.metadata?.recurring_group_id;
+        const bookingGuestId = session.metadata?.booking_guest_id;
+        const bookerId = session.metadata?.booker_id;
+
+        // SAH-92: a friend just paid their share via Payment Link. Flip
+        // the guest row and award the booker an equal-amount wallet credit.
+        if (bookingGuestId) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const { data: guest } = await (supabase as any)
+                .from("booking_guests")
+                .select("id, share_amount, payment_status, booking_id")
+                .eq("id", bookingGuestId)
+                .single();
+            if (guest && guest.payment_status === "pending") {
+                await supabase
+                    .from("booking_guests")
+                    .update({
+                        payment_status: "paid",
+                        paid_at: new Date().toISOString(),
+                    } as never)
+                    .eq("id", bookingGuestId);
+
+                if (bookerId && guest.share_amount) {
+                    try {
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                        await (supabase as any).rpc("refund_wallet_credit", {
+                            p_user_id: bookerId,
+                            p_amount: Number(guest.share_amount),
+                            p_booking_id: guest.booking_id,
+                        });
+                    } catch (err) {
+                        console.error("[split] wallet credit award failed", err);
+                    }
+                }
+            }
+            return NextResponse.json({ received: true });
+        }
+
         if (!bookingId) return NextResponse.json({ received: true });
 
         if (recurringGroupId) {
