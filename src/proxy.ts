@@ -168,5 +168,5 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-    matcher: ["/((?!_next|_vercel|api|.*\\..*).*)" ],
+    matcher: ["/((?!_next|_vercel|api|icon|apple-icon|opengraph-image|twitter-image|sitemap|robots|manifest|.*\\..*).*)" ],
 };
