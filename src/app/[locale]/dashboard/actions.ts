@@ -1210,6 +1210,10 @@ export async function cancelBookingAction(bookingId: string) {
     await supabase.from("bookings").update({ status: "cancelled" } as never).eq("id", bookingId);
     await supabase.from("court_availability").update({ is_booked: false } as never).eq("id", booking.availability_id);
 
+    // SAH-93 follow-up: if this booking spent wallet credit, refund it back
+    // to the player's wallet so they're whole on cancellation.
+    const walletRefunded = await refundWalletCreditForBooking(user.id, bookingId);
+
     const refunded = withinWindow && payment?.status === "succeeded";
     await logAuditEvent({
         actorId: user.id,
@@ -1221,11 +1225,50 @@ export async function cancelBookingAction(bookingId: string) {
             refunded,
             within_window: withinWindow,
             hours_until: hoursUntil,
+            wallet_credit_refunded: walletRefunded,
         },
     });
 
     revalidatePath(`/${locale}/bookings`);
     return { success: true, refunded };
+}
+
+// ---------------------------------------------------------------------------
+// SAH-93 helper: looks up the wallet 'spend' tied to a booking_id and refunds
+// it via refund_wallet_credit. Idempotent — checks for existing 'refund' rows
+// so a re-cancel doesn't double-refund. Returns the amount refunded.
+// ---------------------------------------------------------------------------
+async function refundWalletCreditForBooking(userId: string, bookingId: string): Promise<number> {
+    try {
+        const admin = createAdminClient();
+        // Sum signed amounts for this booking — spend is negative, refund is
+        // positive. If they cancel out the wallet was already refunded.
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { data: txs } = await (admin as any)
+            .from("wallet_transactions")
+            .select("amount_aed, reason")
+            .eq("user_id", userId)
+            .eq("booking_id", bookingId);
+
+        const net = (txs ?? []).reduce(
+            (acc: number, t: { amount_aed: number }) => acc + Number(t.amount_aed),
+            0,
+        );
+        // net < 0 means there's an unrefunded spend equal to |net|.
+        if (net < 0) {
+            const refundAmount = -net;
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            await (admin as any).rpc("refund_wallet_credit", {
+                p_user_id: userId,
+                p_amount: refundAmount,
+                p_booking_id: bookingId,
+            });
+            return refundAmount;
+        }
+    } catch (err) {
+        console.error("[loyalty] cancel-time wallet refund failed", err);
+    }
+    return 0;
 }
 
 // ---------------------------------------------------------------------------
@@ -1244,7 +1287,7 @@ export async function ownerCancelBookingAction(bookingId: string, reason: string
     const { data: booking } = await supabase
         .from("bookings")
         .select(`
-            id, status, availability_id, court_id,
+            id, status, availability_id, court_id, player_id,
             courts(facility_id, facilities(owner_id))
         `)
         .eq("id", bookingId)
@@ -1286,13 +1329,21 @@ export async function ownerCancelBookingAction(bookingId: string, reason: string
         .update({ is_booked: false } as never)
         .eq("id", booking.availability_id);
 
+    // SAH-93 follow-up: refund the player's wallet credit if they used any.
+    const walletRefunded = await refundWalletCreditForBooking(booking.player_id, bookingId);
+
     await logAuditEvent({
         actorId: user.id,
         actorRole: "business",
         action: "booking.cancel.owner",
         targetType: "booking",
         targetId: bookingId,
-        metadata: { reason: reason || null, refunded, prior_status: booking.status },
+        metadata: {
+            reason: reason || null,
+            refunded,
+            prior_status: booking.status,
+            wallet_credit_refunded: walletRefunded,
+        },
     });
 
     revalidatePath(`/${locale}/dashboard/bookings`);
