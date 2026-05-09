@@ -691,9 +691,22 @@ export async function createBookingAndCheckoutAction(
         session = await getStripe().checkout.sessions.create(sessionParams);
     } catch {
         // Stripe rejected the session — release the slot, mark booking cancelled,
-        // and surface a clear error rather than silently rerouting to platform.
+        // refund any wallet credit we already spent, and surface a clear error.
         await supabase.from("bookings").update({ status: "cancelled" } as never).eq("id", booking.id);
         await supabase.from("court_availability").update({ is_booked: false } as never).eq("id", availabilityId);
+        if (appliedCredit > 0) {
+            try {
+                const admin = createAdminClient();
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                await (admin as any).rpc("refund_wallet_credit", {
+                    p_user_id: user.id,
+                    p_amount: appliedCredit,
+                    p_booking_id: booking.id,
+                });
+            } catch (err) {
+                console.error("[loyalty] credit refund after Stripe failure failed", err);
+            }
+        }
         return { error: "Could not start payment. Please try again." };
     }
 

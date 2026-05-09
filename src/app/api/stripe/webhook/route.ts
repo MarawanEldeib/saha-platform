@@ -188,6 +188,27 @@ export async function POST(req: NextRequest) {
                 .from("bookings")
                 .update({ status: "cancelled" } as never)
                 .eq("id", bookingId);
+
+            // SAH-93: refund any wallet credit that was applied to this
+            // booking. Without this, an expired session burns the player's
+            // credit with no booking to show for it.
+            const walletCredit = Number(session.metadata?.wallet_credit_applied ?? 0);
+            if (walletCredit > 0) {
+                const { data: bookingRow } = await supabase
+                    .from("bookings")
+                    .select("player_id")
+                    .eq("id", bookingId)
+                    .single();
+                const playerId = (bookingRow as { player_id: string } | null)?.player_id;
+                if (playerId) {
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    await (supabase as any).rpc("refund_wallet_credit", {
+                        p_user_id: playerId,
+                        p_amount: walletCredit,
+                        p_booking_id: bookingId,
+                    });
+                }
+            }
         }
     }
 
