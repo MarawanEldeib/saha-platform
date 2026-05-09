@@ -1,9 +1,10 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
-import { getLocale } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
 import { format } from "date-fns";
 import { CheckCircle2, Clock, Users, QrCode } from "lucide-react";
 import { CheckInButton } from "./CheckInButton";
+import { QrScannerModal } from "./QrScannerModal";
 import { getActiveFacility } from "@/lib/facility-context";
 
 export const metadata = { title: "Check-in – Saha" };
@@ -11,6 +12,7 @@ export const metadata = { title: "Check-in – Saha" };
 export default async function CheckInPage() {
     const supabase = await createClient();
     const locale = await getLocale();
+    const t = await getTranslations("checkin_page");
 
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) redirect(`/${locale}/login`);
@@ -39,17 +41,20 @@ export default async function CheckInPage() {
 
     return (
         <div className="space-y-6">
-            <div>
-                <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Check-in</h1>
-                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                    Today&apos;s bookings — {format(new Date(today), "EEEE, MMMM d")}
-                </p>
+            <div className="flex items-start justify-between gap-3 flex-wrap">
+                <div>
+                    <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{t("heading")}</h1>
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                        {t("today_subtitle", { date: format(new Date(today), "EEEE, MMMM d") })}
+                    </p>
+                </div>
+                <QrScannerModal />
             </div>
 
             {!bookings?.length ? (
                 <div className="text-center py-16 space-y-2">
                     <QrCode className="h-12 w-12 text-gray-300 dark:text-gray-600 mx-auto" />
-                    <p className="text-gray-500 dark:text-gray-400">No bookings for today</p>
+                    <p className="text-gray-500 dark:text-gray-400">{t("no_bookings")}</p>
                 </div>
             ) : (
                 <div className="space-y-8">
@@ -93,11 +98,11 @@ export default async function CheckInPage() {
                                                 {/* Player info */}
                                                 <div className="flex-1 min-w-0">
                                                     <p className="font-medium text-sm text-gray-900 dark:text-white truncate">
-                                                        {player?.display_name ?? "Player"}
+                                                        {player?.display_name ?? t("player_fallback")}
                                                     </p>
                                                     <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400 mt-0.5">
                                                         <Users className="h-3 w-3" />
-                                                        <span>{booking.num_players} players</span>
+                                                        <span>{t("num_players", { n: booking.num_players })}</span>
                                                     </div>
                                                 </div>
 
@@ -105,7 +110,7 @@ export default async function CheckInPage() {
                                                 {isCheckedIn ? (
                                                     <div className="flex items-center gap-1.5 text-emerald-500 text-sm font-medium">
                                                         <CheckCircle2 className="h-5 w-5" />
-                                                        <span className="hidden sm:block">Checked in</span>
+                                                        <span className="hidden sm:block">{t("checked_in_label")}</span>
                                                     </div>
                                                 ) : (
                                                     <CheckInButton bookingId={booking.id} />

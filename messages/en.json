@@ -452,6 +452,26 @@
         "loading": "...",
         "button": "Check in"
     },
+    "checkin_page": {
+        "heading": "Check-in",
+        "today_subtitle": "Today's bookings — {date}",
+        "no_bookings": "No bookings for today",
+        "checked_in_label": "Checked in",
+        "num_players": "{n, plural, =1 {# player} other {# players}}",
+        "player_fallback": "Player"
+    },
+    "checkin_scanner": {
+        "scan_button": "Scan QR",
+        "modal_heading": "Scan player QR code",
+        "instructions": "Align the QR code inside the frame. Check-in fires automatically.",
+        "checked_in": "Checked in",
+        "already_checked_in": "Already checked in earlier",
+        "scan_next": "Scan next player",
+        "num_players": "{n, plural, =1 {# player} other {# players}}",
+        "invalid": "Could not read this code — try again",
+        "camera_error": "Could not access the camera. Allow camera permissions and reload.",
+        "close": "Close"
+    },
     "image_uploader": {
         "max_images_error": "You can upload up to {max} images.",
         "invalid_type_error": "Only JPEG, PNG, and WebP images are supported.",
