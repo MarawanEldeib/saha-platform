@@ -31,10 +31,13 @@ type Props = {
     locale: string;
     /** Facility's currency code, e.g. "AED" / "SAR". */
     currency?: string;
+    /** Caller's wallet balance in AED (SAH-93). 0 when no credit. */
+    walletBalance?: number;
 };
 
-export function BookingWidget({ courts, isLoggedIn, locale, currency = "AED" }: Props) {
+export function BookingWidget({ courts, isLoggedIn, locale, currency = "AED", walletBalance = 0 }: Props) {
     const t = useTranslations("booking_widget");
+    const tw = useTranslations("wallet");
     const router = useRouter();
     const [isPending, startTransition] = useTransition();
     const [courtId, setCourtId] = useState(courts[0]?.id ?? "");
@@ -43,6 +46,7 @@ export function BookingWidget({ courts, isLoggedIn, locale, currency = "AED" }: 
     const [selectedSlot, setSelectedSlot] = useState<Slot | null>(null);
     const [loadingSlots, setLoadingSlots] = useState(false);
     const [weeks, setWeeks] = useState(1);
+    const [useWalletCredit, setUseWalletCredit] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
     const selectedCourt = courts.find((c) => c.id === courtId);
@@ -61,9 +65,12 @@ export function BookingWidget({ courts, isLoggedIn, locale, currency = "AED" }: 
         if (!selectedSlot || !courtId) return;
         setError(null);
         startTransition(async () => {
+            // Wallet credit only applies to single-booking flow for now —
+            // recurring series spend logic is a follow-up.
+            const credit = weeks === 1 && useWalletCredit ? walletBalance : undefined;
             const result = weeks > 1
                 ? await createRecurringBookingAndCheckoutAction(selectedSlot.id, 1, weeks)
-                : await createBookingAndCheckoutAction(selectedSlot.id, 1);
+                : await createBookingAndCheckoutAction(selectedSlot.id, 1, credit);
             if (result.error) {
                 setError(result.error);
                 setSlots(null);
@@ -194,6 +201,25 @@ export function BookingWidget({ courts, isLoggedIn, locale, currency = "AED" }: 
                         <span className="text-gray-500 dark:text-gray-400">{t("total")}</span>
                         <span className="font-semibold text-gray-900 dark:text-white">{formatPrice(totalPrice, currency, locale)}</span>
                     </div>
+
+                    {/* SAH-93: wallet credit redemption — only on single-week flow.
+                        Capped server-side to platform fee (10%) so owner stays whole. */}
+                    {walletBalance > 0 && weeks === 1 && (
+                        <label className="flex items-center justify-between gap-3 px-3 py-2 rounded-lg border border-emerald-200 dark:border-emerald-800 bg-emerald-50/50 dark:bg-emerald-900/10 cursor-pointer">
+                            <div className="flex items-center gap-2 min-w-0">
+                                <input
+                                    type="checkbox"
+                                    checked={useWalletCredit}
+                                    onChange={(e) => setUseWalletCredit(e.target.checked)}
+                                    className="rounded border-emerald-400 text-emerald-600 focus:ring-emerald-500"
+                                />
+                                <span className="text-xs font-medium text-emerald-900 dark:text-emerald-200">
+                                    {tw("apply_credit", { amount: formatPrice(walletBalance, "AED", locale) })}
+                                </span>
+                            </div>
+                        </label>
+                    )}
+
                     {error && <p className="text-xs text-red-500">{error}</p>}
                     <button
                         onClick={handleBook}

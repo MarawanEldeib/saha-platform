@@ -378,6 +378,25 @@
         "my_bookings": "My bookings",
         "series_position": "Week {index} of {total} in your weekly series"
     },
+    "wallet": {
+        "card_title": "Wallet credit",
+        "hint_can_apply": "Apply at checkout to save on your next booking.",
+        "hint_earn": "Complete 10 bookings to earn your first credit.",
+        "back_to_account": "Back to account",
+        "hero_hint_balance": "Tap Apply at checkout to use your credit.",
+        "hero_hint_zero": "Every 10 completed bookings earns you a credit toward a free hour.",
+        "progress_title": "Progress to next reward",
+        "progress_text": "{current} of {target} completed bookings since your last reward.",
+        "how_it_works_title": "How wallet credit works",
+        "how_it_works_body": "Every 10 completed bookings, we credit your wallet with the average value of those bookings (capped at AED 50). At checkout, redeem up to 10% of the booking total — the rest is paid via Stripe.",
+        "ledger_title": "Recent activity",
+        "ledger_empty": "No wallet activity yet.",
+        "reason_booking_milestone": "Loyalty reward",
+        "reason_spend": "Applied to booking",
+        "reason_refund": "Booking refund",
+        "reason_admin": "Manual adjustment",
+        "apply_credit": "Apply {amount} wallet credit"
+    },
     "booking_widget": {
         "sign_in_prompt": "Sign in to book a court",
         "sign_in": "Sign in",
