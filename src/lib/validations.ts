@@ -80,6 +80,8 @@ export const facilityUpdateSchema = z.object({
     postal_code: z.string().min(4),
     phone: z.string().optional(),
     website: z.string().url().optional().or(z.literal("")),
+    // SAH-90: UAE Tax Registration Number, 15 digits per FTA spec.
+    trn: z.string().regex(/^\d{15}$/, "TRN must be 15 digits").optional().or(z.literal("")),
 });
 export type FacilityUpdateInput = z.infer<typeof facilityUpdateSchema>;
 

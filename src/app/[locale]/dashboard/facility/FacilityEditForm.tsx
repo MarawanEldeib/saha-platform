@@ -36,6 +36,7 @@ interface Props {
         postal_code: string | null;
         phone: string | null;
         website: string | null;
+        trn?: string | null;
     };
     allSports: Sport[];
     currentSportIds: number[];
@@ -103,6 +104,7 @@ export function FacilityEditForm({
             postal_code: facility.postal_code ?? "",
             phone: facility.phone ?? "",
             website: facility.website ?? "",
+            trn: facility.trn ?? "",
         },
     });
 
@@ -169,6 +171,17 @@ export function FacilityEditForm({
                             placeholder={t("description_placeholder")}
                         />
                         {errors.description && <p className="text-xs text-red-500 mt-1">{errors.description.message}</p>}
+                    </div>
+                    <div>
+                        <Input
+                            label={t("trn_label")}
+                            placeholder={t("trn_placeholder")}
+                            inputMode="numeric"
+                            maxLength={15}
+                            error={errors.trn?.message}
+                            {...register("trn")}
+                        />
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{t("trn_hint")}</p>
                     </div>
                 </div>
             </div>

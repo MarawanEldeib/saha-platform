@@ -102,6 +102,7 @@ export async function updateFacilityAction(formData: FormData) {
         postal_code: formData.get("postal_code") as string,
         phone: (formData.get("phone") as string) || undefined,
         website: (formData.get("website") as string) || undefined,
+        trn: (formData.get("trn") as string) || undefined,
     };
 
     const parsed = facilityUpdateSchema.safeParse(raw);
@@ -113,6 +114,7 @@ export async function updateFacilityAction(formData: FormData) {
         ...parsed.data,
         phone: parsed.data.phone ?? null,
         website: parsed.data.website ?? null,
+        trn: parsed.data.trn || null,
         updated_at: new Date().toISOString(),
         ...(locationWkt ? { location: locationWkt as never } : {}),
     };
