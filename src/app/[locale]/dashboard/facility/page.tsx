@@ -5,6 +5,7 @@ import { FacilityEditForm } from "./FacilityEditForm";
 import { StripeConnectSection } from "./StripeConnectSection";
 import { ShareableLinkCard } from "./ShareableLinkCard";
 import { getActiveFacility } from "@/lib/facility-context";
+import { getStripe, PLATFORM_FEE_PERCENT } from "@/lib/stripe";
 
 export const metadata = { title: "Manage Facility – Saha" };
 
@@ -45,6 +46,23 @@ export default async function FacilityPage() {
 
     const currentSportIds: number[] = (facilitySpots ?? []).map((r: { sport_id: number }) => r.sport_id);
 
+    // SAH-64: fetch live Stripe account state so the section can show
+    // "ready" vs "onboarding incomplete" instead of just "connected".
+    let chargesEnabled = false;
+    let detailsSubmitted = false;
+    let payoutsEnabled = false;
+    if (facility.stripe_account_id) {
+        try {
+            const account = await getStripe().accounts.retrieve(facility.stripe_account_id);
+            chargesEnabled = !!account.charges_enabled;
+            detailsSubmitted = !!account.details_submitted;
+            payoutsEnabled = !!account.payouts_enabled;
+        } catch {
+            // Stripe lookup failed — treat as not-yet-ready. UI will show
+            // "complete onboarding" state.
+        }
+    }
+
     return (
         <div className="max-w-2xl space-y-6">
             <div className="mb-2">
@@ -59,7 +77,13 @@ export default async function FacilityPage() {
                 initialImages={facility.facility_images ?? []}
                 initialHours={hours ?? []}
             />
-            <StripeConnectSection isConnected={!!facility.stripe_account_id} />
+            <StripeConnectSection
+                hasAccount={!!facility.stripe_account_id}
+                chargesEnabled={chargesEnabled}
+                detailsSubmitted={detailsSubmitted}
+                payoutsEnabled={payoutsEnabled}
+                platformFeePercent={PLATFORM_FEE_PERCENT}
+            />
         </div>
     );
 }

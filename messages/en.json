@@ -378,6 +378,24 @@
         "my_bookings": "My bookings",
         "series_position": "Week {index} of {total} in your weekly series"
     },
+    "stripe_connect": {
+        "badge_ready": "Ready to receive payments",
+        "badge_incomplete": "Onboarding incomplete",
+        "badge_not_connected": "Not connected",
+        "ready_body": "Your courts are bookable. Players can pay directly and payouts go to your bank account.",
+        "incomplete_body": "Stripe still needs a bit more from you before payouts can land.",
+        "checklist_details": "Submit the remaining business / identity details.",
+        "checklist_charges": "Confirm your bank account so charges can be enabled.",
+        "checklist_payouts": "Verify identity to enable payouts.",
+        "continue_setup": "Continue Stripe setup",
+        "split_owner_label": "Goes to you",
+        "split_platform_label": "Saha platform fee",
+        "split_payout_value": "Direct",
+        "split_payout_label": "Payouts to your bank",
+        "split_disclosure": "On every booking, Stripe transfers {owner}% to your connected account and Saha keeps a {platform}% platform fee. Payouts go directly to the bank account on file in Stripe — Saha never holds your money.",
+        "disconnect_error": "Something went wrong. Please try again.",
+        "close": "Close"
+    },
     "wallet": {
         "card_title": "Wallet credit",
         "hint_can_apply": "Apply at checkout to save on your next booking.",
