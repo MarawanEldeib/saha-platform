@@ -378,6 +378,25 @@
         "my_bookings": "حجوزاتي",
         "series_position": "الأسبوع {index} من {total} في سلسلتك الأسبوعية"
     },
+    "wallet": {
+        "card_title": "رصيد المحفظة",
+        "hint_can_apply": "طبّقه عند الدفع لتوفر على حجزك القادم.",
+        "hint_earn": "أكمل 10 حجوزات لتحصل على أول رصيد.",
+        "back_to_account": "العودة إلى الحساب",
+        "hero_hint_balance": "اضغط تطبيق عند الدفع لاستخدام رصيدك.",
+        "hero_hint_zero": "كل 10 حجوزات مكتملة تكسبك رصيداً لساعة مجانية.",
+        "progress_title": "التقدم نحو المكافأة التالية",
+        "progress_text": "{current} من {target} حجوزات مكتملة منذ آخر مكافأة.",
+        "how_it_works_title": "كيف تعمل أرصدة المحفظة",
+        "how_it_works_body": "كل 10 حجوزات مكتملة، نضيف إلى محفظتك متوسط قيمة تلك الحجوزات (بحد أقصى 50 درهم). عند الدفع، استرد حتى 10% من إجمالي الحجز — والباقي يُدفع عبر Stripe.",
+        "ledger_title": "النشاط الأخير",
+        "ledger_empty": "لا يوجد نشاط في المحفظة بعد.",
+        "reason_booking_milestone": "مكافأة ولاء",
+        "reason_spend": "مطبّق على حجز",
+        "reason_refund": "استرداد حجز",
+        "reason_admin": "تعديل يدوي",
+        "apply_credit": "تطبيق رصيد {amount}"
+    },
     "booking_widget": {
         "sign_in_prompt": "سجّل الدخول لحجز ملعب",
         "sign_in": "تسجيل الدخول",

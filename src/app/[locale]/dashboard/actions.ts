@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { cookies, headers } from "next/headers";
 import { getLocale } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { facilityUpdateSchema, profileUpdateSchema, courtSchema, type CourtInput, availabilitySlotSchema, facilityHoursSchema } from "@/lib/validations";
 import type { Database } from "@/types/database";
 import type Stripe from "stripe";
@@ -523,6 +524,9 @@ export async function getAvailableSlotsAction(courtId: string, date: string) {
 export async function createBookingAndCheckoutAction(
     availabilityId: string,
     numPlayers: number,
+    /** Optional wallet credit to apply (SAH-93). Capped server-side at the
+     * platform fee (10% of total) so the owner stays whole. */
+    creditToApply?: number,
 ) {
     const supabase = await createClient();
     const locale = await getLocale();
@@ -624,25 +628,55 @@ export async function createBookingAndCheckoutAction(
         status: "pending",
     } as never);
 
+    // SAH-93: optionally redeem wallet credit. Capped at the platform fee
+    // (10% of total) so application_fee_amount can never go negative — the
+    // platform absorbs the discount, owner stays whole.
+    let appliedCredit = 0;
+    if (creditToApply && creditToApply > 0) {
+        const maxRedeemable = Math.round(totalPrice * PLATFORM_FEE_PERCENT) / 100;
+        const requested = Math.min(creditToApply, maxRedeemable);
+        try {
+            const admin = createAdminClient();
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const { data: spent } = await (admin as any).rpc("spend_wallet_credit", {
+                p_user_id: user.id,
+                p_amount: requested,
+                p_booking_id: booking.id,
+            });
+            appliedCredit = typeof spent === "number" ? spent : Number(spent ?? 0);
+        } catch (err) {
+            console.error("[loyalty] spend_wallet_credit failed", err);
+        }
+    }
+
+    const chargeAmount = Math.round((totalPrice - appliedCredit) * 100);
+    const ownerNetAmount = Math.round(totalPrice * (1 - PLATFORM_FEE_PERCENT / 100) * 100);
+    const feeAmount = Math.max(0, chargeAmount - ownerNetAmount);
+
     const headersList = await headers();
     const host = headersList.get("host") ?? "localhost:3000";
     const appUrl = host.startsWith("localhost") ? `http://${host}` : `https://${host}`;
 
-    const feeAmount = Math.round(totalPrice * 100 * PLATFORM_FEE_PERCENT / 100);
     const sessionParams: Stripe.Checkout.SessionCreateParams = {
         mode: "payment",
         line_items: [{
             quantity: 1,
             price_data: {
                 currency: currency.toLowerCase(),
-                unit_amount: Math.round(totalPrice * 100),
+                unit_amount: chargeAmount,
                 product_data: {
                     name: facilityData?.name ? `${facilityData.name} — ${court.name}` : court.name,
-                    description: `${slot.date} · ${slot.start_time}–${slot.end_time}`,
+                    description: appliedCredit > 0
+                        ? `${slot.date} · ${slot.start_time}–${slot.end_time} (${appliedCredit.toFixed(2)} ${currency} wallet credit applied)`
+                        : `${slot.date} · ${slot.start_time}–${slot.end_time}`,
                 },
             },
         }],
-        metadata: { booking_id: booking.id, availability_id: availabilityId },
+        metadata: {
+            booking_id: booking.id,
+            availability_id: availabilityId,
+            wallet_credit_applied: String(appliedCredit),
+        },
         success_url: `${appUrl}/${locale}/bookings/${booking.id}?success=1`,
         cancel_url: `${appUrl}/${locale}/bookings/${booking.id}?cancelled=1`,
         expires_at: Math.floor(Date.now() / 1000) + 30 * 60, // 30 min to pay
@@ -1265,14 +1299,71 @@ export async function markCheckedInAction(bookingId: string) {
         .single();
     if (!facility) return { error: "No facility found" };
 
+    // Find the player so we can run the loyalty milestone check after the
+    // status flip — this is the canonical "completed" trigger.
+    const { data: bookingRow } = await supabase
+        .from("bookings")
+        .select("player_id")
+        .eq("id", bookingId)
+        .single();
+
     await supabase
         .from("bookings")
         .update({ status: "completed" } as never)
         .eq("id", bookingId)
         .eq("status", "confirmed");
 
+    // SAH-93: try awarding a milestone credit. RPC is idempotent — safe to
+    // call after every check-in, returns 0 until the threshold is hit.
+    const playerId = (bookingRow as { player_id: string } | null)?.player_id;
+    if (playerId) {
+        const admin = createAdminClient();
+        try {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            await (admin as any).rpc("award_loyalty_credit_if_due", { p_user_id: playerId });
+        } catch (err) {
+            console.error("[loyalty] award_if_due failed", err);
+        }
+    }
+
     revalidatePath("/dashboard/checkin");
     return { success: true };
+}
+
+// ---------------------------------------------------------------------------
+// SAH-93: read the caller's wallet balance + recent ledger. RLS already
+// scopes both tables to the caller, so no extra ownership checks needed.
+// ---------------------------------------------------------------------------
+export async function getWalletAction() {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { error: "Unauthorized" as const };
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: balanceRow } = await (supabase as any)
+        .from("wallet_balances")
+        .select("credit_aed, updated_at")
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: ledger } = await (supabase as any)
+        .from("wallet_transactions")
+        .select("id, amount_aed, reason, booking_id, created_at")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false })
+        .limit(20);
+
+    return {
+        balance: Number(balanceRow?.credit_aed ?? 0),
+        ledger: (ledger ?? []) as Array<{
+            id: string;
+            amount_aed: number;
+            reason: "booking_milestone" | "spend" | "refund" | "admin";
+            booking_id: string | null;
+            created_at: string;
+        }>,
+    };
 }
 
 // ---------------------------------------------------------------------------

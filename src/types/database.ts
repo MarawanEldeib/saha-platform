@@ -569,6 +569,44 @@ export interface Database {
                 Update: Record<string, never>;
                 Relationships: [];
             };
+            wallet_balances: {
+                Row: {
+                    user_id: string;
+                    credit_aed: number;
+                    bookings_at_last_award: number;
+                    updated_at: string;
+                };
+                Insert: {
+                    user_id: string;
+                    credit_aed?: number;
+                    bookings_at_last_award?: number;
+                };
+                Update: {
+                    credit_aed?: number;
+                    bookings_at_last_award?: number;
+                    updated_at?: string;
+                };
+                Relationships: [];
+            };
+            wallet_transactions: {
+                Row: {
+                    id: string;
+                    user_id: string;
+                    amount_aed: number;
+                    reason: "booking_milestone" | "spend" | "refund" | "admin";
+                    booking_id: string | null;
+                    created_at: string;
+                };
+                Insert: {
+                    id?: string;
+                    user_id: string;
+                    amount_aed: number;
+                    reason: "booking_milestone" | "spend" | "refund" | "admin";
+                    booking_id?: string | null;
+                };
+                Update: never;
+                Relationships: [];
+            };
             audit_log: {
                 Row: {
                     id: string;

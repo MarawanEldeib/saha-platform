@@ -44,6 +44,19 @@ export default async function FacilityDetailPage({
 
     const { data: { user } } = await supabase.auth.getUser();
 
+    // SAH-93: caller's wallet balance for the booking widget. Anonymous
+    // visitors have no wallet — leave at 0.
+    let walletBalance = 0;
+    if (user) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { data: walletRow } = await (supabase as any)
+            .from("wallet_balances")
+            .select("credit_aed")
+            .eq("user_id", user.id)
+            .maybeSingle();
+        walletBalance = Number(walletRow?.credit_aed ?? 0);
+    }
+
     const { data: facility, error } = await supabase
         .from("facilities")
         .select(
@@ -242,6 +255,7 @@ export default async function FacilityDetailPage({
                         isLoggedIn={!!user}
                         locale={locale}
                         currency={(facility as { currency?: string }).currency}
+                        walletBalance={walletBalance}
                     />
                 </aside>
             </div>

@@ -3,7 +3,8 @@ import { getLocale, getTranslations } from "next-intl/server";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { format } from "date-fns";
-import { User, CalendarDays, Settings, Users, ChevronRight, MapPin } from "lucide-react";
+import { User, CalendarDays, Settings, Users, ChevronRight, MapPin, Wallet } from "lucide-react";
+import { formatPrice } from "@/lib/utils";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = { title: "My Account – Saha" };
@@ -13,6 +14,7 @@ export default async function AccountPage() {
     const locale = await getLocale();
     const t = await getTranslations("account");
     const tb = await getTranslations("bookings");
+    const tw = await getTranslations("wallet");
 
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) redirect(`/${locale}/login`);
@@ -23,6 +25,15 @@ export default async function AccountPage() {
         .select("display_name, phone, avatar_url")
         .eq("id", user.id)
         .single();
+
+    // SAH-93: wallet balance for the loyalty card.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: walletRow } = await (supabase as any)
+        .from("wallet_balances")
+        .select("credit_aed")
+        .eq("user_id", user.id)
+        .maybeSingle();
+    const walletBalance = Number(walletRow?.credit_aed ?? 0);
 
     const today = new Date().toISOString().slice(0, 10);
 
@@ -66,6 +77,28 @@ export default async function AccountPage() {
                     <Settings className="h-4 w-4" />
                 </Link>
             </div>
+
+            {/* SAH-93: wallet balance */}
+            <Link
+                href={`/${locale}/account/wallet`}
+                className="block bg-gradient-to-br from-emerald-50 to-emerald-100 dark:from-emerald-900/20 dark:to-emerald-900/10 border border-emerald-200 dark:border-emerald-800 rounded-2xl p-5 hover:border-emerald-300 dark:hover:border-emerald-700 transition-colors"
+            >
+                <div className="flex items-center justify-between gap-4">
+                    <div className="min-w-0">
+                        <div className="flex items-center gap-2 mb-1 text-emerald-700 dark:text-emerald-400">
+                            <Wallet className="h-4 w-4" />
+                            <p className="text-sm font-semibold">{tw("card_title")}</p>
+                        </div>
+                        <p className="text-2xl font-bold text-gray-900 dark:text-white tabular-nums">
+                            {formatPrice(walletBalance, "AED", locale)}
+                        </p>
+                        <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+                            {walletBalance > 0 ? tw("hint_can_apply") : tw("hint_earn")}
+                        </p>
+                    </div>
+                    <ChevronRight className="h-4 w-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                </div>
+            </Link>
 
             {/* Upcoming bookings */}
             <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl overflow-hidden">
