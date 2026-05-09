@@ -1,4 +1,4 @@
-# Saha Platform — Project Report
+# Saha — Project Report
 
 > **Saha** is a court-booking platform for racket sports in the UAE — Padel, Tennis, Squash, Badminton, Pickleball.
 > It connects players with local sports facilities, lets facility owners list courts, manage availability, and accept payments via Stripe Connect, and gives admins approval queues + an audit log.
@@ -180,8 +180,8 @@ Open follow-ups (Linear): rate limiting ([SAH-76](https://linear.app/saha-platfo
 ## 8. Local dev
 
 ```
-git clone https://github.com/MarawanEldeib/saha-platform.git
-cd saha-platform
+git clone https://github.com/MarawanEldeib/saha.git
+cd saha
 npm install
 cp .env.example .env.local   # fill in Supabase + Stripe + Twilio + Resend + Mapbox keys
 npm run dev

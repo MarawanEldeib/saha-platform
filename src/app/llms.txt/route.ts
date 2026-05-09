@@ -47,7 +47,7 @@ The platform supports English and Arabic (RTL). Payments settle in AED with a 90
 
 ## Optional
 
-- [Repository](https://github.com/MarawanEldeib/saha-platform): source code (public)
+- [Repository](https://github.com/MarawanEldeib/saha): source code (public)
 `;
 
 export async function GET() {

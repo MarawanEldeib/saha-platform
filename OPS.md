@@ -34,7 +34,7 @@ Code is wired (`src/lib/botid.ts`) on `loginAction`, `registerAction`,
 `forgotPasswordAction`. It gracefully no-ops when the platform feature
 isn't on. To turn it on:
 
-1. Vercel Dashboard → saha-platform → Settings → Bot Protection (or
+1. Vercel Dashboard → saha → Settings → Bot Protection (or
    "BotID" depending on the dashboard generation).
 2. Toggle Bot Protection to **Enabled**.
 3. Default mode is fine — there's no per-route configuration required.
@@ -67,7 +67,7 @@ migrations can be tested before they hit live data.
    - `STRIPE_SECRET_KEY` / `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` →
      **Stripe test-mode** keys (so test card 4242 works).
    - `STRIPE_WEBHOOK_SECRET` → from a fresh Stripe webhook pointing at
-     `https://saha-platform-git-staging-…vercel.app/api/stripe/webhook`.
+     `https://saha-git-staging-…vercel.app/api/stripe/webhook`.
    - `RESEND_API_KEY`, `TWILIO_*` → optional; can reuse prod or stub.
 4. **Branch policy**: assign the `staging` env to the `staging` git branch
    in Vercel. Push to `master` still deploys to production.
@@ -158,7 +158,7 @@ files in Slack. Vercel is the source of truth — pull from it.
 ```bash
 npm i -g vercel
 vercel login                    # opens browser, sign in
-vercel link                     # pick the saha-platform project
+vercel link                     # pick the saha project
 npm run env:pull                # writes .env.local from Vercel "Development" env
 ```
 
@@ -172,7 +172,7 @@ the latest values.
   edit `.env.local` directly. They won't be overwritten until the next
   `env:pull`.
 - Anything bzo or production needs → add it in
-  [Vercel Settings → Environment Variables](https://vercel.com/marawans-projects-568c78f5/saha-platform/settings/environment-variables),
+  [Vercel Settings → Environment Variables](https://vercel.com/marawans-projects-568c78f5/saha/settings/environment-variables),
   pick the right environment(s) (Development / Preview / Production),
   then everyone runs `env:pull`.
 

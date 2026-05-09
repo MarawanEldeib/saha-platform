@@ -1,4 +1,4 @@
-# Saha Platform
+# Saha
 
 Saha is a racket sports facility discovery and booking platform built for the UAE market. Players find and book Padel, Tennis, Squash, and Badminton courts. Facility owners list and manage their venues.
 
@@ -25,8 +25,8 @@ Saha is a racket sports facility discovery and booking platform built for the UA
 ### Setup
 
 ```bash
-git clone https://github.com/MarawanEldeib/saha-platform.git
-cd saha-platform
+git clone https://github.com/MarawanEldeib/saha.git
+cd saha
 npm install
 cp .env.example .env.local
 # Fill in .env.local with your Supabase and Resend credentials
