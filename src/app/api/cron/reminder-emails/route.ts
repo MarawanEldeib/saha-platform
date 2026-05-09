@@ -32,7 +32,7 @@ export async function GET(req: NextRequest) {
             id, date, start_time, end_time, num_players, total_price, currency,
             player_id,
             courts(name, facilities(name, address, city)),
-            profiles(display_name, phone)
+            profiles(display_name, phone, phone_verified)
         `)
         .eq("status", "confirmed")
         .in("date", [todayKey, tomorrowKey])
@@ -95,8 +95,9 @@ export async function GET(req: NextRequest) {
             }).catch((err) => { console.error("reminder email failed", err); failed++; });
         }
 
-        // Send WhatsApp reminder
-        if (profile?.phone) {
+        // SAH-79: only send WhatsApp to verified phones — otherwise we
+        // could be paging the wrong person.
+        if (profile?.phone && profile?.phone_verified) {
             await sendWhatsApp(
                 profile.phone,
                 `${whatsappLead}\n\n` +
