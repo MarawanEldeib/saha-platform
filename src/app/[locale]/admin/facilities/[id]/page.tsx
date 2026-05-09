@@ -16,6 +16,7 @@ interface FacilityDetail {
     postal_code: string | null;
     phone: string | null;
     website: string | null;
+    location: { coordinates?: [number, number] } | null;
     status: FacilityStatus;
     created_at: string;
     profiles: { display_name: string | null; email?: string } | null;
@@ -89,6 +90,16 @@ export default async function AdminFacilityDetailPage({
                             </span>
                         ))}
                     </div>
+                </div>
+            )}
+
+            {/* SAH-119: warn admins before they try to approve a facility with no
+                resolved coordinates. The action itself blocks approval; this just
+                surfaces the reason early so admins don't waste a click. */}
+            {facility.location === null && (
+                <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-2xl p-5 text-sm text-amber-900 dark:text-amber-200">
+                    <p className="font-semibold mb-1">Coordinates missing</p>
+                    <p>This facility has no resolved location, so it can&apos;t appear on the map or in radius search. Approval is blocked. Ask the owner to re-save the address from their dashboard, then try again.</p>
                 </div>
             )}
 

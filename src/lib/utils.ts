@@ -56,6 +56,26 @@ export function formatPrice(
     }
 }
 
+/**
+ * Normalize free-text user input before saving to DB (SAH-120).
+ *
+ *   - Replace Windows line endings (`\r\n`) and standalone `\r` with `\n`
+ *     so the API output stays clean for downstream consumers (AI agents,
+ *     character counts, future moderation).
+ *   - Trim leading/trailing whitespace.
+ *   - Collapse runs of 3+ blank lines to 2 (visual hygiene without
+ *     destroying intentional paragraph breaks).
+ *
+ * Use on every free-text field that owners or players write into:
+ * `description`, `address`, `notes`, `comment`, etc.
+ */
+export function sanitizeTextInput(input: string): string {
+    return input
+        .replace(/\r\n?/g, "\n")
+        .replace(/\n{3,}/g, "\n\n")
+        .trim();
+}
+
 /** Convert 0-based day index to day name key in i18n messages */
 export const DAY_KEYS = [
     "monday",

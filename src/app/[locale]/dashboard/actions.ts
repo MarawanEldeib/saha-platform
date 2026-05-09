@@ -8,6 +8,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { capWalletCredit, computeCheckoutAmounts } from "@/lib/booking-pricing";
 import { rateLimit } from "@/lib/rate-limit";
 import { facilityUpdateSchema, profileUpdateSchema, courtSchema, type CourtInput, availabilitySlotSchema, facilityHoursSchema } from "@/lib/validations";
+import { sanitizeTextInput } from "@/lib/utils";
 import type { Database } from "@/types/database";
 import type Stripe from "stripe";
 import { getStripe, PLATFORM_FEE_PERCENT } from "@/lib/stripe";
@@ -22,24 +23,33 @@ type FacilityUpdate = Database["public"]["Tables"]["facilities"]["Update"];
 type FacilityInsert = Database["public"]["Tables"]["facility_sports"]["Insert"];
 
 // ---------------------------------------------------------------------------
-// Geocoding helper — uses Mapbox Geocoding API v5
+// Geocoding helper — uses Mapbox Geocoding API v5.
+// Returns a discriminated result so callers can distinguish "address didn't
+// resolve" (user-correctable) from "Mapbox isn't configured" (env issue,
+// dev-only). SAH-119 makes the dashboard refuse to save without a resolved
+// location when Mapbox is configured.
 // ---------------------------------------------------------------------------
-async function geocodeAddress(address: string, city: string): Promise<string | null> {
+type GeocodeResult =
+    | { status: "ok"; wkt: string }
+    | { status: "no_match" }
+    | { status: "not_configured" };
+
+async function geocodeAddress(address: string, city: string): Promise<GeocodeResult> {
     const token = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
-    if (!token) return null;
+    if (!token) return { status: "not_configured" };
     const query = encodeURIComponent(`${address}, ${city}, UAE`);
     try {
         const res = await fetch(
             `https://api.mapbox.com/geocoding/v5/mapbox.places/${query}.json?access_token=${token}&limit=1&country=ae`,
             { signal: AbortSignal.timeout(5000) },
         );
-        if (!res.ok) return null;
+        if (!res.ok) return { status: "no_match" };
         const data = await res.json() as { features?: { geometry?: { type: string; coordinates: [number, number] } }[] };
         const coords = data.features?.[0]?.geometry?.coordinates;
-        if (!coords) return null;
-        return `POINT(${coords[0]} ${coords[1]})`;
+        if (!coords) return { status: "no_match" };
+        return { status: "ok", wkt: `POINT(${coords[0]} ${coords[1]})` };
     } catch {
-        return null;
+        return { status: "no_match" };
     }
 }
 
@@ -97,12 +107,15 @@ export async function updateFacilityAction(formData: FormData) {
         .single();
     if (!own) return { error: "Access denied" };
 
+    // SAH-120: normalize free-text inputs before validation/storage so the API
+    // doesn't surface Windows line endings or trailing whitespace from form
+    // submissions.
     const raw = {
-        name: formData.get("name") as string,
-        description: formData.get("description") as string,
-        address: formData.get("address") as string,
-        city: formData.get("city") as string,
-        postal_code: formData.get("postal_code") as string,
+        name: sanitizeTextInput((formData.get("name") as string) ?? ""),
+        description: sanitizeTextInput((formData.get("description") as string) ?? ""),
+        address: sanitizeTextInput((formData.get("address") as string) ?? ""),
+        city: sanitizeTextInput((formData.get("city") as string) ?? ""),
+        postal_code: sanitizeTextInput((formData.get("postal_code") as string) ?? ""),
         phone: (formData.get("phone") as string) || undefined,
         website: (formData.get("website") as string) || undefined,
         trn: (formData.get("trn") as string) || undefined,
@@ -111,7 +124,17 @@ export async function updateFacilityAction(formData: FormData) {
     const parsed = facilityUpdateSchema.safeParse(raw);
     if (!parsed.success) return { error: parsed.error.issues[0].message };
 
-    const locationWkt = await geocodeAddress(parsed.data.address, parsed.data.city);
+    // SAH-119: if Mapbox is configured (it is in prod), require the address
+    // to resolve before letting the save through. We previously silently
+    // dropped the location update on no_match, which produced ghost
+    // facilities (e.g. CyberSport had status='active' with location IS NULL,
+    // so it didn't appear on the map).
+    const geo = await geocodeAddress(parsed.data.address, parsed.data.city);
+    if (geo.status === "no_match") {
+        return {
+            error: "We couldn't locate that address on the map. Double-check the street and city, then try again.",
+        };
+    }
 
     const update: FacilityUpdate = {
         ...parsed.data,
@@ -119,7 +142,7 @@ export async function updateFacilityAction(formData: FormData) {
         website: parsed.data.website ?? null,
         trn: parsed.data.trn || null,
         updated_at: new Date().toISOString(),
-        ...(locationWkt ? { location: locationWkt as never } : {}),
+        ...(geo.status === "ok" ? { location: geo.wkt as never } : {}),
     };
 
     const { error } = await supabase

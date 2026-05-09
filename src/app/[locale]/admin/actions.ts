@@ -37,6 +37,23 @@ async function assertAdmin() {
 export async function approveFacilityAction(facilityId: string) {
     try {
         const { adminClient, userId, role } = await assertAdmin();
+
+        // SAH-119: a facility without a resolved location can't appear on the
+        // map or in geo-radius searches, so approving it is misleading. Block
+        // approval and let the admin ask the owner to re-save the address
+        // (which will geocode via SAH-119's tightened dashboard action).
+        const { data: existing } = await adminClient
+            .from("facilities")
+            .select("location")
+            .eq("id", facilityId)
+            .single();
+        if (!existing) return { error: "Facility not found" };
+        if ((existing as { location: unknown }).location === null) {
+            return {
+                error: "This facility has no map coordinates yet. Ask the owner to re-save their address from the dashboard, then try approving again.",
+            };
+        }
+
         const update: FacilityUpdate = { status: "active" };
         const { error } = await adminClient
             .from("facilities")
