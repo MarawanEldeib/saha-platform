@@ -3,7 +3,7 @@
 import React, { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { usePathname } from "next/navigation";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import { Plus, Trash2, Zap, X, ChevronLeft, ChevronRight, Lock } from "lucide-react";
 import {
     createAvailabilitySlotAction,
@@ -43,17 +43,10 @@ const TIME_OPTIONS = Array.from({ length: 38 }, (_, i) => {
     return `${h}:${m}`;
 });
 
-const DURATION_OPTIONS = [
-    { label: "1 hour", value: 60 },
-    { label: "1.5 hours", value: 90 },
-    { label: "2 hours", value: 120 },
-];
-
+// 24-hour formatting works in every locale we support — avoids the
+// AM/PM translation problem and matches how owners usually input time.
 function formatTime(t: string) {
-    const [h, m] = t.split(":").map(Number);
-    const period = h < 12 ? "AM" : "PM";
-    const displayH = h % 12 === 0 ? 12 : h % 12;
-    return `${displayH}:${m.toString().padStart(2, "0")} ${period}`;
+    return t.slice(0, 5);
 }
 
 function offsetDate(dateStr: string, days: number) {
@@ -62,21 +55,29 @@ function offsetDate(dateStr: string, days: number) {
     return d.toISOString().split("T")[0];
 }
 
-function formatDateLabel(dateStr: string, today: string) {
-    if (dateStr === today) return "Today";
-    if (dateStr === offsetDate(today, 1)) return "Tomorrow";
-    const d = new Date(dateStr + "T00:00:00");
-    return d.toLocaleDateString("en-AE", { weekday: "short", month: "short", day: "numeric" });
-}
-
 export function AvailabilityClient({ courts, slots, selectedCourtId, selectedDate, today }: Props) {
     const router = useRouter();
     const pathname = usePathname();
     const tSports = useTranslations("sports");
+    const t = useTranslations("dashboard_availability");
+    const locale = useLocale();
     const knownSports = ["Padel", "Pickleball", "Tennis", "Squash", "Badminton"] as const;
     const sportName = (name: string) =>
         knownSports.includes(name as typeof knownSports[number]) ? tSports(name as typeof knownSports[number]) : name;
     const [isPending, startTransition] = useTransition();
+
+    const DURATION_OPTIONS = [
+        { label: t("duration_1h"), value: 60 },
+        { label: t("duration_1_5h"), value: 90 },
+        { label: t("duration_2h"), value: 120 },
+    ];
+
+    function formatDateLabel(dateStr: string) {
+        if (dateStr === today) return t("today");
+        if (dateStr === offsetDate(today, 1)) return t("tomorrow");
+        const d = new Date(dateStr + "T00:00:00");
+        return d.toLocaleDateString(locale === "ar" ? "ar-AE" : "en-AE", { weekday: "short", month: "short", day: "numeric" });
+    }
 
     const [showAddForm, setShowAddForm] = useState(false);
     const [showGenerateForm, setShowGenerateForm] = useState(false);
@@ -108,7 +109,7 @@ export function AvailabilityClient({ courts, slots, selectedCourtId, selectedDat
     function nextDay() { navigate(selectedCourtId, offsetDate(selectedDate, 1)); }
 
     const handleAddSlot = () => {
-        if (addStart >= addEnd) { setAddError("End time must be after start time"); return; }
+        if (addStart >= addEnd) { setAddError(t("error_end_after_start")); return; }
         setAddError(null);
         startTransition(async () => {
             const result = await createAvailabilitySlotAction(selectedCourtId, selectedDate, addStart, addEnd);
@@ -119,7 +120,7 @@ export function AvailabilityClient({ courts, slots, selectedCourtId, selectedDat
     };
 
     const handleGenerate = () => {
-        if (genFrom >= genTo) { setGenError("From time must be before to time"); return; }
+        if (genFrom >= genTo) { setGenError(t("error_from_before_to")); return; }
         setGenError(null);
         startTransition(async () => {
             const result = await generateAvailabilitySlotsAction(selectedCourtId, selectedDate, genFrom, genTo, genDuration);
@@ -130,7 +131,7 @@ export function AvailabilityClient({ courts, slots, selectedCourtId, selectedDat
     };
 
     const handleDelete = (slot: SlotRow) => {
-        if (!confirm(`Remove ${formatTime(slot.start_time)} – ${formatTime(slot.end_time)}?`)) return;
+        if (!confirm(t("confirm_remove_slot", { range: `${formatTime(slot.start_time)} – ${formatTime(slot.end_time)}` }))) return;
         startTransition(async () => {
             const result = await deleteAvailabilitySlotAction(slot.id);
             if (result.error) alert(result.error);
@@ -188,9 +189,9 @@ export function AvailabilityClient({ courts, slots, selectedCourtId, selectedDat
             {/* Date label */}
             <div className="flex items-center justify-between">
                 <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                    {formatDateLabel(selectedDate, today)}
+                    {formatDateLabel(selectedDate)}
                     <span className="ml-2 text-gray-400 dark:text-gray-500 font-normal">
-                        {slots.length} slot{slots.length !== 1 ? "s" : ""}
+                        {t("slots_count", { count: slots.length })}
                     </span>
                 </p>
                 {!showAddForm && !showGenerateForm && (
@@ -200,14 +201,14 @@ export function AvailabilityClient({ courts, slots, selectedCourtId, selectedDat
                             className="inline-flex items-center gap-1.5 border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 font-medium px-3 py-1.5 rounded-xl text-sm transition-colors"
                         >
                             <Zap className="h-3.5 w-3.5" />
-                            Quick Fill
+                            {t("quick_fill_button")}
                         </button>
                         <button
                             onClick={() => { setShowAddForm(true); setShowGenerateForm(false); }}
                             className="inline-flex items-center gap-1.5 bg-emerald-600 text-white hover:bg-emerald-700 font-medium px-3 py-1.5 rounded-xl text-sm transition-colors"
                         >
                             <Plus className="h-3.5 w-3.5" />
-                            Add Slot
+                            {t("add_slot_button")}
                         </button>
                     </div>
                 )}
@@ -216,15 +217,13 @@ export function AvailabilityClient({ courts, slots, selectedCourtId, selectedDat
             {/* Slots list */}
             {slots.length === 0 && !showAddForm && !showGenerateForm ? (
                 <div className="text-center py-12 border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-2xl">
-                    <p className="text-sm text-gray-500 dark:text-gray-400 mb-3">
-                        No slots open for this day. Add slots or use Quick Fill to generate a full day.
-                    </p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mb-3">{t("no_slots_help")}</p>
                     <button
                         onClick={() => setShowGenerateForm(true)}
                         className="inline-flex items-center gap-2 border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 font-medium px-4 py-2 rounded-xl text-sm transition-colors"
                     >
                         <Zap className="h-4 w-4" />
-                        Quick Fill Day
+                        {t("quick_fill_day_button")}
                     </button>
                 </div>
             ) : slots.length > 0 && (
@@ -241,18 +240,18 @@ export function AvailabilityClient({ courts, slots, selectedCourtId, selectedDat
                                 {slot.is_booked ? (
                                     <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 font-medium">
                                         <Lock className="h-3 w-3" />
-                                        Booked
+                                        {t("booked")}
                                     </span>
                                 ) : (
                                     <span className="text-xs px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 font-medium">
-                                        Available
+                                        {t("available")}
                                     </span>
                                 )}
                                 <button
                                     onClick={() => handleDelete(slot)}
                                     disabled={isPending || slot.is_booked}
                                     className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
-                                    title={slot.is_booked ? "Cannot delete a booked slot" : "Remove slot"}
+                                    title={slot.is_booked ? t("cannot_delete_booked") : t("remove_slot")}
                                 >
                                     <Trash2 className="h-4 w-4" />
                                 </button>
@@ -266,14 +265,14 @@ export function AvailabilityClient({ courts, slots, selectedCourtId, selectedDat
             {showAddForm && (
                 <div className="border border-emerald-200 dark:border-emerald-800 bg-emerald-50/50 dark:bg-emerald-950/20 rounded-2xl p-5">
                     <div className="flex items-center justify-between mb-4">
-                        <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Add Slot</h3>
+                        <h3 className="text-sm font-semibold text-gray-900 dark:text-white">{t("add_slot_button")}</h3>
                         <button onClick={() => { setShowAddForm(false); setAddError(null); }} className="p-1.5 text-gray-400 hover:text-gray-600 rounded-lg">
                             <X className="h-4 w-4" />
                         </button>
                     </div>
                     <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-end">
                         <div>
-                            <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Start</label>
+                            <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">{t("start_label")}</label>
                             <select
                                 value={addStart}
                                 onChange={(e) => setAddStart(e.target.value)}
@@ -283,7 +282,7 @@ export function AvailabilityClient({ courts, slots, selectedCourtId, selectedDat
                             </select>
                         </div>
                         <div>
-                            <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">End</label>
+                            <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">{t("end_label")}</label>
                             <select
                                 value={addEnd}
                                 onChange={(e) => setAddEnd(e.target.value)}
@@ -297,7 +296,7 @@ export function AvailabilityClient({ courts, slots, selectedCourtId, selectedDat
                             disabled={isPending}
                             className="inline-flex items-center gap-2 bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-60 font-medium px-4 py-2 rounded-xl text-sm transition-colors"
                         >
-                            {isPending ? "Adding..." : "Add"}
+                            {isPending ? t("adding") : t("add")}
                         </button>
                     </div>
                     {addError && <p className="mt-2 text-xs text-red-500">{addError}</p>}
@@ -309,9 +308,9 @@ export function AvailabilityClient({ courts, slots, selectedCourtId, selectedDat
                 <div className="border border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-900/50 rounded-2xl p-5">
                     <div className="flex items-center justify-between mb-4">
                         <div>
-                            <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Quick Fill</h3>
+                            <h3 className="text-sm font-semibold text-gray-900 dark:text-white">{t("quick_fill_button")}</h3>
                             <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                                Generate {previewSlotCount > 0 ? `${previewSlotCount} slot${previewSlotCount !== 1 ? "s" : ""}` : "slots"} automatically
+                                {t("generate_preview", { count: previewSlotCount })}
                             </p>
                         </div>
                         <button onClick={() => { setShowGenerateForm(false); setGenError(null); }} className="p-1.5 text-gray-400 hover:text-gray-600 rounded-lg">
@@ -320,7 +319,7 @@ export function AvailabilityClient({ courts, slots, selectedCourtId, selectedDat
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-end">
                         <div>
-                            <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">From</label>
+                            <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">{t("from_label")}</label>
                             <select
                                 value={genFrom}
                                 onChange={(e) => setGenFrom(e.target.value)}
@@ -330,7 +329,7 @@ export function AvailabilityClient({ courts, slots, selectedCourtId, selectedDat
                             </select>
                         </div>
                         <div>
-                            <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">To</label>
+                            <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">{t("to_label")}</label>
                             <select
                                 value={genTo}
                                 onChange={(e) => setGenTo(e.target.value)}
@@ -340,7 +339,7 @@ export function AvailabilityClient({ courts, slots, selectedCourtId, selectedDat
                             </select>
                         </div>
                         <div>
-                            <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Slot Duration</label>
+                            <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">{t("slot_duration_label")}</label>
                             <select
                                 value={genDuration}
                                 onChange={(e) => setGenDuration(Number(e.target.value))}
@@ -360,14 +359,14 @@ export function AvailabilityClient({ courts, slots, selectedCourtId, selectedDat
                             className="inline-flex items-center gap-2 bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-60 font-medium px-4 py-2 rounded-xl text-sm transition-colors"
                         >
                             <Zap className="h-4 w-4" />
-                            {isPending ? "Generating..." : `Generate ${previewSlotCount > 0 ? previewSlotCount : ""} Slot${previewSlotCount !== 1 ? "s" : ""}`}
+                            {isPending ? t("generating") : t("generate_button", { count: previewSlotCount })}
                         </button>
                         <button
                             type="button"
                             onClick={() => { setShowGenerateForm(false); setGenError(null); }}
                             className="px-4 py-2 border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 font-medium rounded-xl text-sm transition-colors"
                         >
-                            Cancel
+                            {t("cancel")}
                         </button>
                     </div>
                 </div>

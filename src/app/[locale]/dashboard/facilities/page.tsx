@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
-import { getLocale } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { Building2, Plus } from "lucide-react";
@@ -12,6 +12,7 @@ export const metadata = { title: "Your Facilities — Saha" };
 export default async function FacilitiesListPage() {
     const supabase = await createClient();
     const locale = await getLocale();
+    const t = await getTranslations("dashboard_facilities");
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) redirect(`/${locale}/login`);
 
@@ -22,30 +23,28 @@ export default async function FacilitiesListPage() {
         <div className="max-w-3xl space-y-6">
             <div className="flex items-start justify-between gap-4">
                 <div>
-                    <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Your Facilities</h1>
-                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                        Manage all your venues from one place. Switch the active facility to scope the rest of the dashboard.
-                    </p>
+                    <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{t("title")}</h1>
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{t("description")}</p>
                 </div>
                 <Link
                     href={`/${locale}/dashboard/onboarding`}
                     className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium bg-emerald-600 text-white hover:bg-emerald-700"
                 >
                     <Plus className="h-4 w-4" />
-                    Add facility
+                    {t("add_button")}
                 </Link>
             </div>
 
             {facilities.length === 0 ? (
                 <div className="text-center py-16 border border-dashed border-gray-200 dark:border-gray-800 rounded-2xl">
                     <Building2 className="h-10 w-10 mx-auto text-gray-300 dark:text-gray-600 mb-3" />
-                    <p className="text-gray-500 dark:text-gray-400 mb-4">No facilities yet.</p>
+                    <p className="text-gray-500 dark:text-gray-400 mb-4">{t("empty_state")}</p>
                     <Link
                         href={`/${locale}/dashboard/onboarding`}
                         className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium bg-emerald-600 text-white hover:bg-emerald-700"
                     >
                         <Plus className="h-4 w-4" />
-                        Add your first facility
+                        {t("add_first_button")}
                     </Link>
                 </div>
             ) : (
@@ -63,7 +62,7 @@ export default async function FacilitiesListPage() {
                                         <FacilityStatusBadge status={f.status} />
                                         {isActive && (
                                             <span className="text-xs px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400">
-                                                Active
+                                                {t("active_label")}
                                             </span>
                                         )}
                                     </div>
@@ -77,7 +76,7 @@ export default async function FacilitiesListPage() {
                                         href={`/${locale}/f/${f.slug}`}
                                         className="text-sm font-medium px-3 py-1.5 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
                                     >
-                                        View
+                                        {t("view_link")}
                                     </Link>
                                 </div>
                             </li>

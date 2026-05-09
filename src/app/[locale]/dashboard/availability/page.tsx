@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
-import { getLocale } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
 import { AvailabilityClient } from "./AvailabilityClient";
 import { getActiveFacility } from "@/lib/facility-context";
 
@@ -30,6 +30,7 @@ export default async function AvailabilityPage({
     const { court: courtParam, date: dateParam } = await searchParams;
     const supabase = await createClient();
     const locale = await getLocale();
+    const t = await getTranslations("dashboard_availability");
 
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) redirect(`/${locale}/login`);
@@ -63,10 +64,8 @@ export default async function AvailabilityPage({
     return (
         <div className="max-w-3xl">
             <div className="mb-8">
-                <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Availability</h1>
-                <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                    Open time slots so players can book your courts
-                </p>
+                <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{t("heading")}</h1>
+                <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{t("description")}</p>
             </div>
 
             <AvailabilityClient
