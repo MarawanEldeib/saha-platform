@@ -11,7 +11,7 @@ Store. The technical prerequisite is the OpenAPI spec at
 - ChatGPT Plus/Pro account (Custom GPTs aren't on the free tier).
 - A version of the API deployed and reachable. Verify:
   ```
-  curl https://saha-platform.vercel.app/api/openapi.json
+  curl https://sahasports.vercel.app/api/openapi.json
   ```
 
 ---
@@ -61,11 +61,11 @@ so the GPT advertises bilingual support visibly:
    key for the booking action.)
 3. **Schema**: paste this URL, then click **Import from URL**:
    ```
-   https://saha-platform.vercel.app/api/openapi.json
+   https://sahasports.vercel.app/api/openapi.json
    ```
 4. **Privacy policy**: enter
    ```
-   https://saha-platform.vercel.app/legal/privacy
+   https://sahasports.vercel.app/legal/privacy
    ```
    (or whichever URL you want OpenAI to surface — required for public
    GPTs).
@@ -95,7 +95,7 @@ call with the response. If it hits, you're done.
 
 - Booking creation — `POST /api/v1/bookings` returns 501. The GPT will
   read the error message and fall back to: "I found a slot for you. Open
-  https://saha-platform.vercel.app/{slug}/availability?date=… to book."
+  https://sahasports.vercel.app/{slug}/availability?date=… to book."
   Tracked in **SAH-118**.
 
 When SAH-118 ships, come back here and:

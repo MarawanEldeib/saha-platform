@@ -4,12 +4,12 @@ Read-only API over facility data and open booking slots. Designed for AI
 agents (ChatGPT actions, MCP clients, GPT actions) and third-party
 integrations.
 
-- **Base URL**: `https://saha-platform.vercel.app`
+- **Base URL**: `https://sahasports.vercel.app`
 - **Versioning**: `/api/v1/...`
 - **Auth**: none for read endpoints (RLS enforces access)
 - **CORS**: open (`*`) — public data, called from AI agents
 - **Rate limit**: 60 requests / minute / IP (sliding window)
-- **OpenAPI spec**: [`/api/openapi.json`](https://saha-platform.vercel.app/api/openapi.json)
+- **OpenAPI spec**: [`/api/openapi.json`](https://sahasports.vercel.app/api/openapi.json)
 
 ## Endpoints
 
@@ -29,13 +29,13 @@ integrations.
 ### List padel courts in Dubai
 
 ```bash
-curl 'https://saha-platform.vercel.app/api/v1/facilities?sport=padel&city=Dubai&limit=5'
+curl 'https://sahasports.vercel.app/api/v1/facilities?sport=padel&city=Dubai&limit=5'
 ```
 
 ### Find courts within 5 km of a coordinate
 
 ```bash
-curl 'https://saha-platform.vercel.app/api/v1/facilities?lat=25.0772&lng=55.1389&radius_km=5'
+curl 'https://sahasports.vercel.app/api/v1/facilities?lat=25.0772&lng=55.1389&radius_km=5'
 ```
 
 Response includes `distance_km` per facility, sorted ascending.
@@ -43,13 +43,13 @@ Response includes `distance_km` per facility, sorted ascending.
 ### Get one facility by slug
 
 ```bash
-curl 'https://saha-platform.vercel.app/api/v1/facilities/dubai-padel-club'
+curl 'https://sahasports.vercel.app/api/v1/facilities/dubai-padel-club'
 ```
 
 ### Available slots tomorrow
 
 ```bash
-curl 'https://saha-platform.vercel.app/api/v1/facilities/dubai-padel-club/availability?date=2026-05-10&sport=padel'
+curl 'https://sahasports.vercel.app/api/v1/facilities/dubai-padel-club/availability?date=2026-05-10&sport=padel'
 ```
 
 ## Errors

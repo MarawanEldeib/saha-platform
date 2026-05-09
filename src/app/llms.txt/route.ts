@@ -15,14 +15,14 @@ The platform supports English and Arabic (RTL). Payments settle in AED with a 90
 
 ## API
 
-- [OpenAPI 3.0 spec](https://saha-platform.vercel.app/api/openapi.json): machine-readable contract for all REST endpoints
-- [API documentation](https://saha-platform.vercel.app/docs/API.md): human-readable usage guide with examples
+- [OpenAPI 3.0 spec](https://sahasports.vercel.app/api/openapi.json): machine-readable contract for all REST endpoints
+- [API documentation](https://sahasports.vercel.app/docs/API.md): human-readable usage guide with examples
 
 ### Read endpoints (public, no auth)
 
-- [List facilities](https://saha-platform.vercel.app/api/v1/facilities): filter by sport, city, or geo radius
-- [Facility detail](https://saha-platform.vercel.app/api/v1/facilities/{id}): UUID or slug; includes hours, sports, photos, ratings
-- [Open slots](https://saha-platform.vercel.app/api/v1/facilities/{id}/availability): bookable slots for a date
+- [List facilities](https://sahasports.vercel.app/api/v1/facilities): filter by sport, city, or geo radius
+- [Facility detail](https://sahasports.vercel.app/api/v1/facilities/{id}): UUID or slug; includes hours, sports, photos, ratings
+- [Open slots](https://sahasports.vercel.app/api/v1/facilities/{id}/availability): bookable slots for a date
 
 ### Write endpoints (auth required, in development)
 
@@ -31,10 +31,10 @@ The platform supports English and Arabic (RTL). Payments settle in AED with a 90
 
 ## Pages
 
-- [Home](https://saha-platform.vercel.app): landing page with featured facilities
-- [Facility map](https://saha-platform.vercel.app/en/map): interactive map of all active facilities
-- [Events](https://saha-platform.vercel.app/en/events): upcoming events at facilities
-- [Sign in](https://saha-platform.vercel.app/en/login): supports email/password and Google OAuth
+- [Home](https://sahasports.vercel.app): landing page with featured facilities
+- [Facility map](https://sahasports.vercel.app/en/map): interactive map of all active facilities
+- [Events](https://sahasports.vercel.app/en/events): upcoming events at facilities
+- [Sign in](https://sahasports.vercel.app/en/login): supports email/password and Google OAuth
 
 ## Capabilities
 

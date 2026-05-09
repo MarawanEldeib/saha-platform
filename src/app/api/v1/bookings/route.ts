@@ -13,7 +13,7 @@ export async function OPTIONS() { return apiPreflight(); }
 export async function POST() {
     return apiJson({
         error: "Not Implemented",
-        message: "Booking creation via API is not yet available. Use the web app at https://saha-platform.vercel.app to book.",
+        message: "Booking creation via API is not yet available. Use the web app at https://sahasports.vercel.app to book.",
         tracked_in: "SAH-118",
     }, { status: 501 });
 }

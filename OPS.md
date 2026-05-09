@@ -16,7 +16,7 @@ our quota from their own apps.
 1. https://account.mapbox.com/access-tokens
 2. Open the public token used by `NEXT_PUBLIC_MAPBOX_TOKEN`.
 3. Under **URL restrictions**, add:
-   - `https://saha-platform.vercel.app`
+   - `https://sahasports.vercel.app`
    - `https://saha.ae` (when DNS lands)
    - `http://localhost:3000` (dev)
 4. Save. Mapbox will reject any request from any other origin within
