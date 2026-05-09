@@ -59,12 +59,11 @@ export async function GET(req: NextRequest) {
             continue;
         }
 
-        const facilityId = booking.courts?.facility_id;
         const facilityName = booking.courts?.facilities?.name ?? "the facility";
         const courtName = booking.courts?.name ?? "your court";
-        const reviewUrl = facilityId
-            ? `${appUrl}/en/facilities/${facilityId}#review`
-            : appUrl;
+        // SAH-113: deep-link straight to the quick-review page so the player
+        // gets a 1-tap stars-only flow.
+        const reviewUrl = `${appUrl}/en/review/${booking.id}`;
         const display = booking.profiles?.display_name ?? "there";
         const readableDate = format(new Date(booking.date), "EEEE, MMMM d");
 
