@@ -378,6 +378,27 @@
         "my_bookings": "حجوزاتي",
         "series_position": "الأسبوع {index} من {total} في سلسلتك الأسبوعية"
     },
+    "reliability": {
+        "tooltip": "{pct}% موثوقية — {noShows} عدم حضور من أصل {total} حجوزات."
+    },
+    "quick_review": {
+        "heading": "كيف كانت لعبتك؟",
+        "subheading": "نقرة واحدة. لا حاجة للكتابة.",
+        "rate_prompt": "اضغط للتقييم",
+        "rating_required": "اختر التقييم أولاً.",
+        "comment_too_short": "إذا كتبت تعليقاً، يجب أن يكون 10 أحرف على الأقل.",
+        "add_comment_optional": "إضافة تعليق (اختياري)",
+        "comment_placeholder": "هل تريد مشاركة شيء مع اللاعبين القادمين؟ اختياري.",
+        "comment_hint": "اتركه فارغاً إذا أردت تقييماً بالنجوم فقط.",
+        "submit": "إرسال التقييم",
+        "submitting": "جارٍ الإرسال…",
+        "thanks_title": "شكراً على التقييم!",
+        "thanks_body": "مراجعتك تساعد اللاعبين الآخرين في اختيار مكان رائع.",
+        "back_to_facility": "العودة إلى المنشأة",
+        "my_bookings": "حجوزاتي",
+        "already_reviewed": "لقد قيّمت هذه المنشأة من قبل.",
+        "rls_blocked": "تُفتح المراجعات بعد إكمال حجز في هذه المنشأة."
+    },
     "stripe_connect": {
         "badge_ready": "جاهز لاستقبال المدفوعات",
         "badge_incomplete": "الإعداد غير مكتمل",

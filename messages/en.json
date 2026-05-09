@@ -378,6 +378,27 @@
         "my_bookings": "My bookings",
         "series_position": "Week {index} of {total} in your weekly series"
     },
+    "reliability": {
+        "tooltip": "{pct}% reliable — {noShows} no-shows in {total} bookings."
+    },
+    "quick_review": {
+        "heading": "How was your game?",
+        "subheading": "One tap. No typing required.",
+        "rate_prompt": "Tap to rate",
+        "rating_required": "Please pick a rating first.",
+        "comment_too_short": "If you write a comment, it needs at least 10 characters.",
+        "add_comment_optional": "Add a comment (optional)",
+        "comment_placeholder": "Anything to share with future players? Optional.",
+        "comment_hint": "Leave it blank if you just want to drop a star rating.",
+        "submit": "Submit rating",
+        "submitting": "Submitting…",
+        "thanks_title": "Thanks for the rating!",
+        "thanks_body": "Your review helps other players choose a great venue.",
+        "back_to_facility": "Back to facility",
+        "my_bookings": "My bookings",
+        "already_reviewed": "You have already reviewed this facility.",
+        "rls_blocked": "Reviews open after a completed booking at this facility."
+    },
     "stripe_connect": {
         "badge_ready": "Ready to receive payments",
         "badge_incomplete": "Onboarding incomplete",

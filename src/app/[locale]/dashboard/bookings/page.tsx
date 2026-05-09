@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { CalendarDays, TrendingUp, CheckCircle, AlertCircle } from "lucide-react";
 import { ExportButton } from "./ExportButton";
 import { OwnerCancelButton } from "./OwnerCancelButton";
+import { ReliabilityBadge } from "./ReliabilityBadge";
 import { getActiveFacility } from "@/lib/facility-context";
 import { formatPrice } from "@/lib/utils";
 import type { Metadata } from "next";
@@ -73,7 +74,7 @@ export default async function OwnerBookingsPage() {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (supabase as any)
             .from("bookings")
-            .select("id, court_id, date, start_time, end_time, num_players, total_price, status, profiles(display_name)")
+            .select("id, court_id, player_id, date, start_time, end_time, num_players, total_price, status, profiles(display_name, no_show_count)")
             .in("court_id", courtIds)
             .eq("date", today)
             .order("start_time"),
@@ -81,7 +82,7 @@ export default async function OwnerBookingsPage() {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (supabase as any)
             .from("bookings")
-            .select("id, court_id, date, start_time, end_time, num_players, total_price, status, profiles(display_name)")
+            .select("id, court_id, player_id, date, start_time, end_time, num_players, total_price, status, profiles(display_name, no_show_count)")
             .in("court_id", courtIds)
             .gte("date", today)
             .lte("date", futureEndStr)
@@ -113,6 +114,37 @@ export default async function OwnerBookingsPage() {
     const monthRevenue = (revenueMonth ?? []).reduce((sum: number, b: { total_price: number }) => sum + Number(b.total_price), 0);
     const todayCount = (todayBookings ?? []).length;
     const upcomingCount = (upcomingBookings ?? []).length;
+
+    // SAH-111: lifetime booking counts per player so we can show reliability.
+    // We only fetch counts for players visible in this page's tables to keep
+    // the query bounded. Reliability = 1 - (no_show_count / total_bookings).
+    type RowWithPlayer = { player_id: string | null; profiles: { display_name: string; no_show_count: number | null } | null };
+    const playerIdsInView = Array.from(new Set([
+        ...((todayBookings ?? []) as RowWithPlayer[]).map((b) => b.player_id).filter(Boolean) as string[],
+        ...((upcomingBookings ?? []) as RowWithPlayer[]).map((b) => b.player_id).filter(Boolean) as string[],
+    ]));
+
+    const reliabilityByPlayer: Record<string, { score: number; noShows: number; total: number }> = {};
+    if (playerIdsInView.length > 0) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { data: lifetimeRows } = await (supabase as any)
+            .from("bookings")
+            .select("player_id, status")
+            .in("player_id", playerIdsInView);
+        const lifetimeByPlayer: Record<string, { total: number; noShows: number }> = {};
+        for (const r of (lifetimeRows ?? []) as { player_id: string; status: string }[]) {
+            const slot = lifetimeByPlayer[r.player_id] ?? { total: 0, noShows: 0 };
+            slot.total += 1;
+            if (r.status === "no_show") slot.noShows += 1;
+            lifetimeByPlayer[r.player_id] = slot;
+        }
+        for (const pid of playerIdsInView) {
+            const v = lifetimeByPlayer[pid] ?? { total: 0, noShows: 0 };
+            // Brand-new players get a benefit-of-the-doubt 100% score.
+            const score = v.total === 0 ? 1 : Math.max(0, 1 - v.noShows / v.total);
+            reliabilityByPlayer[pid] = { score, noShows: v.noShows, total: v.total };
+        }
+    }
 
     return (
         <div className="max-w-4xl space-y-8">
@@ -169,7 +201,7 @@ export default async function OwnerBookingsPage() {
                             </thead>
                             <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
                                 {(todayBookings ?? []).map((b: {
-                                    id: string; court_id: string; start_time: string; end_time: string;
+                                    id: string; court_id: string; player_id: string | null; start_time: string; end_time: string;
                                     total_price: number; status: string; profiles: { display_name: string } | null;
                                 }) => (
                                     <tr key={b.id} className="bg-white dark:bg-gray-900">
@@ -177,7 +209,12 @@ export default async function OwnerBookingsPage() {
                                             {b.start_time.slice(0, 5)}–{b.end_time.slice(0, 5)}
                                         </td>
                                         <td className="px-4 py-3 text-gray-700 dark:text-gray-300">{courtMap[b.court_id] ?? "—"}</td>
-                                        <td className="px-4 py-3 text-gray-700 dark:text-gray-300">{b.profiles?.display_name ?? "—"}</td>
+                                        <td className="px-4 py-3 text-gray-700 dark:text-gray-300">
+                                            {b.profiles?.display_name ?? "—"}
+                                            {b.player_id && reliabilityByPlayer[b.player_id] && (
+                                                <ReliabilityBadge {...reliabilityByPlayer[b.player_id]} />
+                                            )}
+                                        </td>
                                         <td className="px-4 py-3 tabular-nums text-gray-900 dark:text-white">{formatPrice(Number(b.total_price), facility.currency, locale)}</td>
                                         <td className="px-4 py-3">
                                             <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_STYLES[b.status] ?? ""}`}>
@@ -213,7 +250,7 @@ export default async function OwnerBookingsPage() {
                             </thead>
                             <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
                                 {(upcomingBookings ?? []).map((b: {
-                                    id: string; court_id: string; date: string; start_time: string;
+                                    id: string; court_id: string; player_id: string | null; date: string; start_time: string;
                                     end_time: string; total_price: number; status: string;
                                     profiles: { display_name: string } | null;
                                 }) => (
@@ -223,7 +260,12 @@ export default async function OwnerBookingsPage() {
                                             {b.start_time.slice(0, 5)}–{b.end_time.slice(0, 5)}
                                         </td>
                                         <td className="px-4 py-3 text-gray-700 dark:text-gray-300">{courtMap[b.court_id] ?? "—"}</td>
-                                        <td className="px-4 py-3 text-gray-700 dark:text-gray-300">{b.profiles?.display_name ?? "—"}</td>
+                                        <td className="px-4 py-3 text-gray-700 dark:text-gray-300">
+                                            {b.profiles?.display_name ?? "—"}
+                                            {b.player_id && reliabilityByPlayer[b.player_id] && (
+                                                <ReliabilityBadge {...reliabilityByPlayer[b.player_id]} />
+                                            )}
+                                        </td>
                                         <td className="px-4 py-3 tabular-nums text-gray-900 dark:text-white">{formatPrice(Number(b.total_price), facility.currency, locale)}</td>
                                         <td className="px-4 py-3">
                                             <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_STYLES[b.status] ?? ""}`}>

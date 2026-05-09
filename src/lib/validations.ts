@@ -109,7 +109,16 @@ export type DiscountInput = z.infer<typeof discountSchema>;
 // ---------------------------------------------------------------------------
 export const reviewSchema = z.object({
     rating: z.number().min(1).max(5),
-    comment: z.string().min(10, "Comment must be at least 10 characters").optional(),
+    // SAH-113: comment is fully optional. Empty string + length check
+    // handled together so the quick-tap form (stars only) validates.
+    comment: z
+        .string()
+        .max(1000, "Comment is too long")
+        .refine((v) => v.length === 0 || v.length >= 10, {
+            message: "Comment must be at least 10 characters",
+        })
+        .optional()
+        .or(z.literal("")),
 });
 export type ReviewInput = z.infer<typeof reviewSchema>;
 
