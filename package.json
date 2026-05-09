@@ -33,6 +33,7 @@
     "@supabase/supabase-js": "^2.97.0",
     "@upstash/ratelimit": "^2.0.8",
     "@upstash/redis": "^1.38.0",
+    "@vercel/analytics": "^2.0.1",
     "@zxing/browser": "^0.2.0",
     "botid": "^1.5.11",
     "clsx": "^2.1.1",

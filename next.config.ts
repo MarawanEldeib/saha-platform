@@ -57,7 +57,6 @@ export default withSentryConfig(withNextIntl(nextConfig), {
     project: process.env.SENTRY_PROJECT,
     authToken: process.env.SENTRY_AUTH_TOKEN,
     tunnelRoute: "/monitoring",
-    disableLogger: true,
     // Don't fail the build if source-map upload errors.
     sourcemaps: { disable: !process.env.SENTRY_AUTH_TOKEN },
 });

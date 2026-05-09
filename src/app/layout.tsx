@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Cairo } from "next/font/google";
 import { getLocale } from "next-intl/server";
+import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 
 // Cairo supports both Arabic and Latin scripts
@@ -48,7 +49,7 @@ export default async function RootLayout({
 
   return (
     <html lang={locale} dir={locale === "ar" ? "rtl" : "ltr"} suppressHydrationWarning>
-      <body suppressHydrationWarning className={`${cairo.className} antialiased`}>{children}</body>
+      <body suppressHydrationWarning className={`${cairo.className} antialiased`}>{children}<Analytics /></body>
     </html>
   );
 }
