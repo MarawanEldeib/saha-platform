@@ -62,6 +62,7 @@ const POLICIES = {
     auth_forgot: { points: 3, windowSec: 60 * 60 },         // 3 / 1 h / IP
     booking_create: { points: 20, windowSec: 60 * 60 },     // 20 / 1 h / IP
     review_submit: { points: 5, windowSec: 60 * 60 },       // 5 / 1 h / IP
+    public_api: { points: 60, windowSec: 60 },              // 60 / 1 min / IP — generous for AI agents (SAH-35)
 } as const;
 
 export type RatePolicy = keyof typeof POLICIES;
