@@ -120,8 +120,8 @@ export default function MapPage() {
             <div className="md:hidden flex justify-center p-2 border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shrink-0">
                 <div className="inline-flex rounded-lg bg-gray-100 dark:bg-gray-800 p-1 gap-1">
                     {([
-                        { key: "map", label: "Map", icon: MapIcon },
-                        { key: "list", label: "List", icon: List },
+                        { key: "map", label: t("view_map"), icon: MapIcon },
+                        { key: "list", label: t("view_list"), icon: List },
                     ] as const).map(({ key, label, icon: Icon }) => (
                         <button
                             key={key}

@@ -2,7 +2,11 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { getAvailableSlotsAction, createBookingAndCheckoutAction } from "@/app/[locale]/dashboard/actions";
+import {
+    getAvailableSlotsAction,
+    createBookingAndCheckoutAction,
+    createRecurringBookingAndCheckoutAction,
+} from "@/app/[locale]/dashboard/actions";
 import { format } from "date-fns";
 import { useTranslations } from "next-intl";
 import { formatPrice } from "@/lib/utils";
@@ -38,6 +42,7 @@ export function BookingWidget({ courts, isLoggedIn, locale, currency = "AED" }: 
     const [slots, setSlots] = useState<Slot[] | null>(null);
     const [selectedSlot, setSelectedSlot] = useState<Slot | null>(null);
     const [loadingSlots, setLoadingSlots] = useState(false);
+    const [weeks, setWeeks] = useState(1);
     const [error, setError] = useState<string | null>(null);
 
     const selectedCourt = courts.find((c) => c.id === courtId);
@@ -56,10 +61,9 @@ export function BookingWidget({ courts, isLoggedIn, locale, currency = "AED" }: 
         if (!selectedSlot || !courtId) return;
         setError(null);
         startTransition(async () => {
-            const result = await createBookingAndCheckoutAction(
-                selectedSlot.id,
-                1,
-            );
+            const result = weeks > 1
+                ? await createRecurringBookingAndCheckoutAction(selectedSlot.id, 1, weeks)
+                : await createBookingAndCheckoutAction(selectedSlot.id, 1);
             if (result.error) {
                 setError(result.error);
                 setSlots(null);
@@ -99,7 +103,8 @@ export function BookingWidget({ courts, isLoggedIn, locale, currency = "AED" }: 
             return ((eh * 60 + em) - (sh * 60 + sm)) / 60;
         })()
         : 0;
-    const totalPrice = selectedCourt ? Math.round(selectedCourt.price_per_hour * durationHours * 100) / 100 : 0;
+    const perWeekPrice = selectedCourt ? Math.round(selectedCourt.price_per_hour * durationHours * 100) / 100 : 0;
+    const totalPrice = Math.round(perWeekPrice * weeks * 100) / 100;
 
     return (
         <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-4 space-y-4">
@@ -141,6 +146,22 @@ export function BookingWidget({ courts, isLoggedIn, locale, currency = "AED" }: 
             >
                 {loadingSlots ? t("checking") : t("check_availability")}
             </button>
+
+            {/* Repeat weekly (SAH-91) */}
+            <div>
+                <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">{t("repeat_label")}</label>
+                <select
+                    value={weeks}
+                    onChange={(e) => setWeeks(Number(e.target.value))}
+                    className="w-full text-sm border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                >
+                    <option value={1}>{t("repeat_once")}</option>
+                    <option value={2}>{t("repeat_n_weeks", { n: 2 })}</option>
+                    <option value={4}>{t("repeat_n_weeks", { n: 4 })}</option>
+                    <option value={8}>{t("repeat_n_weeks", { n: 8 })}</option>
+                    <option value={12}>{t("repeat_n_weeks", { n: 12 })}</option>
+                </select>
+            </div>
 
             {/* Slots */}
             {slots !== null && (

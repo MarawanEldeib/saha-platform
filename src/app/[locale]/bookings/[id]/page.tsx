@@ -9,6 +9,7 @@ import { BookingQRCode } from "@/components/booking/BookingQRCode";
 import { BookingShareActions } from "@/components/booking/BookingShareActions";
 import { BookingStatusWatcher } from "@/components/booking/BookingStatusWatcher";
 import { CompletePaymentButton } from "@/components/booking/CompletePaymentButton";
+import { MoveBookingPanel } from "@/components/booking/MoveBookingPanel";
 
 export const metadata = { title: "Booking – Saha" };
 
@@ -32,6 +33,7 @@ export default async function BookingPage({
         .from("bookings")
         .select(`
             id, date, start_time, end_time, status, total_price, currency, qr_code_token, num_players,
+            court_id, availability_id, move_count, recurring_group_id,
             courts(name, facilities(name, address, city))
         `)
         .eq("id", id)
@@ -48,6 +50,31 @@ export default async function BookingPage({
     const isConfirmed = success === "1" || booking.status === "confirmed";
     const isPending = !isConfirmed && !isCancelled && booking.status === "pending";
     const justPaid = success === "1";
+
+    // Server Component — Date.now() at request time is intentional.
+    // eslint-disable-next-line react-hooks/purity
+    const nowMs = Date.now();
+    const bookingStart = new Date(`${booking.date}T${booking.start_time}`);
+    const hoursUntil = (bookingStart.getTime() - nowMs) / 3_600_000;
+    const canMove =
+        booking.status === "confirmed" &&
+        (booking.move_count ?? 0) < 1 &&
+        hoursUntil > 24 &&
+        !booking.recurring_group_id;
+
+    let seriesPosition: { index: number; total: number } | null = null;
+    if (booking.recurring_group_id) {
+        const { data: siblings } = await supabase
+            .from("bookings")
+            .select("id, date, start_time")
+            .eq("recurring_group_id", booking.recurring_group_id)
+            .order("date", { ascending: true })
+            .order("start_time", { ascending: true });
+        if (siblings && siblings.length > 0) {
+            const idx = siblings.findIndex((b) => b.id === booking.id);
+            if (idx >= 0) seriesPosition = { index: idx + 1, total: siblings.length };
+        }
+    }
 
     const headersList = await headers();
     const host = headersList.get("host") ?? "localhost:3000";
@@ -82,6 +109,12 @@ export default async function BookingPage({
                         </>
                     )}
                 </div>
+
+                {seriesPosition && (
+                    <div className="rounded-lg bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 px-4 py-2 text-center text-sm font-medium text-emerald-700 dark:text-emerald-300">
+                        {t("series_position", { index: seriesPosition.index, total: seriesPosition.total })}
+                    </div>
+                )}
 
                 {/* Booking details */}
                 <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-5 space-y-3">
@@ -140,6 +173,16 @@ export default async function BookingPage({
                         currency={booking.currency}
                         numPlayers={booking.num_players}
                         shareUrl={shareUrl}
+                    />
+                )}
+
+                {canMove && (
+                    <MoveBookingPanel
+                        bookingId={booking.id}
+                        courtId={booking.court_id}
+                        currentAvailabilityId={booking.availability_id}
+                        currentStartTime={booking.start_time}
+                        currentEndTime={booking.end_time}
                     />
                 )}
 

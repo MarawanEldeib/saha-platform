@@ -62,7 +62,9 @@
         "details_button": "View Details",
         "sidebar_title": "Nearby Facilities",
         "km_away": "km away",
-        "outside_uae": "Saha is currently only available in the UAE. Coming soon to your region!"
+        "outside_uae": "Saha is currently only available in the UAE. Coming soon to your region!",
+        "view_map": "Map",
+        "view_list": "List"
     },
     "facility": {
         "hours": "Opening Hours",
@@ -309,7 +311,8 @@
         "players": "Players",
         "total": "Total",
         "find_courts": "Find more courts",
-        "my_bookings": "My bookings"
+        "my_bookings": "My bookings",
+        "series_position": "Week {index} of {total} in your weekly series"
     },
     "booking_widget": {
         "sign_in_prompt": "Sign in to book a court",
@@ -324,7 +327,10 @@
         "no_slots": "No slots available on this date.",
         "total": "Total",
         "processing": "Processing…",
-        "book_now": "Book Now"
+        "book_now": "Book Now",
+        "repeat_label": "Repeat weekly",
+        "repeat_once": "Just this week",
+        "repeat_n_weeks": "Weekly for {n} weeks"
     },
     "booking_share": {
         "whatsapp": "Share on WhatsApp",
@@ -339,6 +345,16 @@
     "booking_qr": {
         "tap_to_expand": "Tap to expand for scanning",
         "show_at_reception": "Show this at reception"
+    },
+    "move_booking": {
+        "trigger": "Move to another time",
+        "heading": "Move this booking",
+        "rules": "Pick a free slot on the same court, same duration. Move once, at least 24 hours before your original time. Price stays the same.",
+        "date_label": "Date",
+        "no_slots": "No free same-duration slots on this date.",
+        "confirm": "Move booking",
+        "moving": "Moving…",
+        "close": "Close"
     },
     "complete_payment": {
         "redirecting": "Redirecting…",
