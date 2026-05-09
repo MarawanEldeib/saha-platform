@@ -1,5 +1,6 @@
 import type { NextConfig } from "next";
 import createNextIntlPlugin from "next-intl/plugin";
+import { withSentryConfig } from "@sentry/nextjs";
 
 const withNextIntl = createNextIntlPlugin("./src/i18n/request.ts");
 
@@ -47,4 +48,16 @@ const nextConfig: NextConfig = {
     },
 };
 
-export default withNextIntl(nextConfig);
+// SAH-75: Sentry wrapping is a no-op at runtime when DSN env vars are
+// missing. Build still succeeds without SENTRY_AUTH_TOKEN; source-map
+// upload is skipped silently. Setting `silent: true` avoids the warning.
+export default withSentryConfig(withNextIntl(nextConfig), {
+    silent: true,
+    org: process.env.SENTRY_ORG,
+    project: process.env.SENTRY_PROJECT,
+    authToken: process.env.SENTRY_AUTH_TOKEN,
+    tunnelRoute: "/monitoring",
+    disableLogger: true,
+    // Don't fail the build if source-map upload errors.
+    sourcemaps: { disable: !process.env.SENTRY_AUTH_TOKEN },
+});

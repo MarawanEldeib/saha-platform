@@ -6,6 +6,7 @@ import { getLocale } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { capWalletCredit, computeCheckoutAmounts } from "@/lib/booking-pricing";
+import { rateLimit } from "@/lib/rate-limit";
 import { facilityUpdateSchema, profileUpdateSchema, courtSchema, type CourtInput, availabilitySlotSchema, facilityHoursSchema } from "@/lib/validations";
 import type { Database } from "@/types/database";
 import type Stripe from "stripe";
@@ -533,6 +534,12 @@ export async function createBookingAndCheckoutAction(
     const locale = await getLocale();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return { error: "Not authenticated" };
+
+    // SAH-76: 20 bookings / 1h / IP — slot squatting / booking spam guard.
+    const rl = await rateLimit("booking_create", user.id);
+    if (!rl.success) {
+        return { error: `Too many booking attempts. Try again in ${rl.retryAfter}s.` };
+    }
 
     // Authoritative slot data — never trust client times.
     const { data: slot } = await supabase
