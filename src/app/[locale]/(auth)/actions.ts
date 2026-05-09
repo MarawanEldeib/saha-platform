@@ -10,11 +10,16 @@ import {
     forgotPasswordSchema,
     resetPasswordSchema,
 } from "@/lib/validations";
+import { botSignalCheck } from "@/lib/botid";
 
 // ---------------------------------------------------------------------------
 // Login
 // ---------------------------------------------------------------------------
 export async function loginAction(formData: FormData) {
+    // SAH-78: Vercel BotID — drops drive-by bots before they hit Supabase.
+    const botError = await botSignalCheck();
+    if (botError) return { error: botError };
+
     const raw = {
         email: formData.get("email") as string,
         password: formData.get("password") as string,
@@ -42,6 +47,9 @@ export async function loginAction(formData: FormData) {
 // Register
 // ---------------------------------------------------------------------------
 export async function registerAction(formData: FormData) {
+    const botError = await botSignalCheck();
+    if (botError) return { error: botError };
+
     const raw = {
         display_name: formData.get("display_name") as string,
         email: formData.get("email") as string,
@@ -91,6 +99,9 @@ export async function registerAction(formData: FormData) {
 // Forgot Password
 // ---------------------------------------------------------------------------
 export async function forgotPasswordAction(formData: FormData) {
+    const botError = await botSignalCheck();
+    if (botError) return { error: botError };
+
     const raw = { email: formData.get("email") as string };
     const parsed = forgotPasswordSchema.safeParse(raw);
     if (!parsed.success) {
