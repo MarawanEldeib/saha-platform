@@ -29,7 +29,7 @@ Store. The technical prerequisite is the OpenAPI spec at
 
 | Field | Value |
 |---|---|
-| **Name** | `Saha — UAE Racket Courts` |
+| **Name** | `Saha` |
 | **Description** | `Find and book Padel, Tennis, Squash, Badminton, and Pickleball courts in the UAE. Powered by Saha. اكتشف واحجز ملاعب البادل والبيكلبول والتنس والإسكواش والبادمنتون في الإمارات.` |
 | **Icon** | Upload `public/saha-logo-512.png` from the repo |
 
