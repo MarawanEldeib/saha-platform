@@ -425,6 +425,8 @@ export interface Database {
                     review_prompt_sent_at: string | null;
                     invoice_number: string | null;
                     invoiced_at: string | null;
+                    move_count: number;
+                    recurring_group_id: string | null;
                     created_at: string;
                     updated_at: string;
                 };
@@ -443,6 +445,8 @@ export interface Database {
                     qr_code_token?: string;
                     notes?: string | null;
                     reminder_sent?: boolean;
+                    move_count?: number;
+                    recurring_group_id?: string | null;
                 };
                 Update: {
                     num_players?: number;
@@ -451,6 +455,11 @@ export interface Database {
                     reminder_sent?: boolean;
                     invoice_number?: string | null;
                     invoiced_at?: string | null;
+                    availability_id?: string;
+                    date?: string;
+                    start_time?: string;
+                    end_time?: string;
+                    move_count?: number;
                     updated_at?: string;
                 };
                 Relationships: [

@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { getTranslations } from "next-intl/server";
 import { format } from "date-fns";
+import { Clock, MapPin } from "lucide-react";
 
 export const metadata = { title: "Sports Events" };
 
@@ -46,9 +47,16 @@ export default async function EventsPage() {
                                 {event.description && (
                                     <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{event.description}</p>
                                 )}
-                                <div className="flex flex-wrap gap-3 mt-2 text-xs text-gray-500 dark:text-gray-500">
+                                <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-2 text-xs text-gray-500 dark:text-gray-500">
+                                    <span className="inline-flex items-center gap-1">
+                                        <Clock className="h-3.5 w-3.5" />
+                                        {format(new Date(event.event_date), "h:mm a")}
+                                    </span>
                                     {event.facilities && (
-                                        <span>{t("venue")}: {(event.facilities as { name: string; city: string }).name}, {(event.facilities as { name: string; city: string }).city}</span>
+                                        <span className="inline-flex items-center gap-1">
+                                            <MapPin className="h-3.5 w-3.5" />
+                                            {(event.facilities as { name: string; city: string }).name}, {(event.facilities as { name: string; city: string }).city}
+                                        </span>
                                     )}
                                 </div>
                             </div>

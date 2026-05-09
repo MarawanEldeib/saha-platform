@@ -40,22 +40,46 @@ export async function POST(req: NextRequest) {
     if (event.type === "checkout.session.completed") {
         const session = event.data.object as Stripe.Checkout.Session;
         const bookingId = session.metadata?.booking_id;
+        const recurringGroupId = session.metadata?.recurring_group_id;
         if (!bookingId) return NextResponse.json({ received: true });
 
-        await supabase
-            .from("bookings")
-            .update({ status: "confirmed" } as never)
-            .eq("id", bookingId);
+        if (recurringGroupId) {
+            // Whole-series confirmation (SAH-91). Flip every booking + every
+            // associated payment in one go. Slots were locked at session
+            // creation time so we don't need to lock again here.
+            await supabase
+                .from("bookings")
+                .update({ status: "confirmed" } as never)
+                .eq("recurring_group_id", recurringGroupId);
 
-        await supabase
-            .from("court_availability")
-            .update({ is_booked: true } as never)
-            .eq("id", session.metadata?.availability_id ?? "");
+            await supabase
+                .from("payments")
+                .update({ status: "succeeded", stripe_checkout_session_id: session.id } as never)
+                .in(
+                    "booking_id",
+                    (
+                        await supabase
+                            .from("bookings")
+                            .select("id")
+                            .eq("recurring_group_id", recurringGroupId)
+                    ).data?.map((r) => r.id) ?? [],
+                );
+        } else {
+            await supabase
+                .from("bookings")
+                .update({ status: "confirmed" } as never)
+                .eq("id", bookingId);
 
-        await supabase
-            .from("payments")
-            .update({ status: "succeeded", stripe_checkout_session_id: session.id } as never)
-            .eq("booking_id", bookingId);
+            await supabase
+                .from("court_availability")
+                .update({ is_booked: true } as never)
+                .eq("id", session.metadata?.availability_id ?? "");
+
+            await supabase
+                .from("payments")
+                .update({ status: "succeeded", stripe_checkout_session_id: session.id } as never)
+                .eq("booking_id", bookingId);
+        }
 
         // Send WhatsApp confirmation and email
         const { data: booking } = await supabase

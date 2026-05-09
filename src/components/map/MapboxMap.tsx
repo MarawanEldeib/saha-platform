@@ -121,11 +121,13 @@ export default function MapboxMapComponent({
                 />
             </Marker>
 
-            {/* Facility markers */}
+            {/* Facility markers — branded teardrop pin */}
             {facilities.map((facility) => {
                 const coords = parseLocation(facility.location);
                 if (!coords) return null;
                 const isSelected = selectedFacility?.id === facility.id;
+                const fill = isSelected ? "#047857" : "#10b981";
+                const size = isSelected ? 36 : 30;
 
                 return (
                     <Marker
@@ -140,19 +142,33 @@ export default function MapboxMapComponent({
                         }}
                     >
                         <div
+                            title={facility.name}
                             style={{
-                                width: isSelected ? 18 : 14,
-                                height: isSelected ? 18 : 14,
-                                background: isSelected ? "#059669" : "#10b981",
-                                border: `${isSelected ? 3 : 2}px solid white`,
-                                borderRadius: "50%",
-                                boxShadow: isSelected
-                                    ? "0 0 0 4px rgba(16,185,129,0.35), 0 2px 8px rgba(0,0,0,0.25)"
-                                    : "0 2px 6px rgba(0,0,0,0.25)",
+                                width: size,
+                                height: size,
                                 cursor: "pointer",
-                                transition: "all 0.15s ease",
+                                filter: isSelected
+                                    ? "drop-shadow(0 4px 6px rgba(0,0,0,0.25))"
+                                    : "drop-shadow(0 2px 3px rgba(0,0,0,0.2))",
+                                transition: "transform 0.15s ease",
+                                transform: isSelected ? "translateY(-2px)" : "none",
                             }}
-                        />
+                        >
+                            <svg
+                                viewBox="0 0 24 32"
+                                width={size}
+                                height={size}
+                                aria-hidden="true"
+                            >
+                                <path
+                                    d="M12 0C5.373 0 0 5.373 0 12c0 8.5 12 20 12 20s12-11.5 12-20c0-6.627-5.373-12-12-12z"
+                                    fill={fill}
+                                    stroke="white"
+                                    strokeWidth="1.5"
+                                />
+                                <circle cx="12" cy="12" r="4" fill="white" />
+                            </svg>
+                        </div>
                     </Marker>
                 );
             })}
@@ -177,7 +193,7 @@ export default function MapboxMapComponent({
                             href={`/${locale}/facilities/${popupInfo.facility.id}`}
                             style={{ fontSize: 12, color: "#059669", fontWeight: 500 }}
                         >
-                            {t("details_button")} →
+                            {t("details_button")} {locale === "ar" ? "←" : "→"}
                         </a>
                     </div>
                 </Popup>

@@ -15,7 +15,16 @@ export async function GET(req: NextRequest) {
     // cookie, so the regular cookie-bound server client would have no auth
     // user and RLS would hide every booking row.
     const supabase = createAdminClient();
-    const today = new Date().toISOString().split("T")[0];
+
+    // Vercel Hobby caps crons at 1/day so we run at 07:00 UTC (11:00 UAE)
+    // and remind for everything in the next ~24h: tomorrow's bookings get
+    // ~24h notice, and today's late-day slots (booked after the previous
+    // morning's cron) get a few hours' notice instead of nothing.
+    const today = new Date();
+    const tomorrow = new Date(today);
+    tomorrow.setUTCDate(today.getUTCDate() + 1);
+    const todayKey = today.toISOString().split("T")[0];
+    const tomorrowKey = tomorrow.toISOString().split("T")[0];
 
     const { data: bookings } = await supabase
         .from("bookings")
@@ -26,7 +35,7 @@ export async function GET(req: NextRequest) {
             profiles(display_name, phone)
         `)
         .eq("status", "confirmed")
-        .eq("date", today)
+        .in("date", [todayKey, tomorrowKey])
         .eq("reminder_sent", false);
 
     let sent = 0;
@@ -51,18 +60,24 @@ export async function GET(req: NextRequest) {
         const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "";
         const bookingUrl = `${appUrl}/en/bookings/${booking.id}`;
         const readableDate = format(new Date(booking.date), "EEEE, MMMM d, yyyy");
+        const isToday = booking.date === todayKey;
+        const heading = isToday ? "Your booking is today!" : "Your booking is tomorrow";
+        const subjectPrefix = isToday ? "Your booking is today" : "Your booking is tomorrow";
+        const whatsappLead = isToday
+            ? "📅 Reminder: your booking is today!"
+            : "📅 Reminder: your booking is tomorrow!";
 
         // Send email reminder
         if (playerEmail) {
             await resend.emails.send({
                 from: "Saha <noreply@saha.ae>",
                 to: playerEmail,
-                subject: `Reminder: Your booking is today – ${court?.name}`,
+                subject: `${subjectPrefix} – ${court?.name}`,
                 html: `
                     <div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:24px">
-                        <h2 style="font-size:20px;font-weight:700;margin-bottom:4px">Your booking is today!</h2>
+                        <h2 style="font-size:20px;font-weight:700;margin-bottom:4px">${heading}</h2>
                         <p style="color:#6b7280;margin-bottom:24px">
-                            Hi ${profile?.display_name ?? "there"}, here's a reminder for your booking today.
+                            Hi ${profile?.display_name ?? "there"}, here's a reminder for your upcoming booking.
                         </p>
                         <div style="background:#f9fafb;border-radius:12px;padding:20px;margin-bottom:24px">
                             <p style="margin:0 0 8px"><strong>Court:</strong> ${court?.name}</p>
@@ -84,7 +99,7 @@ export async function GET(req: NextRequest) {
         if (profile?.phone) {
             await sendWhatsApp(
                 profile.phone,
-                `📅 Reminder: your booking is today!\n\n` +
+                `${whatsappLead}\n\n` +
                 `🏟 ${court?.name} at ${facility?.name}\n` +
                 `📅 ${readableDate}\n` +
                 `⏰ ${booking.start_time.slice(0, 5)} – ${booking.end_time.slice(0, 5)}\n` +
