@@ -56,6 +56,7 @@ export default async function CourtsPage() {
                 courts={(courts as CourtRow[]) ?? []}
                 sports={(sports as Sport[]) ?? []}
                 facilityId={facility.id}
+                currency={facility.currency}
             />
         </div>
     );

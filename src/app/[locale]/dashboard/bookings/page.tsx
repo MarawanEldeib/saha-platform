@@ -5,6 +5,7 @@ import { CalendarDays, TrendingUp, CheckCircle, AlertCircle } from "lucide-react
 import { ExportButton } from "./ExportButton";
 import { OwnerCancelButton } from "./OwnerCancelButton";
 import { getActiveFacility } from "@/lib/facility-context";
+import { formatPrice } from "@/lib/utils";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = { title: "Bookings & Revenue – Saha" };
@@ -134,8 +135,8 @@ export default async function OwnerBookingsPage() {
                 {[
                     { label: t("today"), value: todayCount, icon: CalendarDays, color: "text-blue-600 dark:text-blue-400", bg: "bg-blue-50 dark:bg-blue-900/20" },
                     { label: t("upcoming"), value: upcomingCount, icon: CalendarDays, color: "text-purple-600 dark:text-purple-400", bg: "bg-purple-50 dark:bg-purple-900/20" },
-                    { label: t("revenue_week"), value: `${weekRevenue.toFixed(0)} AED`, icon: TrendingUp, color: "text-emerald-600 dark:text-emerald-400", bg: "bg-emerald-50 dark:bg-emerald-900/20" },
-                    { label: t("revenue_month"), value: `${monthRevenue.toFixed(0)} AED`, icon: TrendingUp, color: "text-orange-600 dark:text-orange-400", bg: "bg-orange-50 dark:bg-orange-900/20" },
+                    { label: t("revenue_week"), value: formatPrice(weekRevenue, facility.currency, locale), icon: TrendingUp, color: "text-emerald-600 dark:text-emerald-400", bg: "bg-emerald-50 dark:bg-emerald-900/20" },
+                    { label: t("revenue_month"), value: formatPrice(monthRevenue, facility.currency, locale), icon: TrendingUp, color: "text-orange-600 dark:text-orange-400", bg: "bg-orange-50 dark:bg-orange-900/20" },
                 ].map(({ label, value, icon: Icon, color, bg }) => (
                     <div key={label} className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-4 space-y-3">
                         <div className={`inline-flex p-2 rounded-lg ${bg}`}>
@@ -177,7 +178,7 @@ export default async function OwnerBookingsPage() {
                                         </td>
                                         <td className="px-4 py-3 text-gray-700 dark:text-gray-300">{courtMap[b.court_id] ?? "—"}</td>
                                         <td className="px-4 py-3 text-gray-700 dark:text-gray-300">{b.profiles?.display_name ?? "—"}</td>
-                                        <td className="px-4 py-3 tabular-nums text-gray-900 dark:text-white">{Number(b.total_price).toFixed(0)} AED</td>
+                                        <td className="px-4 py-3 tabular-nums text-gray-900 dark:text-white">{formatPrice(Number(b.total_price), facility.currency, locale)}</td>
                                         <td className="px-4 py-3">
                                             <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_STYLES[b.status] ?? ""}`}>
                                                 {b.status}
@@ -223,7 +224,7 @@ export default async function OwnerBookingsPage() {
                                         </td>
                                         <td className="px-4 py-3 text-gray-700 dark:text-gray-300">{courtMap[b.court_id] ?? "—"}</td>
                                         <td className="px-4 py-3 text-gray-700 dark:text-gray-300">{b.profiles?.display_name ?? "—"}</td>
-                                        <td className="px-4 py-3 tabular-nums text-gray-900 dark:text-white">{Number(b.total_price).toFixed(0)} AED</td>
+                                        <td className="px-4 py-3 tabular-nums text-gray-900 dark:text-white">{formatPrice(Number(b.total_price), facility.currency, locale)}</td>
                                         <td className="px-4 py-3">
                                             <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_STYLES[b.status] ?? ""}`}>
                                                 {b.status}

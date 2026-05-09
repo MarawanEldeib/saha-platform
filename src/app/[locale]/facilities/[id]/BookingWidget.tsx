@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { getAvailableSlotsAction, createBookingAndCheckoutAction } from "@/app/[locale]/dashboard/actions";
 import { format } from "date-fns";
 import { useTranslations } from "next-intl";
+import { formatPrice } from "@/lib/utils";
 
 type Court = {
     id: string;
@@ -24,9 +25,11 @@ type Props = {
     courts: Court[];
     isLoggedIn: boolean;
     locale: string;
+    /** Facility's currency code, e.g. "AED" / "SAR". */
+    currency?: string;
 };
 
-export function BookingWidget({ courts, isLoggedIn, locale }: Props) {
+export function BookingWidget({ courts, isLoggedIn, locale, currency = "AED" }: Props) {
     const t = useTranslations("booking_widget");
     const router = useRouter();
     const [isPending, startTransition] = useTransition();
@@ -112,7 +115,7 @@ export function BookingWidget({ courts, isLoggedIn, locale }: Props) {
                 >
                     {courts.map((c) => (
                         <option key={c.id} value={c.id}>
-                            {c.name} — {c.price_per_hour} {t("price_suffix")}
+                            {c.name} — {formatPrice(c.price_per_hour, currency, locale)}/hr
                         </option>
                     ))}
                 </select>
@@ -168,7 +171,7 @@ export function BookingWidget({ courts, isLoggedIn, locale }: Props) {
                 <div className="border-t border-gray-200 dark:border-gray-700 pt-3 space-y-3">
                     <div className="flex justify-between text-sm">
                         <span className="text-gray-500 dark:text-gray-400">{t("total")}</span>
-                        <span className="font-semibold text-gray-900 dark:text-white">{totalPrice} AED</span>
+                        <span className="font-semibold text-gray-900 dark:text-white">{formatPrice(totalPrice, currency, locale)}</span>
                     </div>
                     {error && <p className="text-xs text-red-500">{error}</p>}
                     <button

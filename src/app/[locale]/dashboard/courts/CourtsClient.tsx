@@ -13,7 +13,8 @@ import {
 } from "../actions";
 import { Pencil, Trash2, Plus, X, CheckCircle, XCircle } from "lucide-react";
 import type { Sport } from "@/types/database";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
+import { formatPrice } from "@/lib/utils";
 
 type CourtRow = {
     id: string;
@@ -32,11 +33,13 @@ type Props = {
     courts: CourtRow[];
     sports: Sport[];
     facilityId: string;
+    currency?: string;
 };
 
-export function CourtsClient({ courts, sports, facilityId }: Props) {
+export function CourtsClient({ courts, sports, facilityId, currency = "AED" }: Props) {
     const t = useTranslations("courts");
     const tSports = useTranslations("sports");
+    const locale = useLocale();
     const router = useRouter();
     const knownSports = ["Padel", "Pickleball", "Tennis", "Squash", "Badminton"] as const;
     const sportName = (name: string) =>
@@ -146,7 +149,7 @@ export function CourtsClient({ courts, sports, facilityId }: Props) {
                                         {court.name}
                                     </p>
                                     <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                                        {court.sports?.name ? sportName(court.sports.name) : t("no_sport")} &middot; {court.capacity} {t("players")} &middot; AED {Number(court.price_per_hour).toFixed(0)}/hr
+                                        {court.sports?.name ? sportName(court.sports.name) : t("no_sport")} &middot; {court.capacity} {t("players")} &middot; {formatPrice(court.price_per_hour, currency, locale)}/hr
                                     </p>
                                 </div>
 

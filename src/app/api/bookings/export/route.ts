@@ -22,7 +22,7 @@ export async function GET() {
     );
 
     if (courtIds.length === 0) {
-        const csv = "date,time,court,player,amount_aed,status\n";
+        const csv = "date,start_time,end_time,court,player,amount,currency,status\n";
         return new NextResponse(csv, {
             headers: {
                 "Content-Type": "text/csv",
@@ -34,7 +34,7 @@ export async function GET() {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data: bookings } = await (supabase as any)
         .from("bookings")
-        .select("date, start_time, end_time, court_id, total_price, status, profiles(display_name)")
+        .select("date, start_time, end_time, court_id, total_price, currency, status, profiles(display_name)")
         .in("court_id", courtIds)
         .order("date", { ascending: false })
         .order("start_time");
@@ -42,10 +42,10 @@ export async function GET() {
     const escape = (v: string) => `"${String(v ?? "").replace(/"/g, '""')}"`;
 
     const rows = [
-        ["date", "start_time", "end_time", "court", "player", "amount_aed", "status"].join(","),
+        ["date", "start_time", "end_time", "court", "player", "amount", "currency", "status"].join(","),
         ...(bookings ?? []).map((b: {
             date: string; start_time: string; end_time: string;
-            court_id: string; total_price: number; status: string;
+            court_id: string; total_price: number; currency: string; status: string;
             profiles: { display_name: string } | null;
         }) => [
             escape(b.date),
@@ -54,6 +54,7 @@ export async function GET() {
             escape(courtMap[b.court_id] ?? ""),
             escape(b.profiles?.display_name ?? ""),
             escape(Number(b.total_price).toFixed(2)),
+            escape(b.currency ?? facility.currency ?? "AED"),
             escape(b.status),
         ].join(",")),
     ];
