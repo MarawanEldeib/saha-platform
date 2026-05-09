@@ -1010,17 +1010,100 @@ export async function updateProfileAction(formData: FormData) {
     const parsed = profileUpdateSchema.safeParse(raw);
     if (!parsed.success) return { error: parsed.error.issues[0].message };
 
+    // SAH-79: changing the phone number invalidates the previous
+    // verification — flip phone_verified to false on update so the next
+    // booking confirmation send is gated until the user re-verifies.
+    const { data: existing } = await supabase
+        .from("profiles")
+        .select("phone")
+        .eq("id", user.id)
+        .single();
+    const previousPhone = (existing as { phone: string | null } | null)?.phone ?? null;
+    const phoneChanged = (parsed.data.phone || null) !== previousPhone;
+
     const { error } = await supabase
         .from("profiles")
         .update({
             display_name: parsed.data.display_name,
             phone: parsed.data.phone || null,
+            ...(phoneChanged ? { phone_verified: false, phone_verification_sid: null } : {}),
         } as never)
         .eq("id", user.id);
 
     if (error) return { error: error.message };
     revalidatePath("/", "layout");
-    return { success: true };
+    return { success: true, phoneChanged };
+}
+
+// ---------------------------------------------------------------------------
+// SAH-79: WhatsApp OTP — send a code to the caller's stored phone.
+// Returns 'not_configured' when Twilio Verify isn't set up so the UI can
+// show "save phone but skip OTP" gracefully instead of erroring.
+// ---------------------------------------------------------------------------
+export async function startPhoneVerificationAction() {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { error: "Not authenticated" };
+
+    const { data: profile } = await supabase
+        .from("profiles")
+        .select("phone, phone_verified")
+        .eq("id", user.id)
+        .single();
+
+    const phone = (profile as { phone: string | null } | null)?.phone;
+    if (!phone) return { error: "Save your phone number first." };
+    if ((profile as { phone_verified: boolean } | null)?.phone_verified) {
+        return { error: "Phone is already verified." };
+    }
+
+    const { startWhatsAppVerification } = await import("@/lib/twilio");
+    const result = await startWhatsAppVerification(phone);
+
+    if (result.status === "not_configured") {
+        return { notConfigured: true };
+    }
+    if (result.status === "error") return { error: result.message };
+
+    if ("sid" in result) {
+        await supabase
+            .from("profiles")
+            .update({ phone_verification_sid: result.sid } as never)
+            .eq("id", user.id);
+    }
+    return { success: true, status: result.status };
+}
+
+export async function checkPhoneVerificationAction(code: string) {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { error: "Not authenticated" };
+
+    const { data: profile } = await supabase
+        .from("profiles")
+        .select("phone")
+        .eq("id", user.id)
+        .single();
+
+    const phone = (profile as { phone: string | null } | null)?.phone;
+    if (!phone) return { error: "No phone on file." };
+
+    const { checkWhatsAppVerification } = await import("@/lib/twilio");
+    const result = await checkWhatsAppVerification(phone, code);
+
+    if (result.status === "not_configured") return { notConfigured: true };
+    if (result.status === "approved") {
+        await supabase
+            .from("profiles")
+            .update({ phone_verified: true, phone_verification_sid: null } as never)
+            .eq("id", user.id);
+        revalidatePath("/", "layout");
+        return { success: true };
+    }
+    if (result.status === "incorrect") return { error: "Incorrect code. Try again." };
+    if (result.status === "expired") return { error: "Code expired — request a new one." };
+    if (result.status === "pending") return { error: "Verification still pending." };
+    return { error: result.message ?? "Verification failed." };
 }
 
 // ---------------------------------------------------------------------------

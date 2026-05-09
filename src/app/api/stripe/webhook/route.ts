@@ -87,7 +87,7 @@ export async function POST(req: NextRequest) {
             .select(`
                 id, date, start_time, end_time, num_players, total_price, currency, qr_code_token,
                 courts(name, facilities(name, address, city)),
-                profiles(id, display_name, phone)
+                profiles(id, display_name, phone, phone_verified)
             `)
             .eq("id", bookingId)
             .single();
@@ -98,7 +98,7 @@ export async function POST(req: NextRequest) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const profile = (booking as any)?.profiles;
 
-        if (booking && profile?.phone) {
+        if (booking && profile?.phone && profile?.phone_verified) {
             const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "";
             const bookingUrl = `${appUrl}/en/bookings/${booking.id}`;
             const readableDate = format(new Date(booking.date), "EEEE, MMMM d, yyyy");
