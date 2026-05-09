@@ -62,6 +62,8 @@ export async function proxy(request: NextRequest) {
     const requestHeaders = new Headers(request.headers);
     requestHeaders.set("x-nonce", nonce);
     requestHeaders.set("Content-Security-Policy", csp);
+    const localeFromUrl = pathname.match(LOCALE_PATTERN)?.[1] ?? routing.defaultLocale;
+    requestHeaders.set("X-NEXT-INTL-LOCALE", localeFromUrl);
 
     const intlResponse = intlMiddleware(request);
 
