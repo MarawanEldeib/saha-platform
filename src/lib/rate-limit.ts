@@ -1,0 +1,86 @@
+/**
+ * SAH-76: Upstash-backed rate limiting. Falls through cleanly when env
+ * vars aren't set so non-prod environments aren't blocked. Each key uses a
+ * sliding window — better burst behaviour than fixed-window for our load.
+ */
+
+import { Ratelimit } from "@upstash/ratelimit";
+import { Redis } from "@upstash/redis";
+import { headers } from "next/headers";
+
+let cachedRedis: Redis | null | undefined;
+function getRedis(): Redis | null {
+    if (cachedRedis !== undefined) return cachedRedis;
+    const url = process.env.UPSTASH_REDIS_REST_URL;
+    const token = process.env.UPSTASH_REDIS_REST_TOKEN;
+    if (!url || !token) {
+        cachedRedis = null;
+        if (process.env.NODE_ENV === "production") {
+            console.warn("[rate-limit] Upstash env vars missing — rate limiting disabled");
+        }
+        return null;
+    }
+    cachedRedis = new Redis({ url, token });
+    return cachedRedis;
+}
+
+const limiters = new Map<string, Ratelimit>();
+function getLimiter(name: string, points: number, windowSec: number): Ratelimit | null {
+    const redis = getRedis();
+    if (!redis) return null;
+    let l = limiters.get(name);
+    if (!l) {
+        l = new Ratelimit({
+            redis,
+            limiter: Ratelimit.slidingWindow(points, `${windowSec} s`),
+            analytics: true,
+            prefix: `saha:rl:${name}`,
+        });
+        limiters.set(name, l);
+    }
+    return l;
+}
+
+async function callerKey(prefix: string, suffix?: string): Promise<string> {
+    const h = await headers();
+    const ip = h.get("x-forwarded-for")?.split(",")[0]?.trim()
+        ?? h.get("x-real-ip")
+        ?? "unknown";
+    return suffix ? `${prefix}:${ip}:${suffix}` : `${prefix}:${ip}`;
+}
+
+export interface RateLimitResult {
+    /** True when the call is permitted (or limiting is disabled). */
+    success: boolean;
+    /** Seconds until the next attempt is allowed; 0 when allowed. */
+    retryAfter: number;
+}
+
+const POLICIES = {
+    auth_login: { points: 5, windowSec: 15 * 60 },          // 5 / 15 min / IP
+    auth_signup: { points: 3, windowSec: 60 * 60 },         // 3 / 1 h / IP
+    auth_forgot: { points: 3, windowSec: 60 * 60 },         // 3 / 1 h / IP
+    booking_create: { points: 20, windowSec: 60 * 60 },     // 20 / 1 h / IP
+    review_submit: { points: 5, windowSec: 60 * 60 },       // 5 / 1 h / IP
+} as const;
+
+export type RatePolicy = keyof typeof POLICIES;
+
+export async function rateLimit(policy: RatePolicy, suffix?: string): Promise<RateLimitResult> {
+    const cfg = POLICIES[policy];
+    const limiter = getLimiter(policy, cfg.points, cfg.windowSec);
+    if (!limiter) {
+        return { success: true, retryAfter: 0 };
+    }
+    const key = await callerKey(policy, suffix);
+    try {
+        const { success, reset } = await limiter.limit(key);
+        const retryAfter = success ? 0 : Math.max(0, Math.ceil((reset - Date.now()) / 1000));
+        return { success, retryAfter };
+    } catch (err) {
+        // Don't fail-closed on Upstash errors — better to serve the request
+        // than to lock out real users when the rate-limit backend hiccups.
+        console.warn("[rate-limit] backend error, allowing request", err);
+        return { success: true, retryAfter: 0 };
+    }
+}

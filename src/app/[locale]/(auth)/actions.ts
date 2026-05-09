@@ -11,6 +11,7 @@ import {
     resetPasswordSchema,
 } from "@/lib/validations";
 import { botSignalCheck } from "@/lib/botid";
+import { rateLimit } from "@/lib/rate-limit";
 
 // ---------------------------------------------------------------------------
 // Login
@@ -19,6 +20,13 @@ export async function loginAction(formData: FormData) {
     // SAH-78: Vercel BotID — drops drive-by bots before they hit Supabase.
     const botError = await botSignalCheck();
     if (botError) return { error: botError };
+
+    // SAH-76: 5 attempts / 15 min / IP. Combined IP+email key so one IP
+    // can't lock the same email out everywhere by hammering it.
+    const rl = await rateLimit("auth_login", (formData.get("email") as string) ?? "");
+    if (!rl.success) {
+        return { error: `Too many attempts. Try again in ${rl.retryAfter}s.` };
+    }
 
     const raw = {
         email: formData.get("email") as string,
@@ -49,6 +57,11 @@ export async function loginAction(formData: FormData) {
 export async function registerAction(formData: FormData) {
     const botError = await botSignalCheck();
     if (botError) return { error: botError };
+
+    const rl = await rateLimit("auth_signup");
+    if (!rl.success) {
+        return { error: `Too many sign-ups from this IP. Try again in ${rl.retryAfter}s.` };
+    }
 
     const raw = {
         display_name: formData.get("display_name") as string,
@@ -101,6 +114,11 @@ export async function registerAction(formData: FormData) {
 export async function forgotPasswordAction(formData: FormData) {
     const botError = await botSignalCheck();
     if (botError) return { error: botError };
+
+    const rl = await rateLimit("auth_forgot", (formData.get("email") as string) ?? "");
+    if (!rl.success) {
+        return { error: `Too many reset requests. Try again in ${rl.retryAfter}s.` };
+    }
 
     const raw = { email: formData.get("email") as string };
     const parsed = forgotPasswordSchema.safeParse(raw);
