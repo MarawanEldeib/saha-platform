@@ -67,6 +67,8 @@ export interface Database {
                     rejection_reason: string | null;
                     stripe_account_id: string | null;
                     currency: string;
+                    trn: string | null;
+                    invoice_seq: number;
                     created_at: string;
                     updated_at: string;
                 };
@@ -86,6 +88,7 @@ export interface Database {
                     status?: FacilityStatus;
                     stripe_account_id?: string | null;
                     currency?: string;
+                    trn?: string | null;
                 };
                 Update: {
                     name?: string;
@@ -102,6 +105,7 @@ export interface Database {
                     rejection_reason?: string | null;
                     stripe_account_id?: string | null;
                     currency?: string;
+                    trn?: string | null;
                     updated_at?: string;
                 };
                 Relationships: [
@@ -419,6 +423,8 @@ export interface Database {
                     notes: string | null;
                     reminder_sent: boolean;
                     review_prompt_sent_at: string | null;
+                    invoice_number: string | null;
+                    invoiced_at: string | null;
                     created_at: string;
                     updated_at: string;
                 };
@@ -443,6 +449,8 @@ export interface Database {
                     status?: BookingStatus;
                     notes?: string | null;
                     reminder_sent?: boolean;
+                    invoice_number?: string | null;
+                    invoiced_at?: string | null;
                     updated_at?: string;
                 };
                 Relationships: [
