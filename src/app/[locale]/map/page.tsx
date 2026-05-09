@@ -4,7 +4,7 @@ import React from "react";
 import { useTranslations, useLocale } from "next-intl";
 import dynamic from "next/dynamic";
 import { createClient } from "@/lib/supabase/client";
-import { Search, Loader2, ChevronRight, MapPin } from "lucide-react";
+import { Search, Loader2, ChevronRight, MapPin, Map as MapIcon, List } from "lucide-react";
 import Link from "next/link";
 import type { Sport } from "@/types/database";
 
@@ -43,6 +43,9 @@ export default function MapPage() {
     const [userLng, setUserLng] = React.useState(55.2708);
     const [selectedFacility, setSelectedFacility] = React.useState<FacilityResult | null>(null);
     const [isOutsideUAE, setIsOutsideUAE] = React.useState(false);
+    // SAH-32: mobile-only view toggle. Side-by-side keeps the map cramped on
+    // phones — give them the full screen for whichever view they want.
+    const [mobileView, setMobileView] = React.useState<"map" | "list">("map");
 
     // Fetch sports for filter
     React.useEffect(() => {
@@ -112,9 +115,37 @@ export default function MapPage() {
                     <span>{t("outside_uae")}</span>
                 </div>
             )}
-        <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
+
+            {/* Mobile-only Map/List toggle (SAH-32) */}
+            <div className="md:hidden flex justify-center p-2 border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shrink-0">
+                <div className="inline-flex rounded-lg bg-gray-100 dark:bg-gray-800 p-1 gap-1">
+                    {([
+                        { key: "map", label: "Map", icon: MapIcon },
+                        { key: "list", label: "List", icon: List },
+                    ] as const).map(({ key, label, icon: Icon }) => (
+                        <button
+                            key={key}
+                            type="button"
+                            onClick={() => setMobileView(key)}
+                            className={`inline-flex items-center gap-1.5 px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                                mobileView === key
+                                    ? "bg-white dark:bg-gray-900 text-gray-900 dark:text-white shadow-sm"
+                                    : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
+                            }`}
+                        >
+                            <Icon className="h-4 w-4" />
+                            {label}
+                            {key === "list" && filteredFacilities.length > 0 && (
+                                <span className="text-xs text-gray-400">({filteredFacilities.length})</span>
+                            )}
+                        </button>
+                    ))}
+                </div>
+            </div>
+
+        <div className="flex-1 flex flex-col md:flex-row overflow-hidden relative">
             {/* ── Sidebar ─────────────────────────────────────────────── */}
-            <aside className="w-full md:w-80 lg:w-96 bg-white dark:bg-gray-900 border-e border-gray-200 dark:border-gray-800 flex flex-col shrink-0 overflow-hidden">
+            <aside className={`${mobileView === "list" ? "flex" : "hidden"} md:flex w-full md:w-72 lg:w-96 bg-white dark:bg-gray-900 border-e border-gray-200 dark:border-gray-800 flex-col shrink-0 overflow-hidden`}>
                 <div className="p-4 border-b border-gray-200 dark:border-gray-800 space-y-3">
                     <h1 className="font-bold text-lg text-gray-900 dark:text-white">{t("title")}</h1>
 
@@ -197,7 +228,7 @@ export default function MapPage() {
             </aside>
 
             {/* ── Map ─────────────────────────────────────────────────── */}
-            <div className="flex-1 min-h-64">
+            <div className={`${mobileView === "map" ? "flex" : "hidden"} md:flex flex-1 min-h-64 relative`}>
                 <MapContainer
                     facilities={filteredFacilities}
                     userLat={userLat}
@@ -205,6 +236,22 @@ export default function MapPage() {
                     selectedFacility={selectedFacility}
                     onSelectFacility={setSelectedFacility}
                 />
+                {/* Mobile selected-facility callout — auto-flips to list-context */}
+                {selectedFacility && (
+                    <div className="md:hidden absolute inset-x-3 bottom-3 z-10 rounded-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-lg p-3 flex items-center gap-3">
+                        <div className="flex-1 min-w-0">
+                            <p className="font-semibold text-sm text-gray-900 dark:text-white truncate">{selectedFacility.name}</p>
+                            <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{selectedFacility.city}</p>
+                        </div>
+                        <Link
+                            href={`/${locale}/facilities/${selectedFacility.id}`}
+                            className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-emerald-600 text-white text-xs font-medium hover:bg-emerald-700 shrink-0"
+                        >
+                            {t("details_button")}
+                            <ChevronRight className="h-3.5 w-3.5" />
+                        </Link>
+                    </div>
+                )}
             </div>
         </div>
         </div>
