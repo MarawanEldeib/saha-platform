@@ -11,14 +11,16 @@ import { loginAction } from "../actions";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import { MapPin } from "lucide-react";
+import { GoogleSignInButton, OrDivider } from "@/components/auth/GoogleSignInButton";
 
 function LoginForm() {
     const t = useTranslations("auth.login");
     const locale = useLocale();
     const searchParams = useSearchParams();
     const next = searchParams.get("next") ?? "";
+    const urlError = searchParams.get("error");
 
-    const [serverError, setServerError] = React.useState<string | null>(null);
+    const [serverError, setServerError] = React.useState<string | null>(urlError ?? null);
 
     const {
         register,
@@ -48,6 +50,9 @@ function LoginForm() {
                         <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{t("title")}</h1>
                         <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{t("subtitle")}</p>
                     </div>
+
+                    <GoogleSignInButton next={next} />
+                    <OrDivider />
 
                     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
                         <Input

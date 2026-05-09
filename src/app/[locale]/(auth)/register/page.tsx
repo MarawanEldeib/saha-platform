@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import { MapPin, CheckCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { GoogleSignInButton, OrDivider } from "@/components/auth/GoogleSignInButton";
 
 function RegisterForm() {
     const t = useTranslations("auth.register");
@@ -72,6 +73,9 @@ function RegisterForm() {
                         <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{t("title")}</h1>
                         <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{t("subtitle")}</p>
                     </div>
+
+                    <GoogleSignInButton />
+                    <OrDivider />
 
                     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
                         {/* Account Type Selector */}
