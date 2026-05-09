@@ -452,6 +452,26 @@
         "loading": "...",
         "button": "تسجيل الحضور"
     },
+    "checkin_page": {
+        "heading": "تسجيل الحضور",
+        "today_subtitle": "حجوزات اليوم — {date}",
+        "no_bookings": "لا توجد حجوزات لليوم",
+        "checked_in_label": "تم التسجيل",
+        "num_players": "{n, plural, =0 {لا لاعبين} =1 {لاعب واحد} =2 {لاعبان} few {# لاعبين} many {# لاعباً} other {# لاعب}}",
+        "player_fallback": "لاعب"
+    },
+    "checkin_scanner": {
+        "scan_button": "مسح QR",
+        "modal_heading": "امسح رمز QR للاعب",
+        "instructions": "ضع رمز QR داخل الإطار. سيتم تسجيل الحضور تلقائياً.",
+        "checked_in": "تم تسجيل الحضور",
+        "already_checked_in": "تم التسجيل سابقاً",
+        "scan_next": "امسح اللاعب التالي",
+        "num_players": "{n, plural, =0 {لا لاعبين} =1 {لاعب واحد} =2 {لاعبان} few {# لاعبين} many {# لاعباً} other {# لاعب}}",
+        "invalid": "لم نستطع قراءة هذا الرمز — حاول مرة أخرى",
+        "camera_error": "تعذّر الوصول إلى الكاميرا. اسمح بأذونات الكاميرا ثم أعد التحميل.",
+        "close": "إغلاق"
+    },
     "image_uploader": {
         "max_images_error": "يمكنك رفع حتى {max} صور.",
         "invalid_type_error": "يُقبل فقط JPEG وPNG وWebP.",

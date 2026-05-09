@@ -1274,3 +1274,77 @@ export async function markCheckedInAction(bookingId: string) {
     revalidatePath("/dashboard/checkin");
     return { success: true };
 }
+
+// ---------------------------------------------------------------------------
+// SAH-61: scanner-driven check-in. Looks the booking up by its qr_code_token,
+// verifies the booking is at one of the caller's facilities and dated today,
+// then marks it completed. Returns enough info for the UI to confirm the
+// match before flipping status.
+// ---------------------------------------------------------------------------
+export async function checkInByQrTokenAction(token: string) {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { error: "Unauthorized" };
+
+    if (!token || token.length < 8) return { error: "Invalid QR code" };
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: booking } = await (supabase as any)
+        .from("bookings")
+        .select(`
+            id, date, start_time, end_time, status, num_players,
+            courts(name, facility_id, facilities(owner_id, name)),
+            profiles(display_name)
+        `)
+        .eq("qr_code_token", token)
+        .single();
+
+    if (!booking) return { error: "Booking not found for this QR code" };
+
+    const ownerId = booking.courts?.facilities?.owner_id;
+    if (ownerId !== user.id) return { error: "This booking is at a different facility" };
+
+    const today = new Date().toISOString().split("T")[0];
+    if (booking.date !== today) {
+        return { error: `This booking is for ${booking.date}, not today` };
+    }
+
+    if (booking.status === "completed") {
+        return {
+            alreadyCheckedIn: true,
+            booking: {
+                id: booking.id,
+                playerName: booking.profiles?.display_name ?? "Player",
+                courtName: booking.courts?.name ?? "Court",
+                startTime: booking.start_time as string,
+                endTime: booking.end_time as string,
+                numPlayers: booking.num_players as number,
+            },
+        };
+    }
+    if (booking.status !== "confirmed") {
+        return { error: `Booking status is "${booking.status}" — cannot check in` };
+    }
+
+    const { error } = await supabase
+        .from("bookings")
+        .update({ status: "completed" } as never)
+        .eq("id", booking.id)
+        .eq("status", "confirmed");
+
+    if (error) return { error: "Could not check in — please try again" };
+
+    revalidatePath("/dashboard/checkin");
+
+    return {
+        success: true,
+        booking: {
+            id: booking.id,
+            playerName: booking.profiles?.display_name ?? "Player",
+            courtName: booking.courts?.name ?? "Court",
+            startTime: booking.start_time as string,
+            endTime: booking.end_time as string,
+            numPlayers: booking.num_players as number,
+        },
+    };
+}
