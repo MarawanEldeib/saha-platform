@@ -3,13 +3,48 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Menu, X } from "lucide-react";
+import {
+    Menu,
+    X,
+    LayoutDashboard,
+    Building2,
+    CalendarPlus,
+    Settings,
+    Trophy,
+    CalendarDays,
+    ScanLine,
+    BookOpen,
+    Users,
+    DollarSign,
+    ScrollText,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
+
+/**
+ * Server Components can't pass function references (like Lucide icon
+ * components) across the Server→Client boundary, so this client component
+ * keeps its own icon registry and the parent passes a string key.
+ */
+const ICON_MAP = {
+    LayoutDashboard,
+    Building2,
+    CalendarPlus,
+    Settings,
+    Trophy,
+    CalendarDays,
+    ScanLine,
+    BookOpen,
+    Users,
+    DollarSign,
+    ScrollText,
+} as const;
+
+export type MobileNavIconName = keyof typeof ICON_MAP;
 
 export interface MobileNavItem {
     href: string;
     label: string;
-    icon: React.ComponentType<{ className?: string }>;
+    icon: MobileNavIconName;
     comingSoon?: boolean;
 }
 
@@ -73,7 +108,8 @@ export function MobileNavDrawer({ title, headerSlot, items, locale }: Props) {
 
                         {headerSlot && <div className="mb-3">{headerSlot}</div>}
 
-                        {items.map(({ href, label, icon: Icon, comingSoon }) => {
+                        {items.map(({ href, label, icon, comingSoon }) => {
+                            const Icon = ICON_MAP[icon];
                             const fullHref = `/${locale}/${href}`;
                             const active = pathname === fullHref || pathname?.startsWith(`${fullHref}/`);
                             if (comingSoon) {
@@ -87,7 +123,7 @@ export function MobileNavDrawer({ title, headerSlot, items, locale }: Props) {
                                         title="Coming soon"
                                     >
                                         <span className="flex items-center gap-2.5">
-                                            <Icon className="h-4 w-4" />
+                                            {Icon ? <Icon className="h-4 w-4" /> : null}
                                             {label}
                                         </span>
                                         <span className="text-[10px] uppercase">soon</span>
@@ -106,7 +142,7 @@ export function MobileNavDrawer({ title, headerSlot, items, locale }: Props) {
                                             : "text-gray-600 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-100"
                                     )}
                                 >
-                                    <Icon className="h-4 w-4" />
+                                    {Icon ? <Icon className="h-4 w-4" /> : null}
                                     {label}
                                 </Link>
                             );
