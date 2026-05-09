@@ -47,6 +47,11 @@ const nextConfig: NextConfig = {
                 hostname: "*.supabase.co",
                 pathname: "/storage/v1/object/public/**",
             },
+            {
+                // Google profile pictures from OAuth (SAH-115).
+                protocol: "https",
+                hostname: "*.googleusercontent.com",
+            },
         ],
     },
     async headers() {
