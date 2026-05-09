@@ -89,8 +89,78 @@ export default async function FacilityDetailPage({
             (a.display_order ?? 0) - (b.display_order ?? 0)
     );
 
+    // SAH-39: schema.org/SportsActivityLocation structured data so search
+    // engines + AI assistants can index facility metadata directly.
+    // facility_hours uses 0=Monday … 6=Sunday in our DB.
+    const SCHEMA_DAYS = [
+        "https://schema.org/Monday",
+        "https://schema.org/Tuesday",
+        "https://schema.org/Wednesday",
+        "https://schema.org/Thursday",
+        "https://schema.org/Friday",
+        "https://schema.org/Saturday",
+        "https://schema.org/Sunday",
+    ] as const;
+    const openingHoursSpec = hours
+        .filter((h) => !h.is_closed && h.open_time && h.close_time && SCHEMA_DAYS[h.day_of_week])
+        .map((h) => ({
+            "@type": "OpeningHoursSpecification",
+            dayOfWeek: SCHEMA_DAYS[h.day_of_week],
+            opens: h.open_time!.slice(0, 5),
+            closes: h.close_time!.slice(0, 5),
+        }));
+
+    // location is a PostGIS GeoJSON Point: { type: 'Point', coordinates: [lng, lat] }
+    const geoCoords = (facility.location as { type?: string; coordinates?: [number, number] } | null)?.coordinates;
+
+    const sportsList = (facility.facility_sports ?? [])
+        .map((fs: { sports: { name: string } | null }) => fs.sports?.name)
+        .filter(Boolean) as string[];
+
+    const facilityImages = images
+        .map((img: { storage_path: string }) => getStorageUrl("facility-images", img.storage_path))
+        .filter(Boolean);
+
+    const jsonLd = {
+        "@context": "https://schema.org",
+        "@type": "SportsActivityLocation",
+        name: facility.name,
+        description: facility.description ?? undefined,
+        address: {
+            "@type": "PostalAddress",
+            streetAddress: facility.address,
+            addressLocality: facility.city,
+            postalCode: facility.postal_code ?? undefined,
+            addressCountry: facility.country ?? "AE",
+        },
+        ...(geoCoords && geoCoords.length === 2
+            ? { geo: { "@type": "GeoCoordinates", latitude: geoCoords[1], longitude: geoCoords[0] } }
+            : {}),
+        ...(facility.phone ? { telephone: facility.phone } : {}),
+        ...(facility.website ? { url: facility.website } : {}),
+        ...(facilityImages.length > 0 ? { image: facilityImages } : {}),
+        ...(sportsList.length > 0 ? { sport: sportsList } : {}),
+        ...(openingHoursSpec.length > 0 ? { openingHoursSpecification: openingHoursSpec } : {}),
+        ...(facility.reviews?.length
+            ? {
+                aggregateRating: {
+                    "@type": "AggregateRating",
+                    ratingValue: avgRating.toFixed(1),
+                    reviewCount: facility.reviews.length,
+                    bestRating: 5,
+                    worstRating: 1,
+                },
+            }
+            : {}),
+    };
+
     return (
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-10">
+            <script
+                type="application/ld+json"
+                // Server-rendered, value comes from our DB — XSS-safe.
+                dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+            />
             {/* Header */}
             <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
                 <div>
