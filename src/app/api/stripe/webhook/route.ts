@@ -47,23 +47,23 @@ export async function POST(req: NextRequest) {
             // Whole-series confirmation (SAH-91). Flip every booking + every
             // associated payment in one go. Slots were locked at session
             // creation time so we don't need to lock again here.
+            const { data: groupBookings } = await supabase
+                .from("bookings")
+                .select("id")
+                .eq("recurring_group_id", recurringGroupId);
+            const groupBookingIds = (groupBookings ?? []).map((b: { id: string }) => b.id);
+
             await supabase
                 .from("bookings")
                 .update({ status: "confirmed" } as never)
                 .eq("recurring_group_id", recurringGroupId);
 
-            await supabase
-                .from("payments")
-                .update({ status: "succeeded", stripe_checkout_session_id: session.id } as never)
-                .in(
-                    "booking_id",
-                    (
-                        await supabase
-                            .from("bookings")
-                            .select("id")
-                            .eq("recurring_group_id", recurringGroupId)
-                    ).data?.map((r) => r.id) ?? [],
-                );
+            if (groupBookingIds.length > 0) {
+                await supabase
+                    .from("payments")
+                    .update({ status: "succeeded", stripe_checkout_session_id: session.id } as never)
+                    .in("booking_id", groupBookingIds);
+            }
         } else {
             await supabase
                 .from("bookings")
@@ -153,17 +153,42 @@ export async function POST(req: NextRequest) {
         const session = event.data.object as Stripe.Checkout.Session;
         const bookingId = session.metadata?.booking_id;
         const availabilityId = session.metadata?.availability_id;
+        const recurringGroupId = session.metadata?.recurring_group_id;
         if (!bookingId) return NextResponse.json({ received: true });
 
-        await supabase
-            .from("court_availability")
-            .update({ is_booked: false } as never)
-            .eq("id", availabilityId ?? "");
+        if (recurringGroupId) {
+            // SAH-91: a whole series expired — cancel every booking + release
+            // every slot. Without this, N-1 slots stay locked forever.
+            const { data: groupBookings } = await supabase
+                .from("bookings")
+                .select("availability_id")
+                .eq("recurring_group_id", recurringGroupId);
 
-        await supabase
-            .from("bookings")
-            .update({ status: "cancelled" } as never)
-            .eq("id", bookingId);
+            await supabase
+                .from("bookings")
+                .update({ status: "cancelled" } as never)
+                .eq("recurring_group_id", recurringGroupId);
+
+            const slotIds = (groupBookings ?? [])
+                .map((b: { availability_id: string }) => b.availability_id)
+                .filter(Boolean);
+            if (slotIds.length > 0) {
+                await supabase
+                    .from("court_availability")
+                    .update({ is_booked: false } as never)
+                    .in("id", slotIds);
+            }
+        } else {
+            await supabase
+                .from("court_availability")
+                .update({ is_booked: false } as never)
+                .eq("id", availabilityId ?? "");
+
+            await supabase
+                .from("bookings")
+                .update({ status: "cancelled" } as never)
+                .eq("id", bookingId);
+        }
     }
 
     // ---------------------------------------------------------------------
@@ -177,21 +202,61 @@ export async function POST(req: NextRequest) {
         const availabilityId = intent.metadata?.availability_id;
 
         if (bookingId) {
-            await supabase
-                .from("payments")
-                .update({ status: "failed" } as never)
-                .eq("booking_id", bookingId);
-
-            await supabase
+            // Look up the booking's recurring_group_id (intent metadata
+            // doesn't carry it). When set, fan out cancellation to the whole
+            // series so we don't leak inventory on a failed recurring charge.
+            const { data: bookingRow } = await supabase
                 .from("bookings")
-                .update({ status: "cancelled" } as never)
-                .eq("id", bookingId);
+                .select("recurring_group_id")
+                .eq("id", bookingId)
+                .single();
+            const groupId = (bookingRow as { recurring_group_id: string | null } | null)?.recurring_group_id ?? null;
 
-            if (availabilityId) {
+            if (groupId) {
+                const { data: groupBookings } = await supabase
+                    .from("bookings")
+                    .select("id, availability_id")
+                    .eq("recurring_group_id", groupId);
+
+                const groupBookingIds = (groupBookings ?? []).map((b: { id: string }) => b.id);
+                const groupSlotIds = (groupBookings ?? [])
+                    .map((b: { availability_id: string }) => b.availability_id)
+                    .filter(Boolean);
+
+                if (groupBookingIds.length > 0) {
+                    await supabase
+                        .from("payments")
+                        .update({ status: "failed" } as never)
+                        .in("booking_id", groupBookingIds);
+
+                    await supabase
+                        .from("bookings")
+                        .update({ status: "cancelled" } as never)
+                        .in("id", groupBookingIds);
+                }
+                if (groupSlotIds.length > 0) {
+                    await supabase
+                        .from("court_availability")
+                        .update({ is_booked: false } as never)
+                        .in("id", groupSlotIds);
+                }
+            } else {
                 await supabase
-                    .from("court_availability")
-                    .update({ is_booked: false } as never)
-                    .eq("id", availabilityId);
+                    .from("payments")
+                    .update({ status: "failed" } as never)
+                    .eq("booking_id", bookingId);
+
+                await supabase
+                    .from("bookings")
+                    .update({ status: "cancelled" } as never)
+                    .eq("id", bookingId);
+
+                if (availabilityId) {
+                    await supabase
+                        .from("court_availability")
+                        .update({ is_booked: false } as never)
+                        .eq("id", availabilityId);
+                }
             }
         }
     }
