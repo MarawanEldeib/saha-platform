@@ -318,6 +318,96 @@ export async function deleteAvailabilitySlotAction(slotId: string) {
 }
 
 // ---------------------------------------------------------------------------
+// SAH-40: AI description generator. Owners often struggle with the
+// description copy during onboarding — this gives them a polished 2-3
+// sentence start they can edit. Returns notConfigured: true when
+// ANTHROPIC_API_KEY isn't set so the UI can hide the button.
+// ---------------------------------------------------------------------------
+export async function generateFacilityDescriptionAction(input: {
+    facilityName: string;
+    sports: string[];
+    city: string;
+}) {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { error: "Not authenticated" };
+
+    const { getAnthropic, HAIKU_MODEL, textFromMessage } = await import("@/lib/anthropic");
+    const client = getAnthropic();
+    if (!client) return { notConfigured: true as const };
+
+    if (!input.facilityName || input.sports.length === 0 || !input.city) {
+        return { error: "Need facility name, at least one sport, and city" };
+    }
+
+    const sportsList = input.sports.join(", ");
+    try {
+        const message = await client.messages.create({
+            model: HAIKU_MODEL,
+            max_tokens: 200,
+            messages: [{
+                role: "user",
+                content:
+                    `Write a 2-3 sentence description for a sports facility listing on Saha, a UAE court-booking platform. ` +
+                    `Plain prose, no marketing fluff, no emojis. Mention the sports and a hint of atmosphere. ` +
+                    `Facility: ${input.facilityName}\nSports: ${sportsList}\nCity: ${input.city}`,
+            }],
+        });
+        return { description: textFromMessage(message) };
+    } catch (err) {
+        console.error("[ai] description generation failed", err);
+        return { error: "Could not generate a description right now." };
+    }
+}
+
+// ---------------------------------------------------------------------------
+// SAH-41: natural-language court search. Translates a free-text query
+// into structured filters the existing facilities_within_radius RPC can
+// accept. Returns notConfigured for the same reason as SAH-40.
+// ---------------------------------------------------------------------------
+export async function parseSearchQueryAction(query: string) {
+    if (!query || query.trim().length < 4) {
+        return { error: "Query is too short" };
+    }
+
+    const { getAnthropic, HAIKU_MODEL, textFromMessage } = await import("@/lib/anthropic");
+    const client = getAnthropic();
+    if (!client) return { notConfigured: true as const };
+
+    try {
+        const message = await client.messages.create({
+            model: HAIKU_MODEL,
+            max_tokens: 200,
+            messages: [{
+                role: "user",
+                content:
+                    `Parse this UAE court-search query into a JSON object with keys ` +
+                    `{"sport": "Padel"|"Pickleball"|"Tennis"|"Squash"|"Badminton"|null, ` +
+                    `"city": string|null, "date": "YYYY-MM-DD"|null, "time_of_day": "morning"|"afternoon"|"evening"|null}. ` +
+                    `Return JSON only, no commentary. Query: ${query}`,
+            }],
+        });
+        const raw = textFromMessage(message);
+        const json = raw.match(/\{[\s\S]*\}/)?.[0];
+        if (!json) return { error: "Could not parse query" };
+        try {
+            const parsed = JSON.parse(json) as {
+                sport?: string | null;
+                city?: string | null;
+                date?: string | null;
+                time_of_day?: string | null;
+            };
+            return { filters: parsed };
+        } catch {
+            return { error: "Could not parse query" };
+        }
+    } catch (err) {
+        console.error("[ai] query parse failed", err);
+        return { error: "Search assistant is unavailable right now." };
+    }
+}
+
+// ---------------------------------------------------------------------------
 // Courts: create
 // ---------------------------------------------------------------------------
 export async function createCourtAction(facilityId: string, input: CourtInput) {
