@@ -318,6 +318,142 @@ export async function deleteAvailabilitySlotAction(slotId: string) {
 }
 
 // ---------------------------------------------------------------------------
+// SAH-92: split a confirmed booking into per-guest Stripe Payment Links.
+// The booker has already paid in full; each friend's link pays the
+// platform, and on success we award the booker an equal wallet credit.
+//
+// This is intentionally a thin v1: no live invitations (the booker shares
+// the URL via WhatsApp manually), no per-guest cancellation, no auto-Stripe
+// refund to the booker. We stack settle-up via the existing wallet flow,
+// which keeps the Stripe surface tiny and avoids destination-charge gymnastics.
+// ---------------------------------------------------------------------------
+export async function splitBookingAction(
+    bookingId: string,
+    guests: { name?: string; email?: string }[],
+) {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { error: "Not authenticated" };
+
+    if (!Array.isArray(guests) || guests.length < 1 || guests.length > 7) {
+        return { error: "Invite between 1 and 7 friends." };
+    }
+
+    const { data: booking } = await supabase
+        .from("bookings")
+        .select("id, status, total_price, currency, player_id")
+        .eq("id", bookingId)
+        .eq("player_id", user.id)
+        .single();
+    if (!booking) return { error: "Booking not found" };
+    if (booking.status !== "confirmed") return { error: "Only confirmed bookings can be split" };
+
+    // Existing splits? Don't double-create.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: existing } = await (supabase as any)
+        .from("booking_guests")
+        .select("id")
+        .eq("booking_id", bookingId)
+        .limit(1);
+    if (existing && existing.length > 0) {
+        return { error: "This booking has already been split." };
+    }
+
+    // Booker is one of the players, so split the total across (guests + 1).
+    const totalShares = guests.length + 1;
+    const sharePerPerson = Math.round((Number(booking.total_price) / totalShares) * 100) / 100;
+    const currency = booking.currency || "AED";
+
+    const headersList = await headers();
+    const host = headersList.get("host") ?? "localhost:3000";
+    const appUrl = host.startsWith("localhost") ? `http://${host}` : `https://${host}`;
+    const successUrl = `${appUrl}/en/bookings/${bookingId}?split_paid=1`;
+
+    const admin = createAdminClient();
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: insertedGuests, error: insertError } = await (admin as any)
+        .from("booking_guests")
+        .insert(
+            guests.map((g) => ({
+                booking_id: bookingId,
+                name: g.name?.trim() || null,
+                email: g.email?.trim() || null,
+                share_amount: sharePerPerson,
+                currency,
+                payment_status: "pending" as const,
+            })),
+        )
+        .select("id, name, email, share_amount");
+    if (insertError || !insertedGuests) {
+        return { error: "Could not create guest records" };
+    }
+
+    // Create one Stripe Payment Link per guest. Each link is platform-only
+    // (no Connect transfer) — the friend reimburses the booker via wallet
+    // credit awarded in the webhook.
+    const stripe = getStripe();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const enriched: any[] = [];
+    for (const guest of insertedGuests as { id: string; share_amount: number; name: string | null; email: string | null }[]) {
+        try {
+            const product = await stripe.products.create({
+                name: `Saha booking split — ${(guest.name ?? guest.email ?? "guest")}`,
+                description: `Your share of booking ${bookingId.slice(0, 8)}`,
+            });
+            const price = await stripe.prices.create({
+                product: product.id,
+                currency: currency.toLowerCase(),
+                unit_amount: Math.round(Number(guest.share_amount) * 100),
+            });
+            const link = await stripe.paymentLinks.create({
+                line_items: [{ price: price.id, quantity: 1 }],
+                metadata: {
+                    booking_guest_id: guest.id,
+                    booking_id: bookingId,
+                    booker_id: user.id,
+                },
+                after_completion: { type: "redirect", redirect: { url: successUrl } },
+            });
+            await admin
+                .from("booking_guests")
+                .update({
+                    stripe_payment_link_id: link.id,
+                    stripe_payment_link_url: link.url,
+                } as never)
+                .eq("id", guest.id);
+            enriched.push({
+                id: guest.id,
+                name: guest.name,
+                email: guest.email,
+                share_amount: guest.share_amount,
+                url: link.url,
+            });
+        } catch (err) {
+            console.error("[split] payment link failed for guest", guest.id, err);
+            await admin
+                .from("booking_guests")
+                .update({ payment_status: "failed" } as never)
+                .eq("id", guest.id);
+            enriched.push({
+                id: guest.id,
+                name: guest.name,
+                email: guest.email,
+                share_amount: guest.share_amount,
+                url: null,
+            });
+        }
+    }
+
+    return {
+        success: true,
+        sharePerPerson,
+        currency,
+        guests: enriched,
+    };
+}
+
+// ---------------------------------------------------------------------------
 // SAH-40: AI description generator. Owners often struggle with the
 // description copy during onboarding — this gives them a polished 2-3
 // sentence start they can edit. Returns notConfigured: true when
