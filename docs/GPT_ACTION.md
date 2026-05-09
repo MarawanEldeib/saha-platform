@@ -30,7 +30,7 @@ Store. The technical prerequisite is the OpenAPI spec at
 | Field | Value |
 |---|---|
 | **Name** | `Saha — UAE Racket Courts` |
-| **Description** | `Find and book Padel, Tennis, Squash, Badminton, and Pickleball courts in the UAE. Powered by Saha.` |
+| **Description** | `Find and book Padel, Tennis, Squash, Badminton, and Pickleball courts in the UAE. Powered by Saha. اكتشف واحجز ملاعب البادل والبيكلبول والتنس والإسكواش والبادمنتون في الإمارات.` |
 | **Icon** | Upload `public/saha-logo-512.png` from the repo |
 
 ### 3. Instructions (system prompt)
@@ -40,11 +40,12 @@ included verbatim below). Update versions when capabilities change.
 
 ### 4. Conversation starters
 
-Add four prompts so users have something to click:
+Add four prompts so users have something to click. Mix of English + Arabic
+so the GPT advertises bilingual support visibly:
 - `Find a padel court in Dubai for tomorrow evening`
 - `What courts are open near me right now?`
-- `Show me tennis courts in Abu Dhabi`
-- `Are there squash courts available this weekend?`
+- `ابحث عن ملعب بادل في دبي مساء الغد`
+- `ما الملاعب المتاحة هذا الأسبوع؟`
 
 ### 5. Capabilities
 
