@@ -4,6 +4,8 @@ Manual walkthrough for publishing Saha as a Custom GPT in the OpenAI GPT
 Store. The technical prerequisite is the OpenAPI spec at
 `/api/openapi.json` (shipped in SAH-35).
 
+**Published GPT**: [chatgpt.com/g/g-69ff995c750c819189d6876a8584e8d0-saha](https://chatgpt.com/g/g-69ff995c750c819189d6876a8584e8d0-saha)
+
 ---
 
 ## Prerequisites
