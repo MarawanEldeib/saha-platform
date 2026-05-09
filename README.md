@@ -109,6 +109,7 @@ src/
 - [docs/database.md](docs/database.md) — schema reference
 - [docs/deployment.md](docs/deployment.md) — Vercel deploy + env var list
 - [docs/API.md](docs/API.md) — public REST API usage
+- [docs/MCP.md](docs/MCP.md) — hosted MCP server for Claude Desktop / Cursor / Cline
 - [docs/RUNBOOK_ADMIN.md](docs/RUNBOOK_ADMIN.md) — admin SQL playbooks
 - [docs/RUNBOOK_STRIPE.md](docs/RUNBOOK_STRIPE.md) — Stripe ops playbooks
 - [OPS.md](OPS.md) — manual platform-config steps (Mapbox, Sentry, Twilio, Upstash, Stripe webhook, Google OAuth)

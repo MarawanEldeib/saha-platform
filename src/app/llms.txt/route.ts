@@ -15,8 +15,9 @@ The platform supports English and Arabic (RTL). Payments settle in AED with a 90
 
 ## API
 
-- [OpenAPI 3.0 spec](https://sahasports.vercel.app/api/openapi.json): machine-readable contract for all REST endpoints
+- [OpenAPI 3.1 spec](https://sahasports.vercel.app/api/openapi.json): machine-readable contract for all REST endpoints
 - [API documentation](https://sahasports.vercel.app/docs/API.md): human-readable usage guide with examples
+- [MCP server](https://sahasports.vercel.app/api/mcp): hosted Model Context Protocol endpoint for Claude Desktop, Cursor, and Cline
 
 ### Read endpoints (public, no auth)
 
