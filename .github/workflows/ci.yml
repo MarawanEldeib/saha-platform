@@ -12,8 +12,8 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  lint-typecheck-build:
-    name: lint + typecheck + build
+  lint-typecheck-test-build:
+    name: lint + typecheck + test + build
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -34,6 +34,9 @@ jobs:
 
       - name: Typecheck
         run: npx tsc --noEmit
+
+      - name: Test
+        run: npm test
 
       - name: Build
         env:
