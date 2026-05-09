@@ -4,9 +4,10 @@ import React from "react";
 import { useTranslations, useLocale } from "next-intl";
 import dynamic from "next/dynamic";
 import { createClient } from "@/lib/supabase/client";
-import { Search, Loader2, ChevronRight, MapPin, Map as MapIcon, List } from "lucide-react";
+import { Search, Loader2, ChevronRight, MapPin, Map as MapIcon, List, Sparkles } from "lucide-react";
 import Link from "next/link";
 import type { Sport } from "@/types/database";
+import { parseSearchQueryAction } from "@/app/[locale]/dashboard/actions";
 
 const MapContainer = dynamic(
     () => import("@/components/map/MapboxMap"),
@@ -46,6 +47,8 @@ export default function MapPage() {
     // SAH-32: mobile-only view toggle. Side-by-side keeps the map cramped on
     // phones — give them the full screen for whichever view they want.
     const [mobileView, setMobileView] = React.useState<"map" | "list">("map");
+    const [aiPending, setAiPending] = React.useState(false);
+    const [aiHidden, setAiHidden] = React.useState(false);
 
     // Fetch sports for filter
     React.useEffect(() => {
@@ -160,6 +163,37 @@ export default function MapPage() {
                             className="w-full ps-9 pe-4 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-emerald-500"
                         />
                     </div>
+
+                    {/* SAH-41: AI search — parses free-text into filters. Hidden when
+                        ANTHROPIC_API_KEY isn't configured. */}
+                    {!aiHidden && searchQuery.trim().length >= 4 && (
+                        <button
+                            type="button"
+                            disabled={aiPending}
+                            onClick={async () => {
+                                setAiPending(true);
+                                try {
+                                    const res = await parseSearchQueryAction(searchQuery);
+                                    if ("notConfigured" in res && res.notConfigured) {
+                                        setAiHidden(true);
+                                        return;
+                                    }
+                                    if ("filters" in res && res.filters) {
+                                        const knownSport = sports.find((s) =>
+                                            s.name.toLowerCase() === (res.filters!.sport ?? "").toLowerCase()
+                                        );
+                                        if (knownSport) setSelectedSport(knownSport.id);
+                                    }
+                                } finally {
+                                    setAiPending(false);
+                                }
+                            }}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/30 disabled:opacity-50 transition-colors"
+                        >
+                            {aiPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
+                            {aiPending ? "Thinking…" : "AI search"}
+                        </button>
+                    )}
 
                     {/* Sport filter */}
                     <select
