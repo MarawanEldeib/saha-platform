@@ -29,7 +29,7 @@ const spec = {
             "Discover racket-sport facilities and their open booking slots in the UAE. " +
             "Read endpoints are public (no auth). Write endpoints (POST /bookings) are " +
             "stubbed pending SAH-118.",
-        contact: { name: "Saha Platform", url: "https://saha-platform.vercel.app" },
+        contact: { name: "Saha", url: "https://saha-platform.vercel.app" },
     },
     servers: [
         { url: "https://saha-platform.vercel.app", description: "Production" },

@@ -669,7 +669,7 @@
         "terms_of_service": "Terms of Service",
         "impressum": "Impressum",
         "contact": "Contact",
-        "copyright": "© {year} Saha Platform. All rights reserved.",
+        "copyright": "© {year} Saha. All rights reserved.",
         "business_login": "Business account login"
     }
 }

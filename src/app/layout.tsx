@@ -15,7 +15,7 @@ export const metadata: Metadata = {
   description:
     "Discover and book Padel, Pickleball, Tennis, Squash, and Badminton courts in Dubai and Abu Dhabi. Find facilities, check availability, and play today.",
   keywords: ["padel", "pickleball", "tennis", "squash", "badminton", "court booking", "Dubai", "Abu Dhabi", "UAE", "racket sports"],
-  authors: [{ name: "Saha Platform" }],
+  authors: [{ name: "Saha" }],
   openGraph: {
     siteName: "Saha",
     type: "website",

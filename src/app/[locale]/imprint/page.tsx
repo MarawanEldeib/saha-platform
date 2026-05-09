@@ -33,7 +33,7 @@ export default async function ImprintPage() {
                     <>
                         <section>
                             <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-3">Company</h2>
-                            <p className="font-medium text-gray-900 dark:text-white">Saha Platform</p>
+                            <p className="font-medium text-gray-900 dark:text-white">Saha</p>
                             <p>Dubai, United Arab Emirates</p>
                         </section>
                         <section>
@@ -42,7 +42,7 @@ export default async function ImprintPage() {
                         </section>
                         <section>
                             <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-3">Disclaimer</h2>
-                            <p>The information provided on this platform is for general informational purposes only. Saha Platform makes no warranties about the completeness, accuracy, or reliability of facility listings.</p>
+                            <p>The information provided on this platform is for general informational purposes only. Saha makes no warranties about the completeness, accuracy, or reliability of facility listings.</p>
                         </section>
                         <p className="text-sm text-gray-500 dark:text-gray-500 pt-4 border-t border-gray-200 dark:border-gray-800">Last updated: May 2026</p>
                     </>

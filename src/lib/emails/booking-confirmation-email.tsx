@@ -328,7 +328,7 @@ export async function generateBookingConfirmationEmail(
         </div>
 
         <div class="footer">
-          <p style="margin: 0;">© 2026 Saha Platform. All rights reserved.</p>
+          <p style="margin: 0;">© 2026 Saha. All rights reserved.</p>
           <p style="margin: 5px 0 0 0;">Questions? Contact support@saha-platform.com</p>
         </div>
       </div>
