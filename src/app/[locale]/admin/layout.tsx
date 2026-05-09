@@ -14,25 +14,28 @@ import {
     Settings,
     ShieldCheck,
 } from "lucide-react";
-import { MobileNavDrawer } from "@/components/layout/MobileNavDrawer";
+import { MobileNavDrawer, type MobileNavIconName } from "@/components/layout/MobileNavDrawer";
 
 interface NavItem {
     href: string;
     label: string;
     icon: typeof LayoutDashboard;
+    /** Icon name passed to the client-side mobile drawer (Server→Client
+     * boundary can't carry function references). */
+    iconName: MobileNavIconName;
     /** Pages we haven't built yet — render disabled in the sidebar. */
     comingSoon?: boolean;
 }
 
 const navItems: NavItem[] = [
-    { href: "admin", label: "Overview", icon: LayoutDashboard },
-    { href: "admin/users", label: "Users", icon: Users, comingSoon: true },
-    { href: "admin/facilities", label: "Facilities", icon: Building2 },
-    { href: "admin/bookings", label: "Bookings", icon: BookOpen, comingSoon: true },
-    { href: "admin/finance", label: "Finance", icon: DollarSign, comingSoon: true },
-    { href: "admin/events", label: "Events", icon: CalendarDays },
-    { href: "admin/audit-log", label: "Audit log", icon: ScrollText },
-    { href: "admin/settings", label: "Settings", icon: Settings, comingSoon: true },
+    { href: "admin", label: "Overview", icon: LayoutDashboard, iconName: "LayoutDashboard" },
+    { href: "admin/users", label: "Users", icon: Users, iconName: "Users", comingSoon: true },
+    { href: "admin/facilities", label: "Facilities", icon: Building2, iconName: "Building2" },
+    { href: "admin/bookings", label: "Bookings", icon: BookOpen, iconName: "BookOpen", comingSoon: true },
+    { href: "admin/finance", label: "Finance", icon: DollarSign, iconName: "DollarSign", comingSoon: true },
+    { href: "admin/events", label: "Events", icon: CalendarDays, iconName: "CalendarDays" },
+    { href: "admin/audit-log", label: "Audit log", icon: ScrollText, iconName: "ScrollText" },
+    { href: "admin/settings", label: "Settings", icon: Settings, iconName: "Settings", comingSoon: true },
 ];
 
 export default async function AdminLayout({
@@ -61,7 +64,9 @@ export default async function AdminLayout({
             {/* Mobile drawer + top bar (SAH-31) */}
             <MobileNavDrawer
                 title="Super Admin"
-                items={navItems}
+                items={navItems.map(({ href, label, iconName, comingSoon }) => ({
+                    href, label, icon: iconName, comingSoon,
+                }))}
                 locale={locale}
             />
 

@@ -14,18 +14,21 @@ import {
     BookOpen,
 } from "lucide-react";
 import { FacilitySwitcher } from "@/components/layout/FacilitySwitcher";
-import { MobileNavDrawer } from "@/components/layout/MobileNavDrawer";
+import { MobileNavDrawer, type MobileNavIconName } from "@/components/layout/MobileNavDrawer";
 import { getActiveFacility, listOwnerFacilities } from "@/lib/facility-context";
 
-const navItems = [
-    { href: "dashboard", labelKey: "overview", icon: LayoutDashboard },
-    { href: "dashboard/facility", labelKey: "facility", icon: Building2 },
-    { href: "dashboard/courts", labelKey: "courts", icon: Trophy },
-    { href: "dashboard/availability", labelKey: "availability", icon: CalendarDays },
-    { href: "dashboard/bookings", labelKey: "bookings", icon: BookOpen },
-    { href: "dashboard/checkin", labelKey: "checkin", icon: ScanLine },
-    { href: "dashboard/events", labelKey: "events", icon: CalendarPlus },
-    { href: "dashboard/settings", labelKey: "settings", icon: Settings },
+// Icon is a string key — the actual Lucide component is resolved inside
+// MobileNavDrawer (a Client Component). Server Components can't pass
+// function refs across the boundary.
+const navItems: Array<{ href: string; labelKey: string; icon: typeof LayoutDashboard; iconName: MobileNavIconName }> = [
+    { href: "dashboard", labelKey: "overview", icon: LayoutDashboard, iconName: "LayoutDashboard" },
+    { href: "dashboard/facility", labelKey: "facility", icon: Building2, iconName: "Building2" },
+    { href: "dashboard/courts", labelKey: "courts", icon: Trophy, iconName: "Trophy" },
+    { href: "dashboard/availability", labelKey: "availability", icon: CalendarDays, iconName: "CalendarDays" },
+    { href: "dashboard/bookings", labelKey: "bookings", icon: BookOpen, iconName: "BookOpen" },
+    { href: "dashboard/checkin", labelKey: "checkin", icon: ScanLine, iconName: "ScanLine" },
+    { href: "dashboard/events", labelKey: "events", icon: CalendarPlus, iconName: "CalendarPlus" },
+    { href: "dashboard/settings", labelKey: "settings", icon: Settings, iconName: "Settings" },
 ];
 
 export default async function DashboardLayout({
@@ -59,10 +62,10 @@ export default async function DashboardLayout({
     const facilities = await listOwnerFacilities(supabase, user.id);
     const active = await getActiveFacility(supabase, user.id);
 
-    const mobileItems = navItems.map(({ href, labelKey, icon }) => ({
+    const mobileItems = navItems.map(({ href, labelKey, iconName }) => ({
         href,
         label: t(labelKey),
-        icon,
+        icon: iconName,
     }));
     const mobileTitle = active?.name ?? t("overview");
 
