@@ -31,7 +31,7 @@ const navItems: NavItem[] = [
     { href: "admin", labelKey: "overview", icon: LayoutDashboard, iconName: "LayoutDashboard" },
     { href: "admin/users", labelKey: "users", icon: Users, iconName: "Users", comingSoon: true },
     { href: "admin/facilities", labelKey: "facilities", icon: Building2, iconName: "Building2" },
-    { href: "admin/bookings", labelKey: "bookings", icon: BookOpen, iconName: "BookOpen", comingSoon: true },
+    { href: "admin/bookings", labelKey: "bookings", icon: BookOpen, iconName: "BookOpen" },
     { href: "admin/finance", labelKey: "finance", icon: DollarSign, iconName: "DollarSign", comingSoon: true },
     { href: "admin/events", labelKey: "events", icon: CalendarDays, iconName: "CalendarDays" },
     { href: "admin/audit-log", labelKey: "audit_log", icon: ScrollText, iconName: "ScrollText" },

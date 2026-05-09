@@ -5,6 +5,7 @@ import { cookies, headers } from "next/headers";
 import { getLocale } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { capWalletCredit, computeCheckoutAmounts } from "@/lib/booking-pricing";
 import { facilityUpdateSchema, profileUpdateSchema, courtSchema, type CourtInput, availabilitySlotSchema, facilityHoursSchema } from "@/lib/validations";
 import type { Database } from "@/types/database";
 import type Stripe from "stripe";
@@ -628,30 +629,39 @@ export async function createBookingAndCheckoutAction(
         status: "pending",
     } as never);
 
-    // SAH-93: optionally redeem wallet credit. Capped at the platform fee
-    // (10% of total) so application_fee_amount can never go negative — the
-    // platform absorbs the discount, owner stays whole.
+    // SAH-93: optionally redeem wallet credit. The cap helper ensures
+    // application_fee_amount can never go negative — the platform absorbs
+    // the discount, owner stays whole. See src/lib/booking-pricing.ts.
     let appliedCredit = 0;
     if (creditToApply && creditToApply > 0) {
-        const maxRedeemable = Math.round(totalPrice * PLATFORM_FEE_PERCENT) / 100;
-        const requested = Math.min(creditToApply, maxRedeemable);
-        try {
-            const admin = createAdminClient();
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const { data: spent } = await (admin as any).rpc("spend_wallet_credit", {
-                p_user_id: user.id,
-                p_amount: requested,
-                p_booking_id: booking.id,
-            });
-            appliedCredit = typeof spent === "number" ? spent : Number(spent ?? 0);
-        } catch (err) {
-            console.error("[loyalty] spend_wallet_credit failed", err);
+        // Look up the wallet balance so the cap accounts for it too — keeps
+        // a malicious client from passing a higher number than they have.
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { data: walletRow } = await (supabase as any)
+            .from("wallet_balances")
+            .select("credit_aed")
+            .eq("user_id", user.id)
+            .maybeSingle();
+        const walletBalance = Number(walletRow?.credit_aed ?? 0);
+        const requested = capWalletCredit(creditToApply, walletBalance, totalPrice, PLATFORM_FEE_PERCENT);
+        if (requested > 0) {
+            try {
+                const admin = createAdminClient();
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                const { data: spent } = await (admin as any).rpc("spend_wallet_credit", {
+                    p_user_id: user.id,
+                    p_amount: requested,
+                    p_booking_id: booking.id,
+                });
+                appliedCredit = typeof spent === "number" ? spent : Number(spent ?? 0);
+            } catch (err) {
+                console.error("[loyalty] spend_wallet_credit failed", err);
+            }
         }
     }
 
-    const chargeAmount = Math.round((totalPrice - appliedCredit) * 100);
-    const ownerNetAmount = Math.round(totalPrice * (1 - PLATFORM_FEE_PERCENT / 100) * 100);
-    const feeAmount = Math.max(0, chargeAmount - ownerNetAmount);
+    const { chargeCents: chargeAmount, feeCents: feeAmount } =
+        computeCheckoutAmounts(totalPrice, appliedCredit, PLATFORM_FEE_PERCENT);
 
     const headersList = await headers();
     const host = headersList.get("host") ?? "localhost:3000";
