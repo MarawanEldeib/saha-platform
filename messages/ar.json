@@ -378,6 +378,24 @@
         "my_bookings": "حجوزاتي",
         "series_position": "الأسبوع {index} من {total} في سلسلتك الأسبوعية"
     },
+    "stripe_connect": {
+        "badge_ready": "جاهز لاستقبال المدفوعات",
+        "badge_incomplete": "الإعداد غير مكتمل",
+        "badge_not_connected": "غير مرتبط",
+        "ready_body": "ملاعبك قابلة للحجز. يستطيع اللاعبون الدفع مباشرةً وستصل الأرباح إلى حسابك البنكي.",
+        "incomplete_body": "Stripe يحتاج المزيد من المعلومات قبل أن تصل الأرباح إلى حسابك.",
+        "checklist_details": "أكمل بيانات الأعمال والهوية المتبقية.",
+        "checklist_charges": "أكّد حسابك البنكي لتفعيل قبول المدفوعات.",
+        "checklist_payouts": "وثّق هويتك لتفعيل الأرباح.",
+        "continue_setup": "متابعة إعداد Stripe",
+        "split_owner_label": "يذهب إليك",
+        "split_platform_label": "رسوم منصة سها",
+        "split_payout_value": "مباشر",
+        "split_payout_label": "أرباح إلى بنكك",
+        "split_disclosure": "في كل حجز، يحوّل Stripe {owner}% إلى حسابك المرتبط وتأخذ سها رسوم منصة {platform}%. تصل الأرباح مباشرةً إلى الحساب البنكي المسجّل لدى Stripe — سها لا تحتفظ بأموالك أبداً.",
+        "disconnect_error": "حدث خطأ ما. يرجى المحاولة مرة أخرى.",
+        "close": "إغلاق"
+    },
     "wallet": {
         "card_title": "رصيد المحفظة",
         "hint_can_apply": "طبّقه عند الدفع لتوفر على حجزك القادم.",
