@@ -1,21 +1,27 @@
 /**
- * SAH-35: OpenAPI 3.0 spec for the Saha public REST API.
+ * SAH-35 / SAH-38: OpenAPI 3.1 spec for the Saha public REST API.
  *
- * Served at /api/openapi.json and /llms.txt (referenced from SAH-36).
- * Hand-authored to keep dependencies minimal; the API surface is small
- * enough that auto-generation from a JSON Schema layer would be heavier
- * than it's worth at this stage.
+ * Served at /api/openapi.json. Consumed by the Saha Custom GPT (SAH-38)
+ * and any other AI agent that imports the schema. Hand-authored to keep
+ * dependencies minimal.
  *
  * Update checklist when adding/changing endpoints:
  *   1. Edit the corresponding route under src/app/api/v1/.
- *   2. Update the `paths` entry below + any new `components/schemas`.
- *   3. Bump `info.version` if the change is breaking.
+ *   2. Add/update the `paths` entry below + any `components/schemas`.
+ *   3. Give every operation a unique camelCase `operationId` so downstream
+ *      tools render it cleanly (avoids OpenAI auto-naming like
+ *      `get_api_v1_facilities`).
+ *   4. Bump `info.version` if the change is breaking.
+ *
+ * 3.1 vs 3.0: nullable fields use the JSON-Schema 2020-12 form
+ * `type: ["string", "null"]`. The deprecated `nullable: true` keyword
+ * is invalid in 3.1.
  */
 
 import { apiJson, apiPreflight } from "@/lib/api-response";
 
 const spec = {
-    openapi: "3.0.3",
+    openapi: "3.1.0",
     info: {
         title: "Saha Public API",
         version: "0.1.0",
@@ -31,6 +37,7 @@ const spec = {
     paths: {
         "/api/v1/facilities": {
             get: {
+                operationId: "listFacilities",
                 summary: "List active facilities",
                 description:
                     "Public listing. Provide `lat`+`lng` for distance-sorted radius search; " +
@@ -66,6 +73,7 @@ const spec = {
         },
         "/api/v1/facilities/{id}": {
             get: {
+                operationId: "getFacility",
                 summary: "Get one facility",
                 description: "Lookup by UUID or slug. Inactive facilities return 404.",
                 parameters: [
@@ -89,6 +97,7 @@ const spec = {
         },
         "/api/v1/facilities/{id}/availability": {
             get: {
+                operationId: "getFacilityAvailability",
                 summary: "List open slots at a facility",
                 parameters: [
                     { name: "id", in: "path", required: true, schema: { type: "string" } },
@@ -117,6 +126,7 @@ const spec = {
         },
         "/api/v1/bookings": {
             post: {
+                operationId: "createBooking",
                 summary: "Create a booking",
                 description: "Not yet implemented. Tracked in SAH-118.",
                 responses: { "501": { $ref: "#/components/responses/NotImplemented" } },
@@ -124,6 +134,7 @@ const spec = {
         },
         "/api/v1/bookings/{id}": {
             get: {
+                operationId: "getBooking",
                 summary: "Get a booking",
                 description: "Not yet implemented. Tracked in SAH-118.",
                 parameters: [{ name: "id", in: "path", required: true, schema: { type: "string", format: "uuid" } }],
@@ -137,19 +148,19 @@ const spec = {
                 type: "object",
                 properties: {
                     id: { type: "string", format: "uuid" },
-                    slug: { type: "string", nullable: true },
+                    slug: { type: ["string", "null"] },
                     name: { type: "string" },
-                    description: { type: "string", nullable: true },
+                    description: { type: ["string", "null"] },
                     address: { type: "string" },
                     city: { type: "string" },
                     country: { type: "string" },
-                    phone: { type: "string", nullable: true },
-                    website: { type: "string", nullable: true },
+                    phone: { type: ["string", "null"] },
+                    website: { type: ["string", "null"] },
                     currency: { type: "string", example: "AED" },
-                    latitude: { type: "number", nullable: true },
-                    longitude: { type: "number", nullable: true },
+                    latitude: { type: ["number", "null"] },
+                    longitude: { type: ["number", "null"] },
                     sports: { type: "array", items: { type: "string" } },
-                    distance_km: { type: "number", nullable: true, description: "Only present when lat/lng are supplied" },
+                    distance_km: { type: ["number", "null"], description: "Only present when lat/lng are supplied" },
                 },
             },
             Facility: {
@@ -158,7 +169,7 @@ const spec = {
                     {
                         type: "object",
                         properties: {
-                            postal_code: { type: "string", nullable: true },
+                            postal_code: { type: ["string", "null"] },
                             hours: {
                                 type: "array",
                                 items: {
@@ -166,8 +177,8 @@ const spec = {
                                     properties: {
                                         day_of_week: { type: "integer", minimum: 0, maximum: 6, description: "0=Monday, 6=Sunday" },
                                         is_closed: { type: "boolean" },
-                                        open_time: { type: "string", nullable: true },
-                                        close_time: { type: "string", nullable: true },
+                                        open_time: { type: ["string", "null"] },
+                                        close_time: { type: ["string", "null"] },
                                     },
                                 },
                             },
@@ -175,7 +186,7 @@ const spec = {
                             ratings: {
                                 type: "object",
                                 properties: {
-                                    average: { type: "number", nullable: true, minimum: 1, maximum: 5 },
+                                    average: { type: ["number", "null"], minimum: 1, maximum: 5 },
                                     count: { type: "integer", minimum: 0 },
                                 },
                             },
@@ -188,13 +199,13 @@ const spec = {
                 properties: {
                     availability_id: { type: "string", format: "uuid" },
                     court_id: { type: "string", format: "uuid" },
-                    court_name: { type: "string", nullable: true },
-                    sport: { type: "string", nullable: true },
-                    capacity: { type: "integer", nullable: true },
+                    court_name: { type: ["string", "null"] },
+                    sport: { type: ["string", "null"] },
+                    capacity: { type: ["integer", "null"] },
                     date: { type: "string", format: "date" },
                     start_time: { type: "string", example: "18:00" },
                     end_time: { type: "string", example: "19:00" },
-                    price_per_hour: { type: "number", nullable: true },
+                    price_per_hour: { type: ["number", "null"] },
                     currency: { type: "string", example: "AED" },
                 },
             },
