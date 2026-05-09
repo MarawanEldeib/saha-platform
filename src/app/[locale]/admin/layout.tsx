@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
-import { getLocale } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import {
@@ -18,7 +18,7 @@ import { MobileNavDrawer, type MobileNavIconName } from "@/components/layout/Mob
 
 interface NavItem {
     href: string;
-    label: string;
+    labelKey: "overview" | "users" | "facilities" | "bookings" | "finance" | "events" | "audit_log" | "settings";
     icon: typeof LayoutDashboard;
     /** Icon name passed to the client-side mobile drawer (Server→Client
      * boundary can't carry function references). */
@@ -28,14 +28,14 @@ interface NavItem {
 }
 
 const navItems: NavItem[] = [
-    { href: "admin", label: "Overview", icon: LayoutDashboard, iconName: "LayoutDashboard" },
-    { href: "admin/users", label: "Users", icon: Users, iconName: "Users", comingSoon: true },
-    { href: "admin/facilities", label: "Facilities", icon: Building2, iconName: "Building2" },
-    { href: "admin/bookings", label: "Bookings", icon: BookOpen, iconName: "BookOpen", comingSoon: true },
-    { href: "admin/finance", label: "Finance", icon: DollarSign, iconName: "DollarSign", comingSoon: true },
-    { href: "admin/events", label: "Events", icon: CalendarDays, iconName: "CalendarDays" },
-    { href: "admin/audit-log", label: "Audit log", icon: ScrollText, iconName: "ScrollText" },
-    { href: "admin/settings", label: "Settings", icon: Settings, iconName: "Settings", comingSoon: true },
+    { href: "admin", labelKey: "overview", icon: LayoutDashboard, iconName: "LayoutDashboard" },
+    { href: "admin/users", labelKey: "users", icon: Users, iconName: "Users", comingSoon: true },
+    { href: "admin/facilities", labelKey: "facilities", icon: Building2, iconName: "Building2" },
+    { href: "admin/bookings", labelKey: "bookings", icon: BookOpen, iconName: "BookOpen", comingSoon: true },
+    { href: "admin/finance", labelKey: "finance", icon: DollarSign, iconName: "DollarSign", comingSoon: true },
+    { href: "admin/events", labelKey: "events", icon: CalendarDays, iconName: "CalendarDays" },
+    { href: "admin/audit-log", labelKey: "audit_log", icon: ScrollText, iconName: "ScrollText" },
+    { href: "admin/settings", labelKey: "settings", icon: Settings, iconName: "Settings", comingSoon: true },
 ];
 
 export default async function AdminLayout({
@@ -45,6 +45,8 @@ export default async function AdminLayout({
 }) {
     const supabase = await createClient();
     const locale = await getLocale();
+    const tNav = await getTranslations("admin_nav");
+    const tCommon = await getTranslations("common");
 
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) redirect(`/${locale}/login`);
@@ -63,9 +65,9 @@ export default async function AdminLayout({
         <div className="flex flex-col md:flex-row min-h-[calc(100vh-4rem)]">
             {/* Mobile drawer + top bar (SAH-31) */}
             <MobileNavDrawer
-                title="Super Admin"
-                items={navItems.map(({ href, label, iconName, comingSoon }) => ({
-                    href, label, icon: iconName, comingSoon,
+                title={tNav("super_admin")}
+                items={navItems.map(({ href, labelKey, iconName, comingSoon }) => ({
+                    href, label: tNav(labelKey), icon: iconName, comingSoon,
                 }))}
                 locale={locale}
             />
@@ -73,9 +75,9 @@ export default async function AdminLayout({
             <aside className="hidden md:flex flex-col w-56 shrink-0 bg-white dark:bg-gray-900 border-e border-gray-200 dark:border-gray-800 p-4 gap-1">
                 <div className="flex items-center gap-2 px-3 py-2 mb-2 text-emerald-700 dark:text-emerald-400">
                     <ShieldCheck className="h-4 w-4" />
-                    <span className="text-xs font-semibold uppercase tracking-wide">Super Admin</span>
+                    <span className="text-xs font-semibold uppercase tracking-wide">{tNav("super_admin")}</span>
                 </div>
-                {navItems.map(({ href, label, icon: Icon, comingSoon }) => (
+                {navItems.map(({ href, labelKey, icon: Icon, comingSoon }) => (
                     comingSoon ? (
                         <span
                             key={href}
@@ -83,13 +85,13 @@ export default async function AdminLayout({
                                 "flex items-center justify-between gap-2.5 px-3 py-2 rounded-lg text-sm font-medium",
                                 "text-gray-400 dark:text-gray-600 cursor-not-allowed"
                             )}
-                            title="Coming soon"
+                            title={tCommon("coming_soon")}
                         >
                             <span className="flex items-center gap-2.5">
                                 <Icon className="h-4 w-4" />
-                                {label}
+                                {tNav(labelKey)}
                             </span>
-                            <span className="text-[10px] uppercase">soon</span>
+                            <span className="text-[10px] uppercase">{tCommon("soon")}</span>
                         </span>
                     ) : (
                         <Link
@@ -102,7 +104,7 @@ export default async function AdminLayout({
                             )}
                         >
                             <Icon className="h-4 w-4" />
-                            {label}
+                            {tNav(labelKey)}
                         </Link>
                     )
                 ))}

@@ -175,7 +175,11 @@
             "status_active": "نشطة",
             "status_suspended": "معلقة",
             "complete_onboarding": "أكمل إعداد منشأتك لتظهر في القائمة.",
-            "start_onboarding": "ابدأ الإعداد"
+            "start_onboarding": "ابدأ الإعداد",
+            "facilities_switcher_hint": "1 من {count} منشآت — يمكنك التبديل من الشريط الجانبي.",
+            "manage_facility": "إدارة المنشأة",
+            "view_public_page": "عرض الصفحة العامة",
+            "all_facilities": "كل المنشآت"
         },
         "onboarding": {
             "title": "إعداد المنشأة",
@@ -237,6 +241,66 @@
             "email": "البريد الإلكتروني",
             "save": "حفظ التغييرات"
         }
+    },
+    "dashboard_facilities": {
+        "title": "منشآتك",
+        "description": "أدر كل أماكنك من مكان واحد. غيّر المنشأة النشطة لتحديد نطاق بقية لوحة التحكم.",
+        "add_button": "إضافة منشأة",
+        "empty_state": "لا توجد منشآت بعد.",
+        "add_first_button": "أضف منشأتك الأولى",
+        "active_label": "نشطة",
+        "view_link": "عرض"
+    },
+    "dashboard_availability": {
+        "heading": "الإتاحة",
+        "description": "افتح فترات زمنية ليتمكن اللاعبون من حجز ملاعبك",
+        "duration_1h": "ساعة",
+        "duration_1_5h": "ساعة ونصف",
+        "duration_2h": "ساعتان",
+        "today": "اليوم",
+        "tomorrow": "غداً",
+        "slots_count": "{count, plural, =0 {لا فترات} =1 {فترة واحدة} =2 {فترتان} few {# فترات} many {# فترة} other {# فترة}}",
+        "quick_fill_button": "تعبئة سريعة",
+        "add_slot_button": "إضافة فترة",
+        "no_slots_help": "لا توجد فترات لهذا اليوم. أضف فترات أو استخدم التعبئة السريعة لتوليد يوم كامل.",
+        "quick_fill_day_button": "تعبئة سريعة لليوم",
+        "booked": "محجوزة",
+        "available": "متاحة",
+        "cannot_delete_booked": "لا يمكن حذف فترة محجوزة",
+        "remove_slot": "حذف الفترة",
+        "error_end_after_start": "يجب أن يكون وقت النهاية بعد وقت البداية",
+        "error_from_before_to": "يجب أن يكون وقت البداية قبل وقت النهاية",
+        "confirm_remove_slot": "حذف {range}؟",
+        "start_label": "البداية",
+        "end_label": "النهاية",
+        "from_label": "من",
+        "to_label": "إلى",
+        "slot_duration_label": "مدة الفترة",
+        "adding": "جارٍ الإضافة...",
+        "add": "إضافة",
+        "generating": "جارٍ التوليد...",
+        "generate_button": "{count, plural, =0 {توليد فترات} =1 {توليد فترة واحدة} =2 {توليد فترتين} few {توليد # فترات} many {توليد # فترة} other {توليد # فترة}}",
+        "generate_preview": "{count, plural, =0 {توليد فترات تلقائياً} =1 {توليد فترة واحدة تلقائياً} =2 {توليد فترتين تلقائياً} few {توليد # فترات تلقائياً} many {توليد # فترة تلقائياً} other {توليد # فترة تلقائياً}}",
+        "cancel": "إلغاء"
+    },
+    "dashboard_events": {
+        "heading": "الفعاليات",
+        "onboarding_required": "يرجى إكمال الإعداد لتقديم الفعاليات.",
+        "description": "أدر وقدّم الفعاليات لمنشأتك.",
+        "submit_form_title": "تقديم فعالية جديدة",
+        "list_title": "فعالياتك",
+        "empty_state": "لا توجد فعاليات مقدّمة بعد."
+    },
+    "admin_nav": {
+        "super_admin": "المشرف الأعلى",
+        "overview": "نظرة عامة",
+        "users": "المستخدمون",
+        "facilities": "المنشآت",
+        "bookings": "الحجوزات",
+        "finance": "المالية",
+        "events": "الفعاليات",
+        "audit_log": "سجل التدقيق",
+        "settings": "الإعدادات"
     },
     "admin": {
         "title": "لوحة الإدارة",
@@ -517,6 +581,12 @@
         "sunday": "الأحد",
         "closed": "مغلق",
         "open": "مفتوح",
+        "apply": "تطبيق",
+        "clear": "مسح",
+        "previous": "السابق",
+        "next": "التالي",
+        "soon": "قريباً",
+        "coming_soon": "قريباً",
         "cookie_banner": {
             "message": "نستخدم ملفات تعريف الارتباط لتحسين تجربتك. لا نستخدم ملفات التتبع دون موافقتك.",
             "accept": "قبول",

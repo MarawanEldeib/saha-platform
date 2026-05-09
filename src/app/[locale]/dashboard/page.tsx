@@ -48,7 +48,7 @@ export default async function DashboardPage() {
                             <h2 className="text-xl font-semibold text-gray-900 dark:text-white mt-1">{facility.name}</h2>
                             {facilities.length > 1 && (
                                 <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                                    1 of {facilities.length} facilities — switch from the sidebar.
+                                    {t("facilities_switcher_hint", { count: facilities.length })}
                                 </p>
                             )}
                         </div>
@@ -56,13 +56,13 @@ export default async function DashboardPage() {
                     </div>
                     <div className="flex gap-3 mt-5">
                         <Button variant="outline" size="sm" asChild>
-                            <Link href={`/${locale}/dashboard/facility`}>Manage Facility</Link>
+                            <Link href={`/${locale}/dashboard/facility`}>{t("manage_facility")}</Link>
                         </Button>
                         <Button variant="ghost" size="sm" asChild>
-                            <Link href={`/${locale}/f/${facility.slug}`}>View Public Page</Link>
+                            <Link href={`/${locale}/f/${facility.slug}`}>{t("view_public_page")}</Link>
                         </Button>
                         <Button variant="ghost" size="sm" asChild>
-                            <Link href={`/${locale}/dashboard/facilities`}>All Facilities</Link>
+                            <Link href={`/${locale}/dashboard/facilities`}>{t("all_facilities")}</Link>
                         </Button>
                     </div>
                 </div>

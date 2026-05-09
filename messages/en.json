@@ -175,7 +175,11 @@
             "status_active": "Active",
             "status_suspended": "Suspended",
             "complete_onboarding": "Complete your facility onboarding to get listed.",
-            "start_onboarding": "Start Onboarding"
+            "start_onboarding": "Start Onboarding",
+            "facilities_switcher_hint": "1 of {count} facilities — switch from the sidebar.",
+            "manage_facility": "Manage Facility",
+            "view_public_page": "View Public Page",
+            "all_facilities": "All Facilities"
         },
         "onboarding": {
             "title": "Facility Onboarding",
@@ -237,6 +241,66 @@
             "email": "Email",
             "save": "Save Changes"
         }
+    },
+    "dashboard_facilities": {
+        "title": "Your Facilities",
+        "description": "Manage all your venues from one place. Switch the active facility to scope the rest of the dashboard.",
+        "add_button": "Add facility",
+        "empty_state": "No facilities yet.",
+        "add_first_button": "Add your first facility",
+        "active_label": "Active",
+        "view_link": "View"
+    },
+    "dashboard_availability": {
+        "heading": "Availability",
+        "description": "Open time slots so players can book your courts",
+        "duration_1h": "1 hour",
+        "duration_1_5h": "1.5 hours",
+        "duration_2h": "2 hours",
+        "today": "Today",
+        "tomorrow": "Tomorrow",
+        "slots_count": "{count, plural, =0 {0 slots} =1 {# slot} other {# slots}}",
+        "quick_fill_button": "Quick Fill",
+        "add_slot_button": "Add Slot",
+        "no_slots_help": "No slots open for this day. Add slots or use Quick Fill to generate a full day.",
+        "quick_fill_day_button": "Quick Fill Day",
+        "booked": "Booked",
+        "available": "Available",
+        "cannot_delete_booked": "Cannot delete a booked slot",
+        "remove_slot": "Remove slot",
+        "error_end_after_start": "End time must be after start time",
+        "error_from_before_to": "From time must be before to time",
+        "confirm_remove_slot": "Remove {range}?",
+        "start_label": "Start",
+        "end_label": "End",
+        "from_label": "From",
+        "to_label": "To",
+        "slot_duration_label": "Slot duration",
+        "adding": "Adding...",
+        "add": "Add",
+        "generating": "Generating...",
+        "generate_button": "{count, plural, =0 {Generate slots} =1 {Generate # slot} other {Generate # slots}}",
+        "generate_preview": "{count, plural, =0 {Generate slots automatically} =1 {Generate # slot automatically} other {Generate # slots automatically}}",
+        "cancel": "Cancel"
+    },
+    "dashboard_events": {
+        "heading": "Events",
+        "onboarding_required": "Please complete onboarding to submit events.",
+        "description": "Manage and submit events for your facility.",
+        "submit_form_title": "Submit New Event",
+        "list_title": "Your Events",
+        "empty_state": "No events submitted yet."
+    },
+    "admin_nav": {
+        "super_admin": "Super Admin",
+        "overview": "Overview",
+        "users": "Users",
+        "facilities": "Facilities",
+        "bookings": "Bookings",
+        "finance": "Finance",
+        "events": "Events",
+        "audit_log": "Audit log",
+        "settings": "Settings"
     },
     "admin": {
         "title": "Admin Panel",
@@ -517,6 +581,12 @@
         "sunday": "Sunday",
         "closed": "Closed",
         "open": "Open",
+        "apply": "Apply",
+        "clear": "Clear",
+        "previous": "Previous",
+        "next": "Next",
+        "soon": "soon",
+        "coming_soon": "Coming soon",
         "cookie_banner": {
             "message": "We use cookies to improve your experience. We do not use tracking cookies without your consent.",
             "accept": "Accept",
