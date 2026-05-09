@@ -12,7 +12,8 @@
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "test:e2e": "playwright test",
-    "test:e2e:install": "playwright install --with-deps chromium"
+    "test:e2e:install": "playwright install --with-deps chromium",
+    "env:pull": "vercel env pull .env.local --environment=development --yes"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.95.1",

@@ -145,3 +145,36 @@ unverified" so the rest of the platform keeps working.
    Secret + enable.
 
 Code already lands the callback at `/[locale]/auth/callback`.
+
+---
+
+## SAH-50: Shared dev secrets via Vercel CLI
+
+Both devs work off the same set of secrets without trading `.env.local`
+files in Slack. Vercel is the source of truth — pull from it.
+
+**One-time setup (per dev):**
+
+```bash
+npm i -g vercel
+vercel login                    # opens browser, sign in
+vercel link                     # pick the saha-platform project
+npm run env:pull                # writes .env.local from Vercel "Development" env
+```
+
+**When secrets change** (someone adds a key in Vercel dashboard): every
+dev re-runs `npm run env:pull`. The script overwrites `.env.local` with
+the latest values.
+
+**Where to put new secrets:**
+
+- Local-only test values (Stripe test keys you're experimenting with) →
+  edit `.env.local` directly. They won't be overwritten until the next
+  `env:pull`.
+- Anything bzo or production needs → add it in
+  [Vercel Settings → Environment Variables](https://vercel.com/marawans-projects-568c78f5/saha-platform/settings/environment-variables),
+  pick the right environment(s) (Development / Preview / Production),
+  then everyone runs `env:pull`.
+
+`.env.local` is gitignored — it never gets committed. Production reads
+secrets directly from Vercel at runtime, no `.env.local` involved.
