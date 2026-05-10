@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { getLocale } from "next-intl/server";
 import {
     loginSchema,
@@ -12,6 +13,7 @@ import {
 } from "@/lib/validations";
 import { botSignalCheck } from "@/lib/botid";
 import { rateLimit } from "@/lib/rate-limit";
+import { sendPasswordResetEmail } from "@/lib/emails/password-reset-email";
 
 // ---------------------------------------------------------------------------
 // Login
@@ -126,15 +128,51 @@ export async function forgotPasswordAction(formData: FormData) {
         return { error: parsed.error.issues[0].message };
     }
 
-    const locale = formData.get("locale") as string ?? "en";
-    const supabase = await createClient();
-    const { error } = await supabase.auth.resetPasswordForEmail(parsed.data.email, {
-        redirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/${locale}/reset-password`,
+    const locale = (formData.get("locale") as string) ?? "en";
+
+    // SAH-133: don't use supabase.auth.resetPasswordForEmail() — that triggers
+    // Supabase's built-in email service which sends from
+    // noreply@mail.app.supabase.io and leaks our implementation. Instead:
+    //   1. admin.generateLink() — server-side, mints the recovery URL
+    //      WITHOUT sending any email
+    //   2. send via Resend with full Saha branding
+    const admin = createAdminClient();
+    const redirectTo = `${process.env.NEXT_PUBLIC_APP_URL}/${locale}/reset-password`;
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data, error } = await (admin as any).auth.admin.generateLink({
+        type: "recovery",
+        email: parsed.data.email,
+        options: { redirectTo },
     });
 
     if (error) {
-        return { error: error.message };
+        // generateLink returns an error on unknown emails too. To avoid
+        // user enumeration, return success generically — the user is told
+        // "if an account exists, we sent a reset email" on the page side.
+        console.warn("[forgotPassword] generateLink failed", error.message);
+        return { success: true };
     }
+
+    const recoveryUrl: string | undefined = data?.properties?.action_link ?? data?.action_link;
+    const recipientEmail: string | undefined = data?.user?.email ?? parsed.data.email;
+    const recipientName: string | null =
+        (data?.user?.user_metadata?.display_name as string | undefined) ?? null;
+
+    if (!recoveryUrl || !recipientEmail) {
+        console.warn("[forgotPassword] generateLink returned no action_link");
+        return { success: true };
+    }
+
+    // Fire-and-forget so the user-facing response stays snappy. Failures
+    // are logged but never surfaced — same trade-off as the booking
+    // confirmation email path.
+    void sendPasswordResetEmail({
+        recipientEmail,
+        recipientName,
+        recoveryUrl,
+        locale,
+    });
 
     return { success: true };
 }
