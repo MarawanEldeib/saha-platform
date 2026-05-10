@@ -29,18 +29,49 @@ export default async function MessagesInboxPage() {
     const role = (profile as { role: string } | null)?.role;
     if (role !== "user") redirect(`/${locale}`);
 
-    // RLS narrows to participant-only; both halves of the join are safe.
+    // Fetch conversations + the other player's profile separately. profiles
+    // RLS is strict (own-row only), so we go through the public_profiles
+    // view for the other side's display_name + avatar_url.
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data: convData } = await (supabase as any)
         .from("conversations")
-        .select(
-            `id, player_low_id, player_high_id, last_message_at, matchmaking_post_id,
-             low_profile:profiles!conversations_player_low_id_fkey(display_name, avatar_url),
-             high_profile:profiles!conversations_player_high_id_fkey(display_name, avatar_url)`,
-        )
+        .select("id, player_low_id, player_high_id, last_message_at, matchmaking_post_id")
         .order("last_message_at", { ascending: false });
 
-    const conversations = (convData ?? []) as ConversationRow[];
+    const convsRaw = (convData ?? []) as Omit<ConversationRow, "low_profile" | "high_profile">[];
+
+    const otherIds = Array.from(
+        new Set(
+            convsRaw
+                .flatMap((c) => [
+                    c.player_low_id !== user.id ? c.player_low_id : null,
+                    c.player_high_id !== user.id ? c.player_high_id : null,
+                ])
+                .filter((x): x is string => !!x),
+        ),
+    );
+
+    const profileMap = new Map<string, { display_name: string | null; avatar_url: string | null }>();
+    if (otherIds.length > 0) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { data: profileData } = await (supabase as any)
+            .from("public_profiles")
+            .select("id, display_name, avatar_url")
+            .in("id", otherIds);
+        for (const p of (profileData ?? []) as {
+            id: string;
+            display_name: string | null;
+            avatar_url: string | null;
+        }[]) {
+            profileMap.set(p.id, { display_name: p.display_name, avatar_url: p.avatar_url });
+        }
+    }
+
+    const conversations: ConversationRow[] = convsRaw.map((c) => ({
+        ...c,
+        low_profile: c.player_low_id === user.id ? null : profileMap.get(c.player_low_id) ?? null,
+        high_profile: c.player_high_id === user.id ? null : profileMap.get(c.player_high_id) ?? null,
+    }));
 
     // Unread counts in one query — group by conversation_id, only messages
     // where sender != me and read_at is null.

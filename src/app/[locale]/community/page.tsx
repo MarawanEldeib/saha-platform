@@ -76,13 +76,36 @@ export default function CommunityPage() {
             const [{ data: postsData }, { data: sportsData }, { data: { user } }] = await Promise.all([
                 supabase
                     .from("matchmaking_posts")
-                    .select("*, sports(name), profiles(display_name)")
+                    .select("*, sports(name)")
                     .eq("is_active", true)
                     .order("created_at", { ascending: false }),
                 supabase.from("sports").select("*").in("name", ["Padel", "Pickleball", "Squash", "Tennis", "Badminton"]).order("name"),
                 supabase.auth.getUser(),
             ]);
-            if (postsData) setPosts(postsData as Post[]);
+
+            // profiles RLS is strict (own-row only) so we can't JOIN profiles
+            // for the post author's display_name. Fetch via the public_profiles
+            // view in a second query and merge.
+            if (postsData && postsData.length > 0) {
+                const userIds = Array.from(
+                    new Set((postsData as { user_id: string }[]).map((p) => p.user_id)),
+                );
+                const { data: profilesData } = await supabase
+                    .from("public_profiles")
+                    .select("id, display_name")
+                    .in("id", userIds);
+                const map = new Map<string, string | null>(
+                    (profilesData as { id: string; display_name: string | null }[] | null ?? [])
+                        .map((p) => [p.id, p.display_name]),
+                );
+                const merged = (postsData as unknown as Omit<Post, "profiles">[]).map((p) => ({
+                    ...p,
+                    profiles: { display_name: map.get(p.user_id) ?? null },
+                }));
+                setPosts(merged);
+            } else {
+                setPosts([]);
+            }
             if (sportsData) setSports(sportsData);
 
             if (!user) {
@@ -123,13 +146,32 @@ export default function CommunityPage() {
         if (error) { setServerError(error.message); return; }
         reset();
         setShowForm(false);
-        // Refresh posts
+        // Refresh posts — same pattern as initial load (separate profiles fetch).
         const { data: postsData } = await supabase
             .from("matchmaking_posts")
-            .select("*, sports(name), profiles(display_name)")
+            .select("*, sports(name)")
             .eq("is_active", true)
             .order("created_at", { ascending: false });
-        if (postsData) setPosts(postsData as Post[]);
+        if (postsData && postsData.length > 0) {
+            const userIds = Array.from(
+                new Set((postsData as { user_id: string }[]).map((p) => p.user_id)),
+            );
+            const { data: profilesData } = await supabase
+                .from("public_profiles")
+                .select("id, display_name")
+                .in("id", userIds);
+            const map = new Map<string, string | null>(
+                (profilesData as { id: string; display_name: string | null }[] | null ?? [])
+                    .map((p) => [p.id, p.display_name]),
+            );
+            const merged = (postsData as unknown as Omit<Post, "profiles">[]).map((p) => ({
+                ...p,
+                profiles: { display_name: map.get(p.user_id) ?? null },
+            }));
+            setPosts(merged);
+        } else {
+            setPosts([]);
+        }
     };
 
     const canPost = authState.status === "player";
