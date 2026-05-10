@@ -26,20 +26,45 @@ export async function POST() {
     let accountId = facility.stripe_account_id as string | null;
     const currency = ((facility as { currency?: string }).currency ?? "AED").toLowerCase();
 
+    // SAH-64: capabilities must be requested at account-creation time when
+    // the country (UAE) isn't enabled by default for Express in the
+    // platform's Stripe Connect settings. Without these, Stripe rejects the
+    // account_link with: "You must provide an account with capabilities…".
+    // Both card_payments and transfers are needed for the booking flow's
+    // application_fee_amount + transfer_data split to work.
+    const REQUIRED_CAPABILITIES = {
+        card_payments: { requested: true },
+        transfers: { requested: true },
+    } as const;
+
     try {
-        // Create a new Express connected account if not already connected
         if (!accountId) {
             const account = await getStripe().accounts.create({
                 type: "express",
                 country: "AE",
                 business_profile: { name: facility.name },
                 default_currency: currency,
+                capabilities: REQUIRED_CAPABILITIES,
             });
             accountId = account.id;
             await supabase
                 .from("facilities")
                 .update({ stripe_account_id: accountId } as never)
                 .eq("id", facility.id);
+        } else {
+            // Existing accounts created before SAH-64 don't have capabilities
+            // requested. Stripe lets us add them via accounts.update — this
+            // is idempotent, so it's safe to run on every connect attempt.
+            try {
+                await getStripe().accounts.update(accountId, {
+                    capabilities: REQUIRED_CAPABILITIES,
+                });
+            } catch (capErr) {
+                // Surface but don't block — the link creation below will
+                // fail with a clearer message if capabilities really can't
+                // be granted (e.g. account is in a deauthorized state).
+                console.warn("[stripe/connect] capability backfill failed", capErr);
+            }
         }
 
         const appUrl = process.env.NEXT_PUBLIC_APP_URL!;
