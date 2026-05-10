@@ -45,8 +45,15 @@ export async function isBotRequest(): Promise<boolean> {
  * For mutating server actions on auth/forgot/reset endpoints. Returns a
  * generic error string when flagged so we don't leak which checks fired.
  * Caller bails with `if (botError) return { error: botError };`.
+ *
+ * Kill switch: set `BOTID_DISABLED=1` (Vercel env var) to short-circuit the
+ * check entirely. Useful when BotID's signal is too aggressive and locking
+ * legitimate users out — flip the env var, redeploy, investigate, flip back.
+ * Without this, a misbehaving signal would require a code rollback to
+ * unblock auth, which is too slow during an incident.
  */
 export async function botSignalCheck(): Promise<string | null> {
+    if (process.env.BOTID_DISABLED === "1") return null;
     if (await isBotRequest()) {
         return "Sign-in temporarily unavailable. Please try again in a moment.";
     }
