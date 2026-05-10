@@ -465,6 +465,8 @@
         "split_payout_label": "Payouts to your bank",
         "split_disclosure": "On every booking, Stripe transfers {owner}% to your connected account and Saha keeps a {platform}% platform fee. Payouts go directly to the bank account on file in Stripe — Saha never holds your money.",
         "disconnect_error": "Something went wrong. Please try again.",
+        "connect_failed": "Could not start Stripe onboarding. Please try again.",
+        "hosted_hint": "You'll be taken to Stripe to enter your business and bank details. Takes about 3 minutes.",
         "close": "Close"
     },
     "wallet": {

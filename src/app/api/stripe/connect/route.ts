@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { getStripe } from "@/lib/stripe";
 import { getActiveFacility } from "@/lib/facility-context";
+import { getLocale } from "next-intl/server";
 
 export async function POST() {
     const supabase = await createClient();
@@ -42,10 +43,13 @@ export async function POST() {
         }
 
         const appUrl = process.env.NEXT_PUBLIC_APP_URL!;
+        // SAH-64: keep the locale the user is in so they don't get bounced
+        // to /en/ when they return from Stripe-hosted onboarding.
+        const locale = await getLocale();
         const link = await getStripe().accountLinks.create({
             account: accountId,
-            refresh_url: `${appUrl}/en/dashboard/facility?stripe=refresh`,
-            return_url: `${appUrl}/en/dashboard/facility?stripe=success`,
+            refresh_url: `${appUrl}/${locale}/dashboard/facility?stripe=refresh`,
+            return_url: `${appUrl}/${locale}/dashboard/facility?stripe=success`,
             type: "account_onboarding",
         });
 

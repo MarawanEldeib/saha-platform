@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
-import { CheckCircle2, AlertCircle, X, CreditCard, ArrowDownToLine, BadgeCheck, Wallet } from "lucide-react";
+import { useState } from "react";
+import { CheckCircle2, AlertCircle, ExternalLink, CreditCard, ArrowDownToLine, BadgeCheck, Wallet, Loader2 } from "lucide-react";
 import { useTranslations } from "next-intl";
 
 type Props = {
@@ -17,6 +17,22 @@ type Props = {
     platformFeePercent: number;
 };
 
+/**
+ * SAH-64: Stripe Connect onboarding entry point for facility owners.
+ *
+ * Uses Stripe's hosted onboarding flow (account links) instead of the
+ * embedded Connect Components — bzo reported the embedded approach
+ * silently failed to render forms (likely CSP or platform-config issue).
+ * The hosted flow is the canonical Stripe Connect path: one button →
+ * full-page Stripe form → return to the dashboard with status.
+ *
+ * Visual states:
+ *   - ready       : green badge, "your courts are bookable" line, subtle Disconnect link
+ *   - incomplete  : amber badge + checklist of remaining Stripe steps + Continue Setup CTA
+ *   - none        : gray badge + "not connected" guidance + Connect Stripe CTA
+ *
+ * The 90/10 split disclosure stays visible in every state.
+ */
 export function StripeConnectSection({
     hasAccount: initialHasAccount,
     chargesEnabled: initialChargesEnabled,
@@ -28,19 +44,35 @@ export function StripeConnectSection({
     const tStripe = useTranslations("stripe_connect");
     const [hasAccount, setHasAccount] = useState(initialHasAccount);
     const [chargesEnabled, setChargesEnabled] = useState(initialChargesEnabled);
-    const [showOnboarding, setShowOnboarding] = useState(false);
-    const [loading, setLoading] = useState(false);
+    const [redirecting, setRedirecting] = useState(false);
     const [disconnecting, setDisconnecting] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const containerRef = useRef<HTMLDivElement>(null);
 
     const ownerSharePercent = 100 - platformFeePercent;
-    // Three-state model:
-    //   ready       — account exists + charges_enabled (players can pay)
-    //   incomplete  — account exists but missing details / charges
-    //   none        — no account at all
+
     const state: "ready" | "incomplete" | "none" =
         !hasAccount ? "none" : chargesEnabled ? "ready" : "incomplete";
+
+    async function startOnboarding() {
+        setRedirecting(true);
+        setError(null);
+        try {
+            const res = await fetch("/api/stripe/connect", { method: "POST" });
+            const json = await res.json();
+            if (json.error || !json.url) {
+                setError(json.error ?? tStripe("connect_failed"));
+                setRedirecting(false);
+                return;
+            }
+            // Hand off to Stripe's hosted onboarding. They redirect back to
+            // /dashboard/facility?stripe=success when done, or ?stripe=refresh
+            // if the user expired the account link.
+            window.location.href = json.url;
+        } catch {
+            setError(tStripe("connect_failed"));
+            setRedirecting(false);
+        }
+    }
 
     async function handleDisconnect() {
         if (!confirm(t("stripe_disconnect_confirm"))) return;
@@ -61,61 +93,9 @@ export function StripeConnectSection({
         }
     }
 
-    useEffect(() => {
-        if (!showOnboarding || !containerRef.current) return;
-
-        let cancelled = false;
-        containerRef.current.innerHTML = "";
-
-        async function init() {
-            setLoading(true);
-            setError(null);
-            try {
-                const { loadConnectAndInitialize } = await import("@stripe/connect-js");
-
-                const stripeConnect = loadConnectAndInitialize({
-                    publishableKey: process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!,
-                    fetchClientSecret: async () => {
-                        const res = await fetch("/api/stripe/account-session", { method: "POST" });
-                        const json = await res.json();
-                        if (json.error) throw new Error(json.error);
-                        return json.clientSecret;
-                    },
-                    appearance: {
-                        overlays: "dialog",
-                        variables: { colorPrimary: "#059669" },
-                    },
-                });
-
-                if (cancelled) return;
-
-                const onboarding = stripeConnect.create("account-onboarding");
-                onboarding.setOnExit(() => setShowOnboarding(false));
-
-                if (containerRef.current) {
-                    containerRef.current.appendChild(onboarding);
-                }
-            } catch (err) {
-                if (!cancelled) {
-                    setError(err instanceof Error ? err.message : tStripe("disconnect_error"));
-                    setShowOnboarding(false);
-                }
-            } finally {
-                if (!cancelled) setLoading(false);
-            }
-        }
-
-        init();
-
-        const node = containerRef.current;
-        return () => {
-            cancelled = true;
-            if (node) node.innerHTML = "";
-        };
-    }, [showOnboarding, tStripe]);
-
     return (
         <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-6 space-y-5">
+            {/* Header */}
             <div className="flex items-start justify-between gap-4">
                 <div>
                     <h2 className="text-lg font-semibold text-gray-900 dark:text-white">{t("stripe_heading")}</h2>
@@ -138,9 +118,8 @@ export function StripeConnectSection({
                 )}
             </div>
 
-            {/* Money split disclosure — visible in every state so the owner
-                always knows the numbers. SAH-64 §3. */}
-            <div className="rounded-xl border border-emerald-200 dark:border-emerald-900/50 bg-emerald-50/60 dark:bg-emerald-900/10 p-4 grid grid-cols-3 gap-3 text-center">
+            {/* 90 / 10 / Direct disclosure card — visible in every state */}
+            <div className="rounded-xl border border-emerald-200 dark:border-emerald-900/50 bg-gradient-to-br from-emerald-50 to-emerald-50/30 dark:from-emerald-900/20 dark:to-emerald-900/5 p-4 grid grid-cols-3 gap-3 text-center">
                 <div>
                     <div className="flex items-center justify-center mb-1 text-emerald-600 dark:text-emerald-400">
                         <Wallet className="h-4 w-4" />
@@ -163,30 +142,36 @@ export function StripeConnectSection({
                     <p className="text-[11px] text-gray-600 dark:text-gray-400 mt-0.5">{tStripe("split_payout_label")}</p>
                 </div>
             </div>
-            <p className="text-xs text-gray-500 dark:text-gray-400 -mt-2">{tStripe("split_disclosure", { owner: ownerSharePercent, platform: platformFeePercent })}</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400 -mt-2 leading-relaxed">
+                {tStripe("split_disclosure", { owner: ownerSharePercent, platform: platformFeePercent })}
+            </p>
 
-            {error && <p className="text-sm text-red-500">{error}</p>}
+            {error && (
+                <div className="rounded-lg border border-red-200 dark:border-red-900 bg-red-50 dark:bg-red-950/30 px-3 py-2 text-sm text-red-700 dark:text-red-400" role="alert">
+                    {error}
+                </div>
+            )}
 
             {/* State-specific CTA */}
-            {state === "ready" && !showOnboarding && (
-                <div className="flex items-center justify-between gap-3 pt-1">
-                    <div className="flex items-center gap-2 text-sm text-emerald-600 dark:text-emerald-400">
-                        <CheckCircle2 className="h-4 w-4" />
+            {state === "ready" && (
+                <div className="flex items-center justify-between gap-3 pt-1 border-t border-gray-100 dark:border-gray-800">
+                    <div className="flex items-center gap-2 text-sm text-emerald-600 dark:text-emerald-400 pt-3">
+                        <CheckCircle2 className="h-4 w-4 shrink-0" />
                         <span>{tStripe("ready_body")}</span>
                     </div>
                     <button
                         onClick={handleDisconnect}
                         disabled={disconnecting}
-                        className="text-xs text-gray-400 hover:text-red-500 dark:hover:text-red-400 transition-colors disabled:opacity-50"
+                        className="text-xs text-gray-400 hover:text-red-500 dark:hover:text-red-400 transition-colors disabled:opacity-50 pt-3 shrink-0"
                     >
                         {disconnecting ? "…" : t("stripe_disconnect")}
                     </button>
                 </div>
             )}
 
-            {state === "incomplete" && !showOnboarding && (
-                <div className="space-y-3 pt-1">
-                    <div className="flex items-start gap-2 text-sm text-amber-700 dark:text-amber-300">
+            {state === "incomplete" && (
+                <div className="space-y-3 pt-1 border-t border-gray-100 dark:border-gray-800">
+                    <div className="flex items-start gap-2 text-sm text-amber-700 dark:text-amber-300 pt-3">
                         <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
                         <span>{tStripe("incomplete_body")}</span>
                     </div>
@@ -196,49 +181,41 @@ export function StripeConnectSection({
                         {!initialPayoutsEnabled && <li>{tStripe("checklist_payouts")}</li>}
                     </ul>
                     <button
-                        onClick={() => setShowOnboarding(true)}
-                        disabled={loading}
-                        className="px-4 py-2 rounded-lg bg-[#635BFF] text-white text-sm font-medium hover:opacity-90 disabled:opacity-50 transition-opacity"
+                        onClick={startOnboarding}
+                        disabled={redirecting}
+                        className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-[#635BFF] text-white text-sm font-semibold hover:bg-[#5851e5] disabled:opacity-60 transition-colors shadow-sm"
                     >
-                        {loading ? t("stripe_redirecting") : tStripe("continue_setup")}
+                        {redirecting ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                            <ExternalLink className="h-4 w-4" />
+                        )}
+                        {redirecting ? t("stripe_redirecting") : tStripe("continue_setup")}
                     </button>
                 </div>
             )}
 
-            {state === "none" && !showOnboarding && (
-                <div className="space-y-3 pt-1">
-                    <div className="flex items-start gap-2 text-sm text-amber-700 dark:text-amber-300">
+            {state === "none" && (
+                <div className="space-y-3 pt-1 border-t border-gray-100 dark:border-gray-800">
+                    <div className="flex items-start gap-2 text-sm text-amber-700 dark:text-amber-300 pt-3">
                         <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
                         <span>{t("stripe_not_connected")}</span>
                     </div>
                     <button
-                        onClick={() => setShowOnboarding(true)}
-                        disabled={loading}
-                        className="px-4 py-2 rounded-lg bg-[#635BFF] text-white text-sm font-medium hover:opacity-90 disabled:opacity-50 transition-opacity"
+                        onClick={startOnboarding}
+                        disabled={redirecting}
+                        className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-[#635BFF] text-white text-sm font-semibold hover:bg-[#5851e5] disabled:opacity-60 transition-colors shadow-sm"
                     >
-                        {loading ? t("stripe_redirecting") : t("stripe_connect")}
+                        {redirecting ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                            <ExternalLink className="h-4 w-4" />
+                        )}
+                        {redirecting ? t("stripe_redirecting") : t("stripe_connect")}
                     </button>
-                </div>
-            )}
-
-            {showOnboarding && (
-                <div className="border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden">
-                    <div className="flex items-center justify-between px-4 py-2 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
-                        <span className="text-xs font-medium text-gray-500 dark:text-gray-400">Stripe Connect</span>
-                        <button
-                            onClick={() => setShowOnboarding(false)}
-                            className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-                            aria-label={tStripe("close")}
-                        >
-                            <X className="h-4 w-4" />
-                        </button>
-                    </div>
-                    {loading && (
-                        <div className="flex items-center justify-center py-12 text-sm text-gray-500 dark:text-gray-400">
-                            {t("stripe_redirecting")}
-                        </div>
-                    )}
-                    <div ref={containerRef} />
+                    <p className="text-xs text-gray-400 dark:text-gray-500">
+                        {tStripe("hosted_hint")}
+                    </p>
                 </div>
             )}
         </div>
