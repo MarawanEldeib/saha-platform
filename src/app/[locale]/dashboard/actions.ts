@@ -852,17 +852,67 @@ export async function saveFacilityHoursAction(
 
 // ---------------------------------------------------------------------------
 // Booking: get available slots for a court on a date (used by player booking widget)
+// SAH-128: returns a discriminated result so the UI can show a specific
+// reason instead of the generic "no slots" message — owners reported being
+// confused when the silent empty array meant "you haven't published any
+// availability for this date" vs "everything's booked" vs a real error.
 // ---------------------------------------------------------------------------
-export async function getAvailableSlotsAction(courtId: string, date: string) {
+export type GetSlotsResult =
+    | { ok: true; slots: { id: string; start_time: string; end_time: string }[]; totalDefinedForDate: number }
+    | { ok: false; code: "past_date" | "no_court" | "no_slots_defined" | "all_booked" | "error"; error: string };
+
+export async function getAvailableSlotsAction(courtId: string, date: string): Promise<GetSlotsResult> {
+    if (!courtId || !date) {
+        return { ok: false, code: "error", error: "Missing court or date." };
+    }
+
+    // Past-date guard. Compare in YYYY-MM-DD strings to avoid timezone drift.
+    const today = new Date().toISOString().slice(0, 10);
+    if (date < today) {
+        return { ok: false, code: "past_date", error: "Pick today or a future date." };
+    }
+
     const supabase = await createClient();
-    const { data } = await supabase
+
+    // Verify the court exists and belongs to an active facility. RLS already
+    // restricts this read to public-active facilities, so a null result =
+    // unknown court (or facility suspended).
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: court } = await (supabase as any)
+        .from("courts")
+        .select("id, is_active")
+        .eq("id", courtId)
+        .maybeSingle();
+    if (!court || !court.is_active) {
+        return { ok: false, code: "no_court", error: "Court not found or inactive." };
+    }
+
+    const { data, error } = await supabase
         .from("court_availability")
-        .select("id, start_time, end_time")
+        .select("id, start_time, end_time, is_booked")
         .eq("court_id", courtId)
         .eq("date", date)
-        .eq("is_booked", false)
         .order("start_time");
-    return { slots: data ?? [] };
+
+    if (error) {
+        return { ok: false, code: "error", error: "Could not load slots. Please try again." };
+    }
+
+    const allRows = (data ?? []) as { id: string; start_time: string; end_time: string; is_booked: boolean }[];
+    if (allRows.length === 0) {
+        return { ok: false, code: "no_slots_defined", error: "No time slots are published for this date yet." };
+    }
+
+    const open = allRows.filter((r) => !r.is_booked);
+    if (open.length === 0) {
+        return { ok: false, code: "all_booked", error: "All slots are booked for this date." };
+    }
+
+    return {
+        ok: true,
+        slots: open.map(({ id, start_time, end_time }) => ({ id, start_time, end_time })),
+        totalDefinedForDate: allRows.length,
+    };
 }
 
 // ---------------------------------------------------------------------------

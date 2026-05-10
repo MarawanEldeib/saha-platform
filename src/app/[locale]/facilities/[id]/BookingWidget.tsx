@@ -56,8 +56,18 @@ export function BookingWidget({ courts, isLoggedIn, locale, currency = "AED", wa
         setError(null);
         setSelectedSlot(null);
         setLoadingSlots(true);
-        const { slots: data } = await getAvailableSlotsAction(courtId, date);
-        setSlots(data);
+        const result = await getAvailableSlotsAction(courtId, date);
+        if (result.ok) {
+            setSlots(result.slots);
+        } else {
+            // SAH-128: surface specific reasons instead of a silent empty list.
+            const key = `slots_error_${result.code}` as
+                | "slots_error_past_date" | "slots_error_no_court"
+                | "slots_error_no_slots_defined" | "slots_error_all_booked"
+                | "slots_error_error";
+            setError(t(key));
+            setSlots([]); // keep the no-slots region visible but empty
+        }
         setLoadingSlots(false);
     }
 
@@ -154,6 +164,15 @@ export function BookingWidget({ courts, isLoggedIn, locale, currency = "AED", wa
                 {loadingSlots ? t("checking") : t("check_availability")}
             </button>
 
+            {/* SAH-128: prominent error/diagnostic banner. Shown for both
+                availability failures and booking failures so the user always
+                gets a clear reason. */}
+            {error && (
+                <div className="rounded-lg border border-red-200 dark:border-red-900 bg-red-50 dark:bg-red-950/30 px-3 py-2 text-sm text-red-700 dark:text-red-400" role="alert">
+                    {error}
+                </div>
+            )}
+
             {/* Repeat weekly (SAH-91) */}
             <div>
                 <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">{t("repeat_label")}</label>
@@ -170,27 +189,23 @@ export function BookingWidget({ courts, isLoggedIn, locale, currency = "AED", wa
                 </select>
             </div>
 
-            {/* Slots */}
-            {slots !== null && (
-                <div>
-                    {slots.length === 0 ? (
-                        <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-2">{t("no_slots")}</p>
-                    ) : (
-                        <div className="grid grid-cols-2 gap-2">
-                            {slots.map((slot) => (
-                                <button
-                                    key={slot.id}
-                                    onClick={() => setSelectedSlot(selectedSlot?.id === slot.id ? null : slot)}
-                                    className={`text-xs px-2 py-2 rounded-lg border transition-colors ${selectedSlot?.id === slot.id
-                                        ? "border-gray-900 dark:border-white bg-gray-900 dark:bg-white text-white dark:text-gray-900"
-                                        : "border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:border-gray-500"
-                                        }`}
-                                >
-                                    {slot.start_time.slice(0, 5)} – {slot.end_time.slice(0, 5)}
-                                </button>
-                            ))}
-                        </div>
-                    )}
+            {/* Slots — only show the grid when we have results. Empty + error
+                state is handled above by the diagnostic banner; empty + no
+                error means the widget hasn't been used yet. */}
+            {slots !== null && slots.length > 0 && (
+                <div className="grid grid-cols-2 gap-2">
+                    {slots.map((slot) => (
+                        <button
+                            key={slot.id}
+                            onClick={() => setSelectedSlot(selectedSlot?.id === slot.id ? null : slot)}
+                            className={`text-xs px-2 py-2 rounded-lg border transition-colors ${selectedSlot?.id === slot.id
+                                ? "border-gray-900 dark:border-white bg-gray-900 dark:bg-white text-white dark:text-gray-900"
+                                : "border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:border-gray-500"
+                                }`}
+                        >
+                            {slot.start_time.slice(0, 5)} – {slot.end_time.slice(0, 5)}
+                        </button>
+                    ))}
                 </div>
             )}
 
@@ -220,7 +235,7 @@ export function BookingWidget({ courts, isLoggedIn, locale, currency = "AED", wa
                         </label>
                     )}
 
-                    {error && <p className="text-xs text-red-500">{error}</p>}
+                    {/* Booking errors are surfaced in the prominent banner above. */}
                     <button
                         onClick={handleBook}
                         disabled={isPending}

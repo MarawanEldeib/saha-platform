@@ -49,7 +49,11 @@ export function MoveBookingPanel({
         setSelectedSlotId(null);
         getAvailableSlotsAction(courtId, date).then((res) => {
             if (cancelled) return;
-            const sameDuration = (res.slots ?? []).filter((s) => {
+            // SAH-128: action now returns a discriminated result. We only
+            // need the success-case slots here — surfacing the specific
+            // failure mode is the booking widget's job, not the move panel.
+            const slots = res.ok ? res.slots : [];
+            const sameDuration = slots.filter((s) => {
                 const dur =
                     (new Date(`1970-01-01T${s.end_time}`).getTime() -
                         new Date(`1970-01-01T${s.start_time}`).getTime()) / 60_000;
