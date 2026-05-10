@@ -30,6 +30,9 @@ export function NewEventForm({ facilityId }: { facilityId: string }) {
 
     return (
         <form ref={formRef} onSubmit={handleSubmit} className="space-y-4">
+            <div className="rounded-xl border border-amber-200 bg-amber-50 dark:border-amber-900/40 dark:bg-amber-950/20 px-4 py-3 text-sm text-amber-900 dark:text-amber-200">
+                {t("policy_notice")}
+            </div>
             <Input label={t("name_label")} name="name" placeholder={t("name_placeholder")} required />
             <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t("description_label")}</label>

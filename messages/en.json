@@ -154,7 +154,11 @@
             "login_link": "Log In",
             "error_email_taken": "This email is already in use.",
             "loading": "Creating account...",
-            "success": "Account created! Please check your email to confirm."
+            "success": "Account created! Please check your email to confirm.",
+            "agree_prefix": "By creating an account I agree to Saha's",
+            "agree_terms": "Terms of Service",
+            "agree_and": "and",
+            "agree_guidelines": "Community Guidelines"
         },
         "forgot_password": {
             "title": "Reset Your Password",
@@ -692,6 +696,7 @@
         "description_label": "Description (optional)",
         "description_placeholder": "Additional details about the event…",
         "datetime_label": "Event date & time",
+        "policy_notice": "Events promoting alcohol, gambling, or indecent themes will be rejected. Please review our Community Guidelines before submitting.",
         "submitted": "Event submitted for review!",
         "submit": "Submit Event",
         "save": "Save changes",
@@ -756,9 +761,15 @@
         "business_dashboard": "Business Dashboard",
         "privacy_policy": "Privacy Policy",
         "terms_of_service": "Terms of Service",
+        "community_guidelines": "Community Guidelines",
         "impressum": "Impressum",
         "contact": "Contact",
         "copyright": "© {year} Saha. All rights reserved.",
         "business_login": "Business account login"
+    },
+    "community_guidelines": {
+        "title": "Community Guidelines",
+        "intro": "Saha is a UAE-first racket sports community. These guidelines keep it respectful, family-friendly, and focused on play.",
+        "see_also": "See also:"
     }
 }

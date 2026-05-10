@@ -60,6 +60,7 @@ export function Footer({ isLoggedIn = false, role = null }: { isLoggedIn?: boole
                         <ul className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
                             <li><Link href={`/${locale}/privacy`} className="hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors">{tf("privacy_policy")}</Link></li>
                             <li><Link href={`/${locale}/terms`} className="hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors">{tf("terms_of_service")}</Link></li>
+                            <li><Link href={`/${locale}/community-guidelines`} className="hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors">{tf("community_guidelines")}</Link></li>
                             <li><Link href={`/${locale}/imprint`} className="hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors">{tf("impressum")}</Link></li>
                         </ul>
                     </div>
