@@ -341,6 +341,59 @@ export interface Database {
                     }
                 ];
             };
+            conversations: {
+                Row: {
+                    id: string;
+                    player_low_id: string;
+                    player_high_id: string;
+                    matchmaking_post_id: string | null;
+                    last_message_at: string;
+                    created_at: string;
+                };
+                Insert: {
+                    id?: string;
+                    player_low_id: string;
+                    player_high_id: string;
+                    matchmaking_post_id?: string | null;
+                };
+                Update: never;
+                Relationships: [];
+            };
+            messages: {
+                Row: {
+                    id: string;
+                    conversation_id: string;
+                    sender_id: string;
+                    body: string;
+                    read_at: string | null;
+                    created_at: string;
+                };
+                Insert: {
+                    id?: string;
+                    conversation_id: string;
+                    sender_id: string;
+                    body: string;
+                };
+                Update: {
+                    read_at?: string | null;
+                };
+                Relationships: [
+                    {
+                        foreignKeyName: "messages_conversation_id_fkey";
+                        columns: ["conversation_id"];
+                        isOneToOne: false;
+                        referencedRelation: "conversations";
+                        referencedColumns: ["id"];
+                    },
+                    {
+                        foreignKeyName: "messages_sender_id_fkey";
+                        columns: ["sender_id"];
+                        isOneToOne: false;
+                        referencedRelation: "profiles";
+                        referencedColumns: ["id"];
+                    }
+                ];
+            };
             courts: {
                 Row: {
                     id: string;
