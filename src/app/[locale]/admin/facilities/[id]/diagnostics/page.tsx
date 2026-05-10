@@ -166,8 +166,11 @@ export default async function FacilityDiagnosticsPage({
     const facility = facilityData as FacilityRow;
 
     // Parallel reads — courts, hours, last 20 bookings, next 7 days availability.
-    const today = new Date().toISOString().slice(0, 10);
-    const sevenDaysOut = new Date(Date.now() + 7 * 24 * 3_600_000).toISOString().slice(0, 10);
+    // Server Component — Date.now() at request time is intentional.
+    // eslint-disable-next-line react-hooks/purity
+    const nowMs = Date.now();
+    const today = new Date(nowMs).toISOString().slice(0, 10);
+    const sevenDaysOut = new Date(nowMs + 7 * 24 * 3_600_000).toISOString().slice(0, 10);
 
     const [
         courtsResult,
@@ -213,7 +216,7 @@ export default async function FacilityDiagnosticsPage({
     // Build availability matrix: court x date → { defined, booked, free }
     const dates: string[] = [];
     for (let i = 0; i < 7; i++) {
-        const d = new Date(Date.now() + i * 24 * 3_600_000);
+        const d = new Date(nowMs + i * 24 * 3_600_000);
         dates.push(d.toISOString().slice(0, 10));
     }
     const matrix: Record<string, Record<string, { defined: number; booked: number }>> = {};
