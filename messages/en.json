@@ -11,6 +11,7 @@
         "logout": "Log Out",
         "language": "Language",
         "bookings": "My Bookings",
+        "messages": "Messages",
         "settings": "Settings"
     },
     "home": {
@@ -112,7 +113,10 @@
         "message_placeholder": "Describe what you're looking for...",
         "anonymous": "Anonymous",
         "non_player_title": "Player accounts only",
-        "non_player_body": "Matchmaking is a player feature. Your account is signed in as a facility owner / admin. Sign out and create a separate player account to post or respond to matchmaking requests."
+        "non_player_body": "Matchmaking is a player feature. Your account is signed in as a facility owner / admin. Sign out and create a separate player account to post or respond to matchmaking requests.",
+        "message_player": "Message",
+        "message_to": "Message {name}",
+        "send": "Send"
     },
     "events": {
         "title": "Upcoming Events",
