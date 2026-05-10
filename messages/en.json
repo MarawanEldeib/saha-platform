@@ -169,8 +169,7 @@
             "rate_limited_title": "Too many attempts",
             "rate_limited_body": "Please wait {seconds} seconds before trying again.",
             "error_title": "Something went wrong",
-            "try_again": "Try again",
-            "bot_blocked": "Sign-in temporarily unavailable. Please try again in a moment."
+            "try_again": "Try again"
         },
         "reset_password": {
             "title": "Set New Password",

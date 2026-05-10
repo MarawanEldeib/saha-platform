@@ -11,7 +11,6 @@ import {
     forgotPasswordSchema,
     resetPasswordSchema,
 } from "@/lib/validations";
-import { botSignalCheck } from "@/lib/botid";
 import { rateLimit } from "@/lib/rate-limit";
 import { sendPasswordResetEmail } from "@/lib/emails/password-reset-email";
 
@@ -19,10 +18,6 @@ import { sendPasswordResetEmail } from "@/lib/emails/password-reset-email";
 // Login
 // ---------------------------------------------------------------------------
 export async function loginAction(formData: FormData) {
-    // SAH-78: Vercel BotID — drops drive-by bots before they hit Supabase.
-    const botError = await botSignalCheck();
-    if (botError) return { error: botError };
-
     // SAH-76: 5 attempts / 15 min / IP. Combined IP+email key so one IP
     // can't lock the same email out everywhere by hammering it.
     const rl = await rateLimit("auth_login", (formData.get("email") as string) ?? "");
@@ -57,9 +52,6 @@ export async function loginAction(formData: FormData) {
 // Register
 // ---------------------------------------------------------------------------
 export async function registerAction(formData: FormData) {
-    const botError = await botSignalCheck();
-    if (botError) return { error: botError };
-
     const rl = await rateLimit("auth_signup");
     if (!rl.success) {
         return { error: `Too many sign-ups from this IP. Try again in ${rl.retryAfter}s.` };
@@ -125,13 +117,9 @@ export type ForgotPasswordResult =
     | { ok: false; code: "not_registered" }
     | { ok: false; code: "rate_limited"; retryAfter: number }
     | { ok: false; code: "invalid_email"; message: string }
-    | { ok: false; code: "bot" }
     | { ok: false; code: "error"; message: string };
 
 export async function forgotPasswordAction(formData: FormData): Promise<ForgotPasswordResult> {
-    const botError = await botSignalCheck();
-    if (botError) return { ok: false, code: "bot" };
-
     const rl = await rateLimit("auth_forgot", (formData.get("email") as string) ?? "");
     if (!rl.success) {
         return { ok: false, code: "rate_limited", retryAfter: rl.retryAfter };
