@@ -65,7 +65,9 @@
         "km_away": "km away",
         "outside_uae": "Saha is currently only available in the UAE. Coming soon to your region!",
         "view_map": "Map",
-        "view_list": "List"
+        "view_list": "List",
+        "prayer_friendly_filter": "Prayer-friendly only",
+        "prayer_friendly_chip": "🕌 Prayer-friendly"
     },
     "facility": {
         "hours": "Opening Hours",
@@ -635,7 +637,12 @@
         "stripe_redirecting": "Redirecting…",
         "stripe_connect": "Connect Stripe",
         "stripe_disconnect": "Disconnect",
-        "stripe_disconnect_confirm": "Disconnect your Stripe account? Players will not be able to book your courts until you reconnect."
+        "stripe_disconnect_confirm": "Disconnect your Stripe account? Players will not be able to book your courts until you reconnect.",
+        "prayer_section": "Prayer Amenities",
+        "prayer_hint": "Help Muslim players plan around prayer times. Shown as a \"Prayer-friendly\" badge on your facility profile and search results.",
+        "has_prayer_room": "Has a prayer room",
+        "has_wudu_area": "Has a wudu (ablution) area",
+        "prayer_friendly_badge": "🕌 Prayer-friendly"
     },
     "hours_form": {
         "heading": "Opening Hours",

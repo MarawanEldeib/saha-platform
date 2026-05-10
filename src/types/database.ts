@@ -75,6 +75,8 @@ export interface Database {
                     currency: string;
                     trn: string | null;
                     invoice_seq: number;
+                    has_prayer_room: boolean;
+                    has_wudu_area: boolean;
                     created_at: string;
                     updated_at: string;
                 };
@@ -95,6 +97,8 @@ export interface Database {
                     stripe_account_id?: string | null;
                     currency?: string;
                     trn?: string | null;
+                    has_prayer_room?: boolean;
+                    has_wudu_area?: boolean;
                 };
                 Update: {
                     name?: string;
@@ -112,6 +116,8 @@ export interface Database {
                     stripe_account_id?: string | null;
                     currency?: string;
                     trn?: string | null;
+                    has_prayer_room?: boolean;
+                    has_wudu_area?: boolean;
                     updated_at?: string;
                 };
                 Relationships: [

@@ -38,6 +38,8 @@ interface Props {
         phone: string | null;
         website: string | null;
         trn?: string | null;
+        has_prayer_room?: boolean;
+        has_wudu_area?: boolean;
     };
     allSports: Sport[];
     currentSportIds: number[];
@@ -108,6 +110,8 @@ export function FacilityEditForm({
             phone: facility.phone ?? "",
             website: facility.website ?? "",
             trn: facility.trn ?? "",
+            has_prayer_room: facility.has_prayer_room ?? false,
+            has_wudu_area: facility.has_wudu_area ?? false,
         },
     });
 
@@ -161,7 +165,9 @@ export function FacilityEditForm({
             // and don't depend on each other.
             const fd = new FormData();
             fd.append("facility_id", facility.id);
-            Object.entries(data).forEach(([k, v]) => fd.append(k, v ?? ""));
+            Object.entries(data).forEach(([k, v]) => {
+                fd.append(k, typeof v === "boolean" ? String(v) : (v ?? ""));
+            });
 
             const [details, sports, hoursResult] = await Promise.all([
                 updateFacilityAction(fd),
@@ -235,6 +241,29 @@ export function FacilityEditForm({
                             {...register("trn")}
                         />
                         <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{t("trn_hint")}</p>
+                    </div>
+                </div>
+
+                <div className="mt-6 pt-6 border-t border-gray-100 dark:border-gray-800">
+                    <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-1">{t("prayer_section")}</h3>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">{t("prayer_hint")}</p>
+                    <div className="space-y-2">
+                        <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300 cursor-pointer">
+                            <input
+                                type="checkbox"
+                                className="h-4 w-4 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500"
+                                {...register("has_prayer_room")}
+                            />
+                            {t("has_prayer_room")}
+                        </label>
+                        <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300 cursor-pointer">
+                            <input
+                                type="checkbox"
+                                className="h-4 w-4 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500"
+                                {...register("has_wudu_area")}
+                            />
+                            {t("has_wudu_area")}
+                        </label>
                     </div>
                 </div>
             </div>
