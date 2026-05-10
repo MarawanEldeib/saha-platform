@@ -112,7 +112,7 @@ export function Navbar({ profile }: NavbarProps) {
                                         {t("admin")}
                                     </Link>
                                 )}
-                                {(profile.role === "business" || profile.role === "admin") && (
+                                {profile.role === "business" && (
                                     <Link href={`/${locale}/dashboard`} className={ghostBtn}>
                                         <LayoutDashboard className="h-4 w-4" />
                                         {t("dashboard")}
