@@ -73,9 +73,6 @@ export default function ForgotPasswordPage() {
             case "invalid_email":
                 setServerError(result.message);
                 return;
-            case "bot":
-                setServerError(t("bot_blocked"));
-                return;
             case "error":
             default:
                 setPhase({ status: "error", message: result.message });
