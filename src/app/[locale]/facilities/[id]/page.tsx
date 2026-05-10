@@ -47,16 +47,22 @@ export default async function FacilityDetailPage({
 
     // SAH-93: caller's wallet balance for the booking widget. Anonymous
     // visitors have no wallet — leave at 0.
+    // SAH-127: also fetch role so we can hide booking + review actions for
+    // owners/admins (strict role separation: they need a player account).
     let walletBalance = 0;
+    let userRole: string | null = null;
     if (user) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const { data: walletRow } = await (supabase as any)
-            .from("wallet_balances")
-            .select("credit_aed")
-            .eq("user_id", user.id)
-            .maybeSingle();
+        const [{ data: walletRow }, { data: profileRow }] = await Promise.all([
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            (supabase as any).from("wallet_balances").select("credit_aed").eq("user_id", user.id).maybeSingle(),
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            (supabase as any).from("profiles").select("role").eq("id", user.id).maybeSingle(),
+        ]);
         walletBalance = Number(walletRow?.credit_aed ?? 0);
+        userRole = (profileRow as { role?: string } | null)?.role ?? null;
     }
+    const canBookOrReview = !user || userRole === "user";
 
     const { data: facility, error } = await supabase
         .from("facilities")
@@ -264,7 +270,14 @@ export default async function FacilityDetailPage({
                             reviews={(facility.reviews ?? []) as never}
                             currentUserId={currentUserId}
                         />
-                        <ReviewForm facilityId={facility.id} locale={locale} />
+                        {/* SAH-127: only player accounts can write reviews. */}
+                        {canBookOrReview ? (
+                            <ReviewForm facilityId={facility.id} locale={locale} />
+                        ) : (
+                            <div className="border border-dashed border-gray-300 dark:border-gray-700 rounded-xl p-4 text-sm text-gray-600 dark:text-gray-400">
+                                {t("review_player_only")}
+                            </div>
+                        )}
                     </div>
                 </div>
 
@@ -314,15 +327,22 @@ export default async function FacilityDetailPage({
                         </div>
                     )}
 
-                    {/* Booking widget */}
-                    <BookingWidget
-                        facilityId={facility.id}
-                        courts={(facility.courts ?? []).filter((c: { is_active: boolean }) => c.is_active)}
-                        isLoggedIn={!!user}
-                        locale={locale}
-                        currency={(facility as { currency?: string }).currency}
-                        walletBalance={walletBalance}
-                    />
+                    {/* SAH-127: Booking is a player-only action. Owners and
+                        admins see a CTA explaining they need a player account. */}
+                    {canBookOrReview ? (
+                        <BookingWidget
+                            facilityId={facility.id}
+                            courts={(facility.courts ?? []).filter((c: { is_active: boolean }) => c.is_active)}
+                            isLoggedIn={!!user}
+                            locale={locale}
+                            currency={(facility as { currency?: string }).currency}
+                            walletBalance={walletBalance}
+                        />
+                    ) : (
+                        <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-5 text-sm text-gray-600 dark:text-gray-400">
+                            {t("booking_player_only")}
+                        </div>
+                    )}
                 </aside>
             </div>
         </div>

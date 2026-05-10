@@ -83,6 +83,8 @@
         "review_confirm_delete_yes": "Yes, delete",
         "review_deleting": "Deleting…",
         "review_rating_required": "Please pick a rating between 1 and 5.",
+        "review_player_only": "Reviews are a player action. Sign in with a player account to write a review.",
+        "booking_player_only": "Booking is a player action. Sign in with a player account to book this court.",
         "events_title": "Upcoming Events",
         "no_events": "No upcoming events.",
         "status_active": "Active",

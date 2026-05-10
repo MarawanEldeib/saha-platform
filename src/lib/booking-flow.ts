@@ -54,6 +54,21 @@ export type BookCourtResult =
 export async function bookCourtCore(params: BookCourtParams): Promise<BookCourtResult> {
     const { supabase, userId, availabilityId, numPlayers, creditToApply, appUrl, locale } = params;
 
+    // SAH-127: strict role separation. Only role='user' may book courts;
+    // owners and admins must use a separate player account. RLS also
+    // enforces this at the INSERT, but bailing here gives a clearer error
+    // than the cryptic RLS denial, and saves a Stripe round-trip.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: profileRow } = await (supabase as any)
+        .from("profiles").select("role").eq("id", userId).single();
+    const role = (profileRow as { role?: string } | null)?.role ?? "user";
+    if (role !== "user") {
+        return {
+            ok: false,
+            error: "Only player accounts can book courts. Sign in with a player account to continue.",
+        };
+    }
+
     // Authoritative slot data — never trust client times.
     const { data: slot } = await supabase
         .from("court_availability")
