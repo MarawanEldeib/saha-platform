@@ -372,7 +372,18 @@
         "generating": "جارٍ التوليد...",
         "generate_button": "{count, plural, =0 {توليد فترات} =1 {توليد فترة واحدة} =2 {توليد فترتين} few {توليد # فترات} many {توليد # فترة} other {توليد # فترة}}",
         "generate_preview": "{count, plural, =0 {توليد فترات تلقائياً} =1 {توليد فترة واحدة تلقائياً} =2 {توليد فترتين تلقائياً} few {توليد # فترات تلقائياً} many {توليد # فترة تلقائياً} other {توليد # فترة تلقائياً}}",
-        "cancel": "إلغاء"
+        "cancel": "إلغاء",
+        "session_label": "نوع الجلسة",
+        "session_mixed": "مختلطة",
+        "session_family": "👨‍👩‍👧 عائلية",
+        "session_women_only": "♀ للنساء فقط",
+        "session_men_only": "♂ للرجال فقط"
+    },
+    "session_types": {
+        "type_mixed": "مختلطة",
+        "type_family": "عائلية",
+        "type_women_only": "للنساء فقط",
+        "type_men_only": "للرجال فقط"
     },
     "dashboard_events": {
         "heading": "الفعاليات",

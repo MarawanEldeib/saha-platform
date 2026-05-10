@@ -13,6 +13,7 @@ type SlotRow = {
     start_time: string;
     end_time: string;
     is_booked: boolean;
+    session_type?: string | null;
     created_at: string;
 };
 

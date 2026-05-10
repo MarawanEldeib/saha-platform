@@ -12,6 +12,7 @@ import { useTranslations } from "next-intl";
 import { formatPrice } from "@/lib/utils";
 import type { PrayerWindow } from "@/lib/prayer-times";
 import { findOverlappingWindow } from "@/lib/prayer-times";
+import { SessionTypeBadge } from "@/components/booking/SessionTypeBadge";
 
 type Court = {
     id: string;
@@ -24,6 +25,7 @@ type Slot = {
     id: string;
     start_time: string;
     end_time: string;
+    session_type?: string;
 };
 
 type Props = {
@@ -255,7 +257,10 @@ export function BookingWidget({ facilityId, courts, isLoggedIn, locale, currency
                                             : "border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:border-gray-500"
                                 }`}
                             >
-                                {slot.start_time.slice(0, 5)} – {slot.end_time.slice(0, 5)}
+                                <span className="block">{slot.start_time.slice(0, 5)} – {slot.end_time.slice(0, 5)}</span>
+                                {slot.session_type && slot.session_type !== "mixed" && (
+                                    <span className="block mt-1"><SessionTypeBadge type={slot.session_type} /></span>
+                                )}
                                 {isBlocked && (
                                     <span className="block text-[10px] mt-0.5 opacity-80">🕌 {overlap!.name}</span>
                                 )}

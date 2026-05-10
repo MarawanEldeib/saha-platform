@@ -372,7 +372,18 @@
         "generating": "Generating...",
         "generate_button": "{count, plural, =0 {Generate slots} =1 {Generate # slot} other {Generate # slots}}",
         "generate_preview": "{count, plural, =0 {Generate slots automatically} =1 {Generate # slot automatically} other {Generate # slots automatically}}",
-        "cancel": "Cancel"
+        "cancel": "Cancel",
+        "session_label": "Session type",
+        "session_mixed": "Mixed",
+        "session_family": "👨‍👩‍👧 Family",
+        "session_women_only": "♀ Women only",
+        "session_men_only": "♂ Men only"
+    },
+    "session_types": {
+        "type_mixed": "Mixed",
+        "type_family": "Family",
+        "type_women_only": "Women only",
+        "type_men_only": "Men only"
     },
     "dashboard_events": {
         "heading": "Events",
