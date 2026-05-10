@@ -612,7 +612,15 @@
         "description_placeholder": "Additional details about the event…",
         "datetime_label": "Event date & time",
         "submitted": "Event submitted for review!",
-        "submit": "Submit Event"
+        "submit": "Submit Event",
+        "save": "Save changes",
+        "cancel": "Cancel",
+        "edit": "Edit",
+        "delete": "Delete",
+        "edit_resets_status": "Saving will reset this event to pending so admins can re-review.",
+        "confirm_delete": "Delete \"{name}\"? This cannot be undone.",
+        "confirm_delete_yes": "Yes, delete",
+        "deleting": "Deleting…"
     },
     "common": {
         "loading": "Loading...",

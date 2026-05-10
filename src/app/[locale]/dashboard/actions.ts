@@ -225,6 +225,105 @@ export async function submitEventAction(formData: FormData) {
 }
 
 // ---------------------------------------------------------------------------
+// Events: update an existing event (SAH-123).
+// Owner can correct typos / change date. Resets status to 'pending' so the
+// edited content goes through admin review again — otherwise an owner could
+// approve a clean draft and swap content past review. Apply sanitizeTextInput
+// the same way updateFacilityAction does (SAH-120).
+// ---------------------------------------------------------------------------
+export async function updateEventAction(
+    eventId: string,
+    raw: { name: string; description: string; event_date: string },
+) {
+    const supabase = await createClient();
+    const locale = await getLocale();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { error: "Not authenticated" };
+
+    const name = sanitizeTextInput(raw.name ?? "");
+    const description = sanitizeTextInput(raw.description ?? "");
+    const eventDate = raw.event_date;
+
+    if (!name || name.length < 3) return { error: "Event name must be at least 3 characters." };
+    if (!eventDate) return { error: "Please select an event date." };
+
+    // Ownership check: the event must belong to a facility owned by the caller.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: existing } = await (supabase as any)
+        .from("events")
+        .select("id, facility_id, status, facilities!inner(owner_id)")
+        .eq("id", eventId)
+        .single();
+    if (!existing) return { error: "Event not found" };
+    if (existing.facilities?.owner_id !== user.id) return { error: "Access denied" };
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error } = await (supabase as any)
+        .from("events")
+        .update({
+            name,
+            description: description || null,
+            event_date: eventDate,
+            status: "pending", // re-review after any content change
+        })
+        .eq("id", eventId);
+
+    if (error) return { error: error.message };
+
+    await logAuditEvent({
+        actorId: user.id,
+        actorRole: "business",
+        action: "event.update",
+        targetType: "event",
+        targetId: eventId,
+        metadata: { facility_id: existing.facility_id, previous_status: existing.status },
+    });
+
+    revalidatePath(`/${locale}/dashboard/events`);
+    return { success: true };
+}
+
+// ---------------------------------------------------------------------------
+// Events: delete (SAH-123). Hard delete; owner-scoped. Audit log captures
+// what was removed in case we need to reverse-engineer a complaint.
+// ---------------------------------------------------------------------------
+export async function deleteEventAction(eventId: string) {
+    const supabase = await createClient();
+    const locale = await getLocale();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { error: "Not authenticated" };
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: existing } = await (supabase as any)
+        .from("events")
+        .select("id, name, facility_id, status, facilities!inner(owner_id)")
+        .eq("id", eventId)
+        .single();
+    if (!existing) return { error: "Event not found" };
+    if (existing.facilities?.owner_id !== user.id) return { error: "Access denied" };
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error } = await (supabase as any)
+        .from("events")
+        .delete()
+        .eq("id", eventId);
+
+    if (error) return { error: error.message };
+
+    await logAuditEvent({
+        actorId: user.id,
+        actorRole: "business",
+        action: "event.delete",
+        targetType: "event",
+        targetId: eventId,
+        metadata: { facility_id: existing.facility_id, name: existing.name, status: existing.status },
+    });
+
+    revalidatePath(`/${locale}/dashboard/events`);
+    return { success: true };
+}
+
+// ---------------------------------------------------------------------------
 // Availability: create single slot
 // ---------------------------------------------------------------------------
 export async function createAvailabilitySlotAction(
