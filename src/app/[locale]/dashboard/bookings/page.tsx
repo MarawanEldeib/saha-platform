@@ -1,7 +1,8 @@
 import { createClient } from "@/lib/supabase/server";
 import { getLocale, getTranslations } from "next-intl/server";
 import { redirect } from "next/navigation";
-import { CalendarDays, TrendingUp, CheckCircle, AlertCircle } from "lucide-react";
+import Link from "next/link";
+import { CalendarDays, TrendingUp, CheckCircle, AlertCircle, History } from "lucide-react";
 import { ExportButton } from "./ExportButton";
 import { OwnerCancelButton } from "./OwnerCancelButton";
 import { ReliabilityBadge } from "./ReliabilityBadge";
@@ -149,9 +150,18 @@ export default async function OwnerBookingsPage() {
     return (
         <div className="max-w-4xl space-y-8">
             {/* Header */}
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between gap-3 flex-wrap">
                 <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{t("title")}</h1>
-                <ExportButton />
+                <div className="flex items-center gap-2">
+                    <Link
+                        href={`/${locale}/dashboard/bookings/history`}
+                        className="flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                    >
+                        <History className="h-4 w-4" />
+                        {t("view_all_history")}
+                    </Link>
+                    <ExportButton />
+                </div>
             </div>
 
             {/* Stripe status */}
