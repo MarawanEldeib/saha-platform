@@ -3,7 +3,8 @@
 import * as React from "react";
 import { format, isSameDay } from "date-fns";
 import { Send } from "lucide-react";
-import { sendMessageAction } from "../actions";
+import { sendMessageAction, markMessagesReadAction } from "../actions";
+import { createClient } from "@/lib/supabase/client";
 
 interface MessageRow {
     id: string;
@@ -21,9 +22,15 @@ interface Props {
 }
 
 /**
- * SAH-96 PR A: thread view + composer. No realtime yet — that comes in PR B.
- * For now, after sending we optimistically append the message locally; the
- * page also revalidates so a fresh load shows server truth.
+ * SAH-96 PR B: thread view + composer + Realtime.
+ *
+ * Subscribes to the `messages` table filtered to this conversation_id. New
+ * INSERT events from either side append to the local list without a refresh.
+ * Server-side RLS still applies — clients only receive INSERTs they could
+ * have SELECTed, so non-participants don't leak.
+ *
+ * Optimistic-append on send still happens (zero-latency feel) but the
+ * Realtime echo for our own message is deduplicated by id.
  */
 export function ConversationView({
     conversationId,
@@ -38,9 +45,60 @@ export function ConversationView({
     const scrollerRef = React.useRef<HTMLDivElement | null>(null);
 
     React.useEffect(() => {
-        // Stick to the bottom on mount and after each message send.
+        // Stick to the bottom on mount and after each message append.
         scrollerRef.current?.scrollTo({ top: scrollerRef.current.scrollHeight, behavior: "auto" });
     }, [messages.length]);
+
+    // Realtime subscription. Filter is server-side via PostgREST-style filter
+    // string; we still rely on RLS as the actual auth boundary.
+    React.useEffect(() => {
+        const supabase = createClient();
+        const channel = supabase
+            .channel(`messages:${conversationId}`)
+            .on(
+                "postgres_changes",
+                {
+                    event: "INSERT",
+                    schema: "public",
+                    table: "messages",
+                    filter: `conversation_id=eq.${conversationId}`,
+                },
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                (payload: { new: any }) => {
+                    const row = payload.new as MessageRow;
+                    setMessages((prev) => {
+                        // Skip if we already have it (server echo of our own optimistic
+                        // append, or a duplicate from a reconnect replay).
+                        if (prev.some((m) => m.id === row.id)) return prev;
+                        // Replace the temp optimistic row if its body matches and it
+                        // came from us — otherwise just append.
+                        const tempIdx = prev.findIndex(
+                            (m) =>
+                                m.id.startsWith("temp-") &&
+                                m.sender_id === row.sender_id &&
+                                m.body === row.body,
+                        );
+                        if (tempIdx !== -1) {
+                            const next = [...prev];
+                            next[tempIdx] = row;
+                            return next;
+                        }
+                        return [...prev, row];
+                    });
+
+                    // If the incoming message is from the other player and we're
+                    // looking at the thread, mark as read immediately.
+                    if (row.sender_id !== currentUserId) {
+                        void markMessagesReadAction(conversationId);
+                    }
+                },
+            )
+            .subscribe();
+
+        return () => {
+            void supabase.removeChannel(channel);
+        };
+    }, [conversationId, currentUserId]);
 
     async function send() {
         const body = draft.trim();
