@@ -41,21 +41,35 @@ export default async function ConversationPage({
     const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single();
     if ((profile as { role: string } | null)?.role !== "user") redirect(`/${locale}`);
 
-    // RLS will return null if the caller isn't a participant.
+    // RLS will return null if the caller isn't a participant. profiles RLS
+    // is strict — fetch the other player via public_profiles in a 2nd query.
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data: convData } = await (supabase as any)
         .from("conversations")
         .select(
             `id, player_low_id, player_high_id, matchmaking_post_id,
-             low_profile:profiles!conversations_player_low_id_fkey(display_name, avatar_url),
-             high_profile:profiles!conversations_player_high_id_fkey(display_name, avatar_url),
              matchmaking_posts(id, message)`,
         )
         .eq("id", conversationId)
         .maybeSingle();
 
     if (!convData) notFound();
-    const conv = convData as ConversationDetail;
+    const convRaw = convData as Omit<ConversationDetail, "low_profile" | "high_profile">;
+
+    const otherUserId = convRaw.player_low_id === user.id ? convRaw.player_high_id : convRaw.player_low_id;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: otherProfile } = await (supabase as any)
+        .from("public_profiles")
+        .select("display_name, avatar_url")
+        .eq("id", otherUserId)
+        .maybeSingle();
+    const otherProfileTyped = otherProfile as { display_name: string | null; avatar_url: string | null } | null;
+
+    const conv: ConversationDetail = {
+        ...convRaw,
+        low_profile: convRaw.player_low_id === user.id ? null : otherProfileTyped,
+        high_profile: convRaw.player_high_id === user.id ? null : otherProfileTyped,
+    };
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data: msgData } = await (supabase as any)
