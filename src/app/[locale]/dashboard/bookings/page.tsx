@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { CalendarDays, TrendingUp, CheckCircle, AlertCircle, History } from "lucide-react";
 import { ExportButton } from "./ExportButton";
+import { PdfReportButton } from "./PdfReportButton";
 import { OwnerCancelButton } from "./OwnerCancelButton";
 import { ReliabilityBadge } from "./ReliabilityBadge";
 import { getActiveFacility } from "@/lib/facility-context";
@@ -152,7 +153,7 @@ export default async function OwnerBookingsPage() {
             {/* Header */}
             <div className="flex items-center justify-between gap-3 flex-wrap">
                 <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{t("title")}</h1>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
                     <Link
                         href={`/${locale}/dashboard/bookings/history`}
                         className="flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
@@ -161,6 +162,7 @@ export default async function OwnerBookingsPage() {
                         {t("view_all_history")}
                     </Link>
                     <ExportButton />
+                    <PdfReportButton />
                 </div>
             </div>
 
