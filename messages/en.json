@@ -156,7 +156,21 @@
             "email": "Email Address",
             "submit": "Send Reset Link",
             "back_to_login": "Back to login",
-            "success": "Check your email for the reset link."
+            "back_to_form": "Try a different email",
+            "success": "Check your email",
+            "success_detail": "We sent a reset link to {email}. The link expires in 1 hour.",
+            "resend": "Resend email",
+            "resend_cooldown": "Resend in {seconds}s",
+            "resending": "Sending…",
+            "not_registered_title": "No Saha account",
+            "not_registered_body": "We don't have an account for {email}. Create one or try a different email.",
+            "create_account": "Create account",
+            "try_another_email": "Try another email",
+            "rate_limited_title": "Too many attempts",
+            "rate_limited_body": "Please wait {seconds} seconds before trying again.",
+            "error_title": "Something went wrong",
+            "try_again": "Try again",
+            "bot_blocked": "Sign-in temporarily unavailable. Please try again in a moment."
         },
         "reset_password": {
             "title": "Set New Password",

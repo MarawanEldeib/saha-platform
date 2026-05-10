@@ -112,30 +112,41 @@ export async function registerAction(formData: FormData) {
 
 // ---------------------------------------------------------------------------
 // Forgot Password
+//
+// SAH-134: returns a discriminated result so the page can show specific
+// UI for each case (sent, not_registered, rate_limited, etc.). The
+// previous "always return generic success" guarded against email
+// enumeration, but Saha's signup already leaks the same information
+// (registering an existing email errors), so the trade-off doesn't help
+// in practice — better UX wins.
 // ---------------------------------------------------------------------------
-export async function forgotPasswordAction(formData: FormData) {
+export type ForgotPasswordResult =
+    | { ok: true; code: "sent" }
+    | { ok: false; code: "not_registered" }
+    | { ok: false; code: "rate_limited"; retryAfter: number }
+    | { ok: false; code: "invalid_email"; message: string }
+    | { ok: false; code: "bot" }
+    | { ok: false; code: "error"; message: string };
+
+export async function forgotPasswordAction(formData: FormData): Promise<ForgotPasswordResult> {
     const botError = await botSignalCheck();
-    if (botError) return { error: botError };
+    if (botError) return { ok: false, code: "bot" };
 
     const rl = await rateLimit("auth_forgot", (formData.get("email") as string) ?? "");
     if (!rl.success) {
-        return { error: `Too many reset requests. Try again in ${rl.retryAfter}s.` };
+        return { ok: false, code: "rate_limited", retryAfter: rl.retryAfter };
     }
 
     const raw = { email: formData.get("email") as string };
     const parsed = forgotPasswordSchema.safeParse(raw);
     if (!parsed.success) {
-        return { error: parsed.error.issues[0].message };
+        return { ok: false, code: "invalid_email", message: parsed.error.issues[0].message };
     }
 
     const locale = (formData.get("locale") as string) ?? "en";
 
-    // SAH-133: don't use supabase.auth.resetPasswordForEmail() — that triggers
-    // Supabase's built-in email service which sends from
-    // noreply@mail.app.supabase.io and leaks our implementation. Instead:
-    //   1. admin.generateLink() — server-side, mints the recovery URL
-    //      WITHOUT sending any email
-    //   2. send via Resend with full Saha branding
+    // SAH-133: mint the recovery URL via the admin API (no Supabase email),
+    // then send via Resend with Saha branding.
     const admin = createAdminClient();
     const redirectTo = `${process.env.NEXT_PUBLIC_APP_URL}/${locale}/reset-password`;
 
@@ -147,11 +158,21 @@ export async function forgotPasswordAction(formData: FormData) {
     });
 
     if (error) {
-        // generateLink returns an error on unknown emails too. To avoid
-        // user enumeration, return success generically — the user is told
-        // "if an account exists, we sent a reset email" on the page side.
+        // Distinguish "user not found" from other failures so the UI can
+        // show the right message. Supabase's error codes for unknown
+        // recovery target vary across versions; match on the common ones.
+        const msg = (error.message ?? "").toLowerCase();
+        const code = (error.code ?? "").toLowerCase();
+        const isUnknownUser =
+            msg.includes("user not found") ||
+            msg.includes("not registered") ||
+            msg.includes("no user") ||
+            code === "user_not_found";
+        if (isUnknownUser) {
+            return { ok: false, code: "not_registered" };
+        }
         console.warn("[forgotPassword] generateLink failed", error.message);
-        return { success: true };
+        return { ok: false, code: "error", message: error.message ?? "Could not start password reset." };
     }
 
     const recoveryUrl: string | undefined = data?.properties?.action_link ?? data?.action_link;
@@ -161,12 +182,12 @@ export async function forgotPasswordAction(formData: FormData) {
 
     if (!recoveryUrl || !recipientEmail) {
         console.warn("[forgotPassword] generateLink returned no action_link");
-        return { success: true };
+        return { ok: false, code: "error", message: "Could not generate reset link." };
     }
 
     // Fire-and-forget so the user-facing response stays snappy. Failures
-    // are logged but never surfaced — same trade-off as the booking
-    // confirmation email path.
+    // are logged but not surfaced — Resend is reliable enough that we
+    // don't gate the UX on it.
     void sendPasswordResetEmail({
         recipientEmail,
         recipientName,
@@ -174,7 +195,7 @@ export async function forgotPasswordAction(formData: FormData) {
         locale,
     });
 
-    return { success: true };
+    return { ok: true, code: "sent" };
 }
 
 // ---------------------------------------------------------------------------
