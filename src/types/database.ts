@@ -394,6 +394,32 @@ export interface Database {
                     }
                 ];
             };
+            web_push_subscriptions: {
+                Row: {
+                    id: string;
+                    user_id: string;
+                    endpoint: string;
+                    p256dh: string;
+                    auth_key: string;
+                    user_agent: string | null;
+                    created_at: string;
+                    updated_at: string;
+                };
+                Insert: {
+                    id?: string;
+                    user_id: string;
+                    endpoint: string;
+                    p256dh: string;
+                    auth_key: string;
+                    user_agent?: string | null;
+                };
+                Update: {
+                    endpoint?: string;
+                    p256dh?: string;
+                    auth_key?: string;
+                };
+                Relationships: [];
+            };
             courts: {
                 Row: {
                     id: string;

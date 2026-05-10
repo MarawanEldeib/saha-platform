@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { sanitizeTextInput } from "@/lib/utils";
 import { rateLimit } from "@/lib/rate-limit";
+import { sendPushToUser } from "@/lib/web-push";
 
 /**
  * SAH-96: send a message to another player. Wraps upsert_conversation()
@@ -50,6 +51,22 @@ export async function sendMessageAction(
         body: trimmed,
     });
     if (msgErr) return { ok: false, error: msgErr.message };
+
+    // Fire-and-forget web push to the recipient. Failures are logged inside
+    // sendPushToUser; we don't block the user-facing response on it.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: senderProfile } = await (supabase as any)
+        .from("profiles")
+        .select("display_name")
+        .eq("id", user.id)
+        .single();
+    const senderName = (senderProfile as { display_name: string | null } | null)?.display_name ?? "Someone";
+    void sendPushToUser(recipientId, {
+        title: senderName,
+        body: trimmed.length > 140 ? trimmed.slice(0, 137) + "…" : trimmed,
+        url: `/en/messages/${convId}`,
+        tag: `msg:${convId}`,
+    });
 
     revalidatePath("/messages");
     return { ok: true, conversationId: convId as string };
