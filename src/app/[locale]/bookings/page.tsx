@@ -16,6 +16,14 @@ export default async function MyBookingsPage() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) redirect(`/${locale}/login`);
 
+    // SAH-125: /bookings is the player booking history. Owners manage
+    // bookings on their courts via /dashboard/bookings; admins via /admin.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: roleRow } = await (supabase as any)
+        .from("profiles").select("role").eq("id", user.id).single();
+    if (roleRow?.role === "business") redirect(`/${locale}/dashboard/bookings`);
+    if (roleRow?.role === "admin") redirect(`/${locale}/admin/bookings`);
+
     const { data: bookings } = await supabase
         .from("bookings")
         .select(`

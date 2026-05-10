@@ -22,9 +22,15 @@ export default async function AccountPage() {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data: profile } = await (supabase as any)
         .from("profiles")
-        .select("display_name, phone, avatar_url")
+        .select("display_name, phone, avatar_url, role")
         .eq("id", user.id)
         .single();
+
+    // SAH-125: business owners and admins live in their own workspace.
+    // /account is the player-side hub (wallet, bookings, community);
+    // sending owners here is confusing. Push them to where they belong.
+    if (profile?.role === "business") redirect(`/${locale}/dashboard`);
+    if (profile?.role === "admin") redirect(`/${locale}/admin`);
 
     // SAH-93: wallet balance for the loyalty card.
     // eslint-disable-next-line @typescript-eslint/no-explicit-any

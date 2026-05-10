@@ -25,6 +25,14 @@ export default async function WalletPage() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) redirect(`/${locale}/login`);
 
+    // SAH-125: wallet credit is a player loyalty feature. Owners and admins
+    // are redirected to their own workspace.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: roleRow } = await (supabase as any)
+        .from("profiles").select("role").eq("id", user.id).single();
+    if (roleRow?.role === "business") redirect(`/${locale}/dashboard`);
+    if (roleRow?.role === "admin") redirect(`/${locale}/admin`);
+
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data: walletRow } = await (supabase as any)
         .from("wallet_balances")
