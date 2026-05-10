@@ -345,7 +345,10 @@
             "reject": "Reject",
             "event_name": "Event",
             "submitted_by": "Submitted By",
-            "event_date": "Date"
+            "event_date": "Date",
+            "status_pending": "Pending",
+            "status_approved": "Approved",
+            "status_rejected": "Rejected"
         }
     },
     "bookings": {

@@ -345,7 +345,10 @@
             "reject": "رفض",
             "event_name": "الفعالية",
             "submitted_by": "مقدم الطلب",
-            "event_date": "التاريخ"
+            "event_date": "التاريخ",
+            "status_pending": "قيد الانتظار",
+            "status_approved": "موافق عليها",
+            "status_rejected": "مرفوضة"
         }
     },
     "bookings": {
