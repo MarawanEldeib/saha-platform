@@ -558,7 +558,9 @@
         "book_now": "احجز الآن",
         "repeat_label": "تكرار أسبوعي",
         "repeat_once": "هذا الأسبوع فقط",
-        "repeat_n_weeks": "أسبوعياً لمدة {n} أسابيع"
+        "repeat_n_weeks": "أسبوعياً لمدة {n} أسابيع",
+        "avoid_prayer_times": "تجنّب أوقات الصلاة",
+        "overlaps_prayer": "يتعارض مع صلاة {name} (±20 دقيقة)"
     },
     "booking_share": {
         "whatsapp": "مشاركة عبر واتساب",

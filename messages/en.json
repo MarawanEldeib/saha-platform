@@ -558,7 +558,9 @@
         "book_now": "Book Now",
         "repeat_label": "Repeat weekly",
         "repeat_once": "Just this week",
-        "repeat_n_weeks": "Weekly for {n} weeks"
+        "repeat_n_weeks": "Weekly for {n} weeks",
+        "avoid_prayer_times": "Avoid prayer times",
+        "overlaps_prayer": "Overlaps {name} prayer (±20 min)"
     },
     "booking_share": {
         "whatsapp": "Share on WhatsApp",

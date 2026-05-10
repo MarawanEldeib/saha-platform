@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
     getAvailableSlotsAction,
@@ -10,6 +10,8 @@ import {
 import { format } from "date-fns";
 import { useTranslations } from "next-intl";
 import { formatPrice } from "@/lib/utils";
+import type { PrayerWindow } from "@/lib/prayer-times";
+import { findOverlappingWindow } from "@/lib/prayer-times";
 
 type Court = {
     id: string;
@@ -35,7 +37,7 @@ type Props = {
     walletBalance?: number;
 };
 
-export function BookingWidget({ courts, isLoggedIn, locale, currency = "AED", walletBalance = 0 }: Props) {
+export function BookingWidget({ facilityId, courts, isLoggedIn, locale, currency = "AED", walletBalance = 0 }: Props) {
     const t = useTranslations("booking_widget");
     const tw = useTranslations("wallet");
     const router = useRouter();
@@ -48,6 +50,27 @@ export function BookingWidget({ courts, isLoggedIn, locale, currency = "AED", wa
     const [weeks, setWeeks] = useState(1);
     const [useWalletCredit, setUseWalletCredit] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    // SAH-143 Phase A: prayer-aware slots — opt-in toggle. When enabled, we
+    // fetch the day's blocked windows for this facility and grey out any
+    // slot overlapping a window.
+    const [avoidPrayerTimes, setAvoidPrayerTimes] = useState(false);
+    const [prayerWindows, setPrayerWindows] = useState<PrayerWindow[]>([]);
+
+    useEffect(() => {
+        if (!avoidPrayerTimes || !date) return;
+        let abort = false;
+        (async () => {
+            try {
+                const res = await fetch(`/api/prayer-times?facility_id=${facilityId}&date=${date}`);
+                if (!res.ok) return;
+                const json = (await res.json()) as { windows?: PrayerWindow[] };
+                if (!abort) setPrayerWindows(json.windows ?? []);
+            } catch {
+                /* network errors fall back to "no windows" — booking stays unaffected */
+            }
+        })();
+        return () => { abort = true; };
+    }, [avoidPrayerTimes, date, facilityId]);
 
     const selectedCourt = courts.find((c) => c.id === courtId);
 
@@ -155,6 +178,21 @@ export function BookingWidget({ courts, isLoggedIn, locale, currency = "AED", wa
                 />
             </div>
 
+            {/* SAH-143 Phase A: avoid prayer times toggle */}
+            <label className="flex items-center gap-2 text-xs text-gray-700 dark:text-gray-300 cursor-pointer select-none">
+                <input
+                    type="checkbox"
+                    checked={avoidPrayerTimes}
+                    onChange={(e) => {
+                        setAvoidPrayerTimes(e.target.checked);
+                        setSelectedSlot(null);
+                        if (!e.target.checked) setPrayerWindows([]);
+                    }}
+                    className="h-4 w-4 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500"
+                />
+                <span>{t("avoid_prayer_times")}</span>
+            </label>
+
             {/* Check availability button */}
             <button
                 onClick={handleCheckAvailability}
@@ -194,18 +232,36 @@ export function BookingWidget({ courts, isLoggedIn, locale, currency = "AED", wa
                 error means the widget hasn't been used yet. */}
             {slots !== null && slots.length > 0 && (
                 <div className="grid grid-cols-2 gap-2">
-                    {slots.map((slot) => (
-                        <button
-                            key={slot.id}
-                            onClick={() => setSelectedSlot(selectedSlot?.id === slot.id ? null : slot)}
-                            className={`text-xs px-2 py-2 rounded-lg border transition-colors ${selectedSlot?.id === slot.id
-                                ? "border-gray-900 dark:border-white bg-gray-900 dark:bg-white text-white dark:text-gray-900"
-                                : "border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:border-gray-500"
+                    {slots.map((slot) => {
+                        const overlap = avoidPrayerTimes
+                            ? findOverlappingWindow(slot.start_time.slice(0, 5), slot.end_time.slice(0, 5), prayerWindows)
+                            : null;
+                        const isBlocked = !!overlap;
+                        const isSelected = selectedSlot?.id === slot.id;
+                        return (
+                            <button
+                                key={slot.id}
+                                onClick={() => {
+                                    if (isBlocked) return;
+                                    setSelectedSlot(isSelected ? null : slot);
+                                }}
+                                disabled={isBlocked}
+                                title={overlap ? t("overlaps_prayer", { name: overlap.name }) : undefined}
+                                className={`text-xs px-2 py-2 rounded-lg border transition-colors ${
+                                    isBlocked
+                                        ? "border-amber-200 dark:border-amber-900/40 bg-amber-50 dark:bg-amber-950/20 text-amber-700 dark:text-amber-400 cursor-not-allowed"
+                                        : isSelected
+                                            ? "border-gray-900 dark:border-white bg-gray-900 dark:bg-white text-white dark:text-gray-900"
+                                            : "border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:border-gray-500"
                                 }`}
-                        >
-                            {slot.start_time.slice(0, 5)} – {slot.end_time.slice(0, 5)}
-                        </button>
-                    ))}
+                            >
+                                {slot.start_time.slice(0, 5)} – {slot.end_time.slice(0, 5)}
+                                {isBlocked && (
+                                    <span className="block text-[10px] mt-0.5 opacity-80">🕌 {overlap!.name}</span>
+                                )}
+                            </button>
+                        );
+                    })}
                 </div>
             )}
 
