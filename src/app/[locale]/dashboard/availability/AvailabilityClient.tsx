@@ -10,6 +10,7 @@ import {
     deleteAvailabilitySlotAction,
     generateAvailabilitySlotsAction,
 } from "../actions";
+import { SESSION_TYPES, SESSION_TYPE_GLYPHS, SESSION_TYPE_STYLES, type SessionType } from "@/lib/session-types";
 
 type SlotRow = {
     id: string;
@@ -18,6 +19,7 @@ type SlotRow = {
     start_time: string;
     end_time: string;
     is_booked: boolean;
+    session_type?: string | null;
     created_at: string;
 };
 
@@ -85,12 +87,14 @@ export function AvailabilityClient({ courts, slots, selectedCourtId, selectedDat
     // Add slot form state
     const [addStart, setAddStart] = useState("08:00");
     const [addEnd, setAddEnd] = useState("09:00");
+    const [addSessionType, setAddSessionType] = useState<SessionType>("mixed");
     const [addError, setAddError] = useState<string | null>(null);
 
     // Generate form state
     const [genFrom, setGenFrom] = useState("08:00");
     const [genTo, setGenTo] = useState("22:00");
     const [genDuration, setGenDuration] = useState(60);
+    const [genSessionType, setGenSessionType] = useState<SessionType>("mixed");
     const [genError, setGenError] = useState<string | null>(null);
 
     function navigate(courtId: string, date: string) {
@@ -112,7 +116,7 @@ export function AvailabilityClient({ courts, slots, selectedCourtId, selectedDat
         if (addStart >= addEnd) { setAddError(t("error_end_after_start")); return; }
         setAddError(null);
         startTransition(async () => {
-            const result = await createAvailabilitySlotAction(selectedCourtId, selectedDate, addStart, addEnd);
+            const result = await createAvailabilitySlotAction(selectedCourtId, selectedDate, addStart, addEnd, addSessionType);
             if (result.error) { setAddError(result.error); return; }
             setShowAddForm(false);
             router.refresh();
@@ -123,7 +127,7 @@ export function AvailabilityClient({ courts, slots, selectedCourtId, selectedDat
         if (genFrom >= genTo) { setGenError(t("error_from_before_to")); return; }
         setGenError(null);
         startTransition(async () => {
-            const result = await generateAvailabilitySlotsAction(selectedCourtId, selectedDate, genFrom, genTo, genDuration);
+            const result = await generateAvailabilitySlotsAction(selectedCourtId, selectedDate, genFrom, genTo, genDuration, genSessionType);
             if (result.error) { setGenError(result.error); return; }
             setShowGenerateForm(false);
             router.refresh();
@@ -233,9 +237,16 @@ export function AvailabilityClient({ courts, slots, selectedCourtId, selectedDat
                             key={slot.id}
                             className="flex items-center justify-between px-4 py-2.5 bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
                         >
-                            <span className="text-sm font-medium text-gray-900 dark:text-white">
-                                {formatTime(slot.start_time)} – {formatTime(slot.end_time)}
-                            </span>
+                            <div className="flex items-center gap-2 min-w-0">
+                                <span className="text-sm font-medium text-gray-900 dark:text-white">
+                                    {formatTime(slot.start_time)} – {formatTime(slot.end_time)}
+                                </span>
+                                {slot.session_type && slot.session_type !== "mixed" && (
+                                    <span className={`inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-full font-medium ${SESSION_TYPE_STYLES[slot.session_type as SessionType] ?? ""}`}>
+                                        {SESSION_TYPE_GLYPHS[slot.session_type as SessionType]} {t(`session_${slot.session_type}`)}
+                                    </span>
+                                )}
+                            </div>
                             <div className="flex items-center gap-2">
                                 {slot.is_booked ? (
                                     <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 font-medium">
@@ -291,6 +302,16 @@ export function AvailabilityClient({ courts, slots, selectedCourtId, selectedDat
                                 {TIME_OPTIONS.map((t) => <option key={t} value={t}>{formatTime(t)}</option>)}
                             </select>
                         </div>
+                        <div>
+                            <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">{t("session_label")}</label>
+                            <select
+                                value={addSessionType}
+                                onChange={(e) => setAddSessionType(e.target.value as SessionType)}
+                                className="px-3 py-2 text-sm border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                            >
+                                {SESSION_TYPES.map((s) => <option key={s} value={s}>{t(`session_${s}`)}</option>)}
+                            </select>
+                        </div>
                         <button
                             onClick={handleAddSlot}
                             disabled={isPending}
@@ -317,7 +338,7 @@ export function AvailabilityClient({ courts, slots, selectedCourtId, selectedDat
                             <X className="h-4 w-4" />
                         </button>
                     </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-end">
+                    <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 items-end">
                         <div>
                             <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">{t("from_label")}</label>
                             <select
@@ -348,6 +369,16 @@ export function AvailabilityClient({ courts, slots, selectedCourtId, selectedDat
                                 {DURATION_OPTIONS.map((d) => (
                                     <option key={d.value} value={d.value}>{d.label}</option>
                                 ))}
+                            </select>
+                        </div>
+                        <div>
+                            <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">{t("session_label")}</label>
+                            <select
+                                value={genSessionType}
+                                onChange={(e) => setGenSessionType(e.target.value as SessionType)}
+                                className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                            >
+                                {SESSION_TYPES.map((s) => <option key={s} value={s}>{t(`session_${s}`)}</option>)}
                             </select>
                         </div>
                     </div>

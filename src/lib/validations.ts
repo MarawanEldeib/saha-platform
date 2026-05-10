@@ -172,6 +172,8 @@ export const availabilitySlotSchema = z.object({
     date: z.string().min(1, "Date is required"),
     start_time: z.string().min(1, "Start time is required"),
     end_time: z.string().min(1, "End time is required"),
+    // SAH-144
+    session_type: z.enum(["mixed", "family", "women_only", "men_only"]).optional(),
 });
 export type AvailabilitySlotInput = z.infer<typeof availabilitySlotSchema>;
 
@@ -181,6 +183,8 @@ export const generateSlotsSchema = z.object({
     from_time: z.string().min(1, "From time is required"),
     to_time: z.string().min(1, "To time is required"),
     duration_minutes: z.number().int().min(30).max(240),
+    // SAH-144
+    session_type: z.enum(["mixed", "family", "women_only", "men_only"]).optional(),
 });
 export type GenerateSlotsInput = z.infer<typeof generateSlotsSchema>;
 

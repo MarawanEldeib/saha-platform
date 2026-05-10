@@ -309,13 +309,14 @@ export async function createAvailabilitySlotAction(
     date: string,
     startTime: string,
     endTime: string,
+    sessionType: "mixed" | "family" | "women_only" | "men_only" = "mixed",
 ) {
     const supabase = await createClient();
     const locale = await getLocale();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return { error: "Not authenticated" };
 
-    const parsed = availabilitySlotSchema.safeParse({ court_id: courtId, date, start_time: startTime, end_time: endTime });
+    const parsed = availabilitySlotSchema.safeParse({ court_id: courtId, date, start_time: startTime, end_time: endTime, session_type: sessionType });
     if (!parsed.success) return { error: parsed.error.issues[0].message };
 
     const { data: courtRow } = await supabase.from("courts").select("facility_id").eq("id", courtId).single();
@@ -324,12 +325,14 @@ export async function createAvailabilitySlotAction(
     const { data: facility } = await supabase.from("facilities").select("id").eq("id", courtRow.facility_id).eq("owner_id", user.id).single();
     if (!facility) return { error: "Access denied" };
 
-    const { error } = await supabase.from("court_availability").insert({
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error } = await (supabase as any).from("court_availability").insert({
         court_id: courtId,
         date,
         start_time: startTime,
         end_time: endTime,
         is_booked: false,
+        session_type: sessionType,
     });
 
     if (error) return { error: error.code === "23505" ? "A slot already exists at that time" : error.message };
@@ -355,6 +358,7 @@ export async function generateAvailabilitySlotsAction(
     fromTime: string,
     toTime: string,
     durationMinutes: number,
+    sessionType: "mixed" | "family" | "women_only" | "men_only" = "mixed",
 ) {
     const supabase = await createClient();
     const locale = await getLocale();
@@ -380,10 +384,12 @@ export async function generateAvailabilitySlotsAction(
             start_time: minutesToTime(cur),
             end_time: minutesToTime(cur + durationMinutes),
             is_booked: false,
+            session_type: sessionType,
         });
     }
 
-    const { error } = await supabase.from("court_availability").upsert(rows, {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error } = await (supabase as any).from("court_availability").upsert(rows, {
         onConflict: "court_id,date,start_time",
         ignoreDuplicates: true,
     });
@@ -836,7 +842,7 @@ export async function saveFacilityHoursAction(
 // availability for this date" vs "everything's booked" vs a real error.
 // ---------------------------------------------------------------------------
 export type GetSlotsResult =
-    | { ok: true; slots: { id: string; start_time: string; end_time: string }[]; totalDefinedForDate: number }
+    | { ok: true; slots: { id: string; start_time: string; end_time: string; session_type: string }[]; totalDefinedForDate: number }
     | { ok: false; code: "past_date" | "no_court" | "no_slots_defined" | "all_booked" | "error"; error: string };
 
 export async function getAvailableSlotsAction(courtId: string, date: string): Promise<GetSlotsResult> {
@@ -865,9 +871,10 @@ export async function getAvailableSlotsAction(courtId: string, date: string): Pr
         return { ok: false, code: "no_court", error: "Court not found or inactive." };
     }
 
-    const { data, error } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data, error } = await (supabase as any)
         .from("court_availability")
-        .select("id, start_time, end_time, is_booked")
+        .select("id, start_time, end_time, is_booked, session_type")
         .eq("court_id", courtId)
         .eq("date", date)
         .order("start_time");
@@ -876,7 +883,7 @@ export async function getAvailableSlotsAction(courtId: string, date: string): Pr
         return { ok: false, code: "error", error: "Could not load slots. Please try again." };
     }
 
-    const allRows = (data ?? []) as { id: string; start_time: string; end_time: string; is_booked: boolean }[];
+    const allRows = (data ?? []) as { id: string; start_time: string; end_time: string; is_booked: boolean; session_type: string | null }[];
     if (allRows.length === 0) {
         return { ok: false, code: "no_slots_defined", error: "No time slots are published for this date yet." };
     }
@@ -888,7 +895,12 @@ export async function getAvailableSlotsAction(courtId: string, date: string): Pr
 
     return {
         ok: true,
-        slots: open.map(({ id, start_time, end_time }) => ({ id, start_time, end_time })),
+        slots: open.map(({ id, start_time, end_time, session_type }) => ({
+            id,
+            start_time,
+            end_time,
+            session_type: session_type ?? "mixed",
+        })),
         totalDefinedForDate: allRows.length,
     };
 }

@@ -483,6 +483,7 @@ export interface Database {
                     start_time: string;
                     end_time: string;
                     is_booked: boolean;
+                    session_type: "mixed" | "family" | "women_only" | "men_only";
                     created_at: string;
                 };
                 Insert: {
@@ -492,9 +493,11 @@ export interface Database {
                     start_time: string;
                     end_time: string;
                     is_booked?: boolean;
+                    session_type?: "mixed" | "family" | "women_only" | "men_only";
                 };
                 Update: {
                     is_booked?: boolean;
+                    session_type?: "mixed" | "family" | "women_only" | "men_only";
                 };
                 Relationships: [
                     {
