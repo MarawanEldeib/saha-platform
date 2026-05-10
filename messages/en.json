@@ -124,7 +124,26 @@
         "no_events": "No upcoming events.",
         "date": "Date",
         "venue": "Venue",
-        "organizer": "Organizer"
+        "organizer": "Organizer",
+        "filter_label": "Filter",
+        "clear_filters": "Clear"
+    },
+    "event_tags": {
+        "label": "Event tags (optional)",
+        "hint": "Help players find events that fit their preferences. Tags are reviewed by admins.",
+        "tag_family_friendly": "Family-friendly",
+        "tag_no_music": "No music",
+        "tag_ramadan_friendly_hours": "Ramadan-friendly hours",
+        "tag_post_taraweeh": "Post-Taraweeh",
+        "tag_ramadan_fitness": "Ramadan fitness",
+        "tag_women_only": "Women only",
+        "tag_men_only": "Men only"
+    },
+    "ramadan_banner": {
+        "greeting": "Ramadan Mubarak",
+        "suhoor": "Suhoor",
+        "iftar": "Iftar",
+        "dubai_note": "Dubai timings"
     },
     "auth": {
         "login": {

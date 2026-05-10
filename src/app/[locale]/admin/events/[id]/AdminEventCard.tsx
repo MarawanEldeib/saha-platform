@@ -7,6 +7,9 @@ import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { useRouter } from "next/navigation";
 import { adminUpdateEventAction } from "../../actions";
+import { EventTagPicker } from "@/components/events/EventTagPicker";
+import { EventTagChips } from "@/components/events/EventTagChips";
+import { sanitizeEventTags, type EventTag } from "@/lib/event-tags";
 
 interface Props {
     event: {
@@ -18,20 +21,16 @@ interface Props {
         facility_city: string | null;
         submitter_name: string | null;
         created_at: string;
+        tags?: string[] | null;
     };
 }
 
-/**
- * SAH-131: Admin can edit event content (name / description / event_date)
- * inline on the review page. Unlike the owner edit, this does NOT reset
- * the event status — admins typically fix typos while keeping the current
- * approval state.
- */
 export function AdminEventCard({ event }: Props) {
     const router = useRouter();
     const [editing, setEditing] = React.useState(false);
     const [error, setError] = React.useState<string | null>(null);
     const [isPending, startTransition] = React.useTransition();
+    const [tags, setTags] = React.useState<EventTag[]>(sanitizeEventTags(event.tags));
 
     const dateInputValue = event.event_date.slice(0, 16);
 
@@ -44,6 +43,7 @@ export function AdminEventCard({ event }: Props) {
                 name: (fd.get("name") as string) ?? "",
                 description: (fd.get("description") as string) ?? "",
                 event_date: (fd.get("event_date") as string) ?? "",
+                tags,
             });
             if (result?.error) {
                 setError(result.error);
@@ -77,6 +77,7 @@ export function AdminEventCard({ event }: Props) {
                         defaultValue={dateInputValue}
                         required
                     />
+                    <EventTagPicker selected={tags} onChange={setTags} />
                     {error && <p className="text-sm text-red-500" role="alert">{error}</p>}
                     <p className="text-xs text-gray-500 dark:text-gray-400">
                         Admin edit — status is preserved (won&apos;t reset to pending).
@@ -86,7 +87,7 @@ export function AdminEventCard({ event }: Props) {
                         <Button
                             type="button"
                             variant="secondary"
-                            onClick={() => { setEditing(false); setError(null); }}
+                            onClick={() => { setEditing(false); setError(null); setTags(sanitizeEventTags(event.tags)); }}
                         >
                             Cancel
                         </Button>
@@ -124,6 +125,9 @@ export function AdminEventCard({ event }: Props) {
                     <User className="h-4 w-4 text-gray-400 shrink-0" />
                     <span>Submitted by {event.submitter_name}</span>
                 </div>
+            )}
+            {event.tags && event.tags.length > 0 && (
+                <div className="pt-2"><EventTagChips tags={event.tags} /></div>
             )}
             {event.description ? (
                 <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed pt-2 border-t border-gray-100 dark:border-gray-800 whitespace-pre-wrap">

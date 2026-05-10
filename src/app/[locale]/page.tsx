@@ -2,6 +2,7 @@ import { getTranslations, getLocale } from "next-intl/server";
 import Link from "next/link";
 import { MapPin, Users, Star, ChevronRight, Zap } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
+import { RamadanBanner } from "@/components/RamadanBanner";
 
 export const metadata = {
     title: "Saha – Racket Sports Facility Directory",
@@ -57,6 +58,9 @@ export default async function HomePage() {
 
     return (
         <div className="flex flex-col">
+            <div className="max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 pt-4">
+                <RamadanBanner />
+            </div>
             {/* ── Hero ────────────────────────────────────────────────────────── */}
             <section className="relative bg-gradient-to-br from-emerald-50 via-white to-teal-50 dark:from-gray-950 dark:via-gray-900 dark:to-gray-900 overflow-hidden">
                 {/* Background decorative circles */}

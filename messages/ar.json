@@ -124,7 +124,26 @@
         "no_events": "لا توجد فعاليات قادمة.",
         "date": "التاريخ",
         "venue": "المكان",
-        "organizer": "المنظّم"
+        "organizer": "المنظّم",
+        "filter_label": "تصفية",
+        "clear_filters": "مسح"
+    },
+    "event_tags": {
+        "label": "وسوم الفعالية (اختياري)",
+        "hint": "ساعد اللاعبين على إيجاد الفعاليات المناسبة لتفضيلاتهم. الوسوم تُراجَع من قِبل المشرفين.",
+        "tag_family_friendly": "مناسبة للعائلات",
+        "tag_no_music": "بدون موسيقى",
+        "tag_ramadan_friendly_hours": "أوقات تناسب رمضان",
+        "tag_post_taraweeh": "بعد التراويح",
+        "tag_ramadan_fitness": "لياقة رمضانية",
+        "tag_women_only": "للنساء فقط",
+        "tag_men_only": "للرجال فقط"
+    },
+    "ramadan_banner": {
+        "greeting": "رمضان مبارك",
+        "suhoor": "السحور",
+        "iftar": "الإفطار",
+        "dubai_note": "بتوقيت دبي"
     },
     "auth": {
         "login": {

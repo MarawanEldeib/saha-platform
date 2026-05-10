@@ -6,12 +6,15 @@ import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { CheckCircle } from "lucide-react";
 import { useTranslations } from "next-intl";
+import { EventTagPicker } from "@/components/events/EventTagPicker";
+import type { EventTag } from "@/lib/event-tags";
 
 export function NewEventForm({ facilityId }: { facilityId: string }) {
     const t = useTranslations("events_form");
     const [error, setError] = React.useState<string | null>(null);
     const [success, setSuccess] = React.useState(false);
     const [loading, setLoading] = React.useState(false);
+    const [tags, setTags] = React.useState<EventTag[]>([]);
     const formRef = React.useRef<HTMLFormElement>(null);
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -25,6 +28,7 @@ export function NewEventForm({ facilityId }: { facilityId: string }) {
         setLoading(false);
         if (result?.error) { setError(result.error); return; }
         setSuccess(true);
+        setTags([]);
         formRef.current?.reset();
     };
 
@@ -44,6 +48,7 @@ export function NewEventForm({ facilityId }: { facilityId: string }) {
                 />
             </div>
             <Input label={t("datetime_label")} name="event_date" type="datetime-local" required />
+            <EventTagPicker selected={tags} onChange={setTags} name="tags" />
             {error && <p className="text-sm text-red-500" role="alert">{error}</p>}
             {success && (
                 <p className="text-sm text-emerald-600 flex items-center gap-1">
