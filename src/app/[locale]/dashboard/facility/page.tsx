@@ -23,7 +23,7 @@ export default async function FacilityPage() {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data: facility } = await (supabase as any)
         .from("facilities")
-        .select("id, name, slug, description, address, city, postal_code, phone, website, trn, stripe_account_id, facility_images(id, storage_path, display_order)")
+        .select("id, name, slug, description, address, city, postal_code, phone, website, trn, has_prayer_room, has_wudu_area, stripe_account_id, facility_images(id, storage_path, display_order)")
         .eq("id", active.id)
         .single();
 

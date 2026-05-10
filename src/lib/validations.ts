@@ -82,6 +82,9 @@ export const facilityUpdateSchema = z.object({
     website: z.string().url().optional().or(z.literal("")),
     // SAH-90: UAE Tax Registration Number, 15 digits per FTA spec.
     trn: z.string().regex(/^\d{15}$/, "TRN must be 15 digits").optional().or(z.literal("")),
+    // SAH-143: prayer-friendly amenity flags. Optional booleans (default false).
+    has_prayer_room: z.boolean().optional(),
+    has_wudu_area: z.boolean().optional(),
 });
 export type FacilityUpdateInput = z.infer<typeof facilityUpdateSchema>;
 

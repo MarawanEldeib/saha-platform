@@ -65,7 +65,9 @@
         "km_away": "كم",
         "outside_uae": "سها متاح حالياً في الإمارات العربية المتحدة فقط. قريباً في منطقتك!",
         "view_map": "الخريطة",
-        "view_list": "القائمة"
+        "view_list": "القائمة",
+        "prayer_friendly_filter": "صديقة للمصلين فقط",
+        "prayer_friendly_chip": "🕌 صديقة للمصلين"
     },
     "facility": {
         "hours": "ساعات العمل",
@@ -556,7 +558,9 @@
         "book_now": "احجز الآن",
         "repeat_label": "تكرار أسبوعي",
         "repeat_once": "هذا الأسبوع فقط",
-        "repeat_n_weeks": "أسبوعياً لمدة {n} أسابيع"
+        "repeat_n_weeks": "أسبوعياً لمدة {n} أسابيع",
+        "avoid_prayer_times": "تجنّب أوقات الصلاة",
+        "overlaps_prayer": "يتعارض مع صلاة {name} (±20 دقيقة)"
     },
     "booking_share": {
         "whatsapp": "مشاركة عبر واتساب",
@@ -635,7 +639,12 @@
         "stripe_redirecting": "جارٍ التحويل…",
         "stripe_connect": "ربط Stripe",
         "stripe_disconnect": "قطع الاتصال",
-        "stripe_disconnect_confirm": "هل تريد قطع اتصال حساب Stripe؟ لن يتمكن اللاعبون من حجز ملاعبك حتى تعيد الاتصال."
+        "stripe_disconnect_confirm": "هل تريد قطع اتصال حساب Stripe؟ لن يتمكن اللاعبون من حجز ملاعبك حتى تعيد الاتصال.",
+        "prayer_section": "مرافق الصلاة",
+        "prayer_hint": "ساعد اللاعبين المسلمين على التخطيط حول أوقات الصلاة. يظهر كشارة \"صديقة للمصلين\" على ملف منشأتك ونتائج البحث.",
+        "has_prayer_room": "تتوفر مصلى",
+        "has_wudu_area": "تتوفر منطقة وضوء",
+        "prayer_friendly_badge": "🕌 صديقة للمصلين"
     },
     "hours_form": {
         "heading": "ساعات العمل",

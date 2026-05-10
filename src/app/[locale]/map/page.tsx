@@ -23,6 +23,8 @@ interface FacilityResult {
     location: unknown;
     status: string;
     distance_m: number;
+    has_prayer_room?: boolean;
+    has_wudu_area?: boolean;
     lat?: number;
     lng?: number;
 }
@@ -49,6 +51,7 @@ export default function MapPage() {
     const [mobileView, setMobileView] = React.useState<"map" | "list">("map");
     const [aiPending, setAiPending] = React.useState(false);
     const [aiHidden, setAiHidden] = React.useState(false);
+    const [prayerFriendlyOnly, setPrayerFriendlyOnly] = React.useState(false);
 
     // Fetch sports for filter
     React.useEffect(() => {
@@ -102,13 +105,13 @@ export default function MapPage() {
         fetchFacilities();
     }, [userLat, userLng, selectedSport]);
 
-    const filteredFacilities = searchQuery
-        ? facilities.filter(
-            (f) =>
-                f.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                f.city.toLowerCase().includes(searchQuery.toLowerCase())
+    const filteredFacilities = facilities
+        .filter((f) =>
+            !searchQuery ||
+            f.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            f.city.toLowerCase().includes(searchQuery.toLowerCase())
         )
-        : facilities;
+        .filter((f) => !prayerFriendlyOnly || f.has_prayer_room || f.has_wudu_area);
 
     return (
         <div className="flex flex-col h-[calc(100vh-4rem)]">
@@ -208,6 +211,17 @@ export default function MapPage() {
                             </option>
                         ))}
                     </select>
+
+                    {/* SAH-143: prayer-friendly filter */}
+                    <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300 cursor-pointer">
+                        <input
+                            type="checkbox"
+                            checked={prayerFriendlyOnly}
+                            onChange={(e) => setPrayerFriendlyOnly(e.target.checked)}
+                            className="h-4 w-4 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500"
+                        />
+                        {t("prayer_friendly_filter")}
+                    </label>
                 </div>
 
                 {/* Facility List */}
@@ -238,11 +252,18 @@ export default function MapPage() {
                                 >
                                     <p className="font-medium text-sm text-gray-900 dark:text-white truncate">{facility.name}</p>
                                     <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{facility.city}</p>
-                                    {facility.distance_m && (
-                                        <p className="text-xs text-emerald-600 dark:text-emerald-400 mt-0.5">
-                                            {(facility.distance_m / 1000).toFixed(1)} {t("km_away")}
-                                        </p>
-                                    )}
+                                    <div className="flex items-center gap-2 mt-0.5">
+                                        {facility.distance_m && (
+                                            <p className="text-xs text-emerald-600 dark:text-emerald-400">
+                                                {(facility.distance_m / 1000).toFixed(1)} {t("km_away")}
+                                            </p>
+                                        )}
+                                        {(facility.has_prayer_room || facility.has_wudu_area) && (
+                                            <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300">
+                                                {t("prayer_friendly_chip")}
+                                            </span>
+                                        )}
+                                    </div>
                                 </button>
                                 {isSelected && (
                                     <div className="px-4 pb-3">

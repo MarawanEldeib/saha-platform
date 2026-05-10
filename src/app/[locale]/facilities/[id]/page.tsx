@@ -184,8 +184,18 @@ export default async function FacilityDetailPage({
                             {facility.address}, {facility.city}{facility.postal_code ? `, ${facility.postal_code}` : ""}
                         </span>
                     </div>
-                    <div className="flex items-center gap-3 mt-3">
+                    <div className="flex flex-wrap items-center gap-2 mt-3">
                         <FacilityStatusBadge status={facility.status} />
+                        {(facility.has_prayer_room || facility.has_wudu_area) && (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300">
+                                {tf("prayer_friendly_badge")}
+                                {facility.has_prayer_room && facility.has_wudu_area
+                                    ? ` · ${tf("has_prayer_room")} + ${tf("has_wudu_area")}`
+                                    : facility.has_prayer_room
+                                        ? ` · ${tf("has_prayer_room")}`
+                                        : ` · ${tf("has_wudu_area")}`}
+                            </span>
+                        )}
                     </div>
                 </div>
                 <div className="flex items-center gap-2">

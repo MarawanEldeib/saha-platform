@@ -91,6 +91,8 @@ export async function updateFacilityAction(formData: FormData) {
         phone: (formData.get("phone") as string) || undefined,
         website: (formData.get("website") as string) || undefined,
         trn: (formData.get("trn") as string) || undefined,
+        has_prayer_room: formData.get("has_prayer_room") === "true",
+        has_wudu_area: formData.get("has_wudu_area") === "true",
     };
 
     const parsed = facilityUpdateSchema.safeParse(raw);
@@ -113,6 +115,8 @@ export async function updateFacilityAction(formData: FormData) {
         phone: parsed.data.phone ?? null,
         website: parsed.data.website ?? null,
         trn: parsed.data.trn || null,
+        has_prayer_room: parsed.data.has_prayer_room ?? false,
+        has_wudu_area: parsed.data.has_wudu_area ?? false,
         updated_at: new Date().toISOString(),
         ...(geo.status === "ok" ? { location: geo.wkt as never } : {}),
     };
