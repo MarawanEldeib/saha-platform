@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { CheckCircle2, AlertCircle, ExternalLink, CreditCard, ArrowDownToLine, BadgeCheck, Wallet, Loader2 } from "lucide-react";
+import { CheckCircle2, AlertCircle, ExternalLink, CreditCard, ArrowDownToLine, BadgeCheck, Wallet, Loader2, Clock } from "lucide-react";
 import { useTranslations } from "next-intl";
 
 type Props = {
@@ -50,8 +50,20 @@ export function StripeConnectSection({
 
     const ownerSharePercent = 100 - platformFeePercent;
 
-    const state: "ready" | "incomplete" | "none" =
-        !hasAccount ? "none" : chargesEnabled ? "ready" : "incomplete";
+    // SAH-64: split "incomplete" into two sub-states. After bzo finished
+    // Stripe onboarding, details_submitted flips to true but charges/
+    // payouts stay false until Stripe completes KYC review (hours/days).
+    // The owner already did their part — show "verifying" instead of a
+    // checklist of "things you still need to do" which felt unfair.
+    //   ready      — account exists + charges_enabled (players can pay)
+    //   verifying  — owner submitted details, Stripe is reviewing
+    //   incomplete — owner still has fields to fill in Stripe form
+    //   none       — no account at all
+    const state: "ready" | "verifying" | "incomplete" | "none" =
+        !hasAccount ? "none"
+        : chargesEnabled ? "ready"
+        : initialDetailsSubmitted ? "verifying"
+        : "incomplete";
 
     async function startOnboarding() {
         setRedirecting(true);
@@ -105,6 +117,11 @@ export function StripeConnectSection({
                     <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 shrink-0">
                         <BadgeCheck className="h-3.5 w-3.5" />
                         {tStripe("badge_ready")}
+                    </span>
+                ) : state === "verifying" ? (
+                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 shrink-0">
+                        <Clock className="h-3.5 w-3.5" />
+                        {tStripe("badge_verifying")}
                     </span>
                 ) : state === "incomplete" ? (
                     <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 shrink-0">
@@ -165,6 +182,28 @@ export function StripeConnectSection({
                         className="text-xs text-gray-400 hover:text-red-500 dark:hover:text-red-400 transition-colors disabled:opacity-50 pt-3 shrink-0"
                     >
                         {disconnecting ? "…" : t("stripe_disconnect")}
+                    </button>
+                </div>
+            )}
+
+            {state === "verifying" && (
+                <div className="space-y-3 pt-1 border-t border-gray-100 dark:border-gray-800">
+                    <div className="flex items-start gap-2 text-sm text-blue-700 dark:text-blue-300 pt-3">
+                        <Clock className="h-4 w-4 mt-0.5 shrink-0" />
+                        <span>{tStripe("verifying_body")}</span>
+                    </div>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 ms-6">{tStripe("verifying_hint")}</p>
+                    <button
+                        onClick={startOnboarding}
+                        disabled={redirecting}
+                        className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 disabled:opacity-50 transition-colors"
+                    >
+                        {redirecting ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                            <ExternalLink className="h-4 w-4" />
+                        )}
+                        {redirecting ? t("stripe_redirecting") : tStripe("review_or_update")}
                     </button>
                 </div>
             )}

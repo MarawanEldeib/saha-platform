@@ -465,9 +465,13 @@
     },
     "stripe_connect": {
         "badge_ready": "Ready to receive payments",
+        "badge_verifying": "Stripe is verifying",
         "badge_incomplete": "Onboarding incomplete",
         "badge_not_connected": "Not connected",
         "ready_body": "Your courts are bookable. Players can pay directly and payouts go to your bank account.",
+        "verifying_body": "You've submitted everything Stripe needs. They're now verifying your details.",
+        "verifying_hint": "Stripe verification typically completes in a few hours, sometimes up to 1–2 business days. Your courts will be bookable as soon as it's done — no action needed from you.",
+        "review_or_update": "Review or update on Stripe",
         "incomplete_body": "Stripe still needs a bit more from you before payouts can land.",
         "checklist_details": "Submit the remaining business / identity details.",
         "checklist_charges": "Confirm your bank account so charges can be enabled.",
