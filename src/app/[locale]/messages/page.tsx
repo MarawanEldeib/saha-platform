@@ -4,6 +4,7 @@ import { getLocale } from "next-intl/server";
 import Link from "next/link";
 import { formatDistanceToNow } from "date-fns";
 import { MessageSquare } from "lucide-react";
+import { PushOptIn } from "@/components/messaging/PushOptIn";
 
 export const metadata = { title: "Messages – Saha" };
 
@@ -65,6 +66,8 @@ export default async function MessagesInboxPage() {
                     Direct messages with other players from matchmaking posts.
                 </p>
             </div>
+
+            <PushOptIn />
 
             {conversations.length === 0 ? (
                 <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-8 text-center">
