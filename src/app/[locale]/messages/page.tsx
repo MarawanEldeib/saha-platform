@@ -117,7 +117,6 @@ export default async function MessagesInboxPage() {
                         {conversations.map((c) => {
                             const otherIsLow = c.player_low_id !== user.id;
                             const other = otherIsLow ? c.low_profile : c.high_profile;
-                            const otherId = otherIsLow ? c.player_low_id : c.player_high_id;
                             const unread = unreadByConv[c.id] ?? 0;
                             const initials =
                                 other?.display_name?.trim().split(" ").map((w) => w[0]).slice(0, 2).join("").toUpperCase() ||
@@ -154,9 +153,6 @@ export default async function MessagesInboxPage() {
                                                     {formatDistanceToNow(new Date(c.last_message_at), { addSuffix: true })}
                                                 </span>
                                             </div>
-                                            <p className="text-xs text-gray-500 dark:text-gray-500 mt-0.5 truncate">
-                                                Player ID: <span className="font-mono">{otherId.slice(0, 8)}…</span>
-                                            </p>
                                         </div>
                                         {unread > 0 && (
                                             <span className="shrink-0 inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full bg-emerald-600 text-white text-xs font-semibold">
