@@ -259,6 +259,7 @@ export interface Database {
                     description: string | null;
                     event_date: string;
                     status: EventStatus;
+                    tags: string[];
                     created_at: string;
                     updated_at: string;
                 };
@@ -270,12 +271,14 @@ export interface Database {
                     description?: string | null;
                     event_date: string;
                     status?: EventStatus;
+                    tags?: string[];
                 };
                 Update: {
                     name?: string;
                     description?: string | null;
                     event_date?: string;
                     status?: EventStatus;
+                    tags?: string[];
                     updated_at?: string;
                 };
                 Relationships: [

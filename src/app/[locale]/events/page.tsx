@@ -2,26 +2,51 @@ import { createClient } from "@/lib/supabase/server";
 import { getTranslations } from "next-intl/server";
 import { format } from "date-fns";
 import { Clock, MapPin } from "lucide-react";
+import { EVENT_TAGS, isValidEventTag, type EventTag } from "@/lib/event-tags";
+import { EventTagChips } from "@/components/events/EventTagChips";
+import { EventTagFilterChips } from "./EventTagFilterChips";
+import { RamadanBanner } from "@/components/RamadanBanner";
 
 export const metadata = { title: "Sports Events" };
 
-export default async function EventsPage() {
+export default async function EventsPage({
+    searchParams,
+}: {
+    searchParams: Promise<{ tag?: string | string[] }>;
+}) {
     const t = await getTranslations("events");
     const supabase = await createClient();
+    const sp = await searchParams;
 
-    const { data: events } = await supabase
+    const rawTags = Array.isArray(sp.tag) ? sp.tag : sp.tag ? [sp.tag] : [];
+    const activeTags: EventTag[] = rawTags.filter(isValidEventTag);
+
+    let query = supabase
         .from("events")
         .select("*, facilities(name, city), profiles(display_name)")
         .eq("status", "approved")
         .gte("event_date", new Date().toISOString())
         .order("event_date", { ascending: true });
 
+    if (activeTags.length > 0) {
+        // overlaps = events whose tags share at least one with the selected set.
+        query = query.overlaps("tags", activeTags);
+    }
+
+    const { data: events } = await query;
+
     return (
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-            <div className="mb-10">
+            <div className="mb-6">
                 <h1 className="text-3xl font-bold text-gray-900 dark:text-white">{t("title")}</h1>
                 <p className="text-gray-500 dark:text-gray-400 mt-2">{t("subtitle")}</p>
             </div>
+
+            <div className="mb-6">
+                <RamadanBanner />
+            </div>
+
+            <EventTagFilterChips allTags={[...EVENT_TAGS]} activeTags={activeTags} />
 
             {(!events || events.length === 0) ? (
                 <p className="text-gray-500 dark:text-gray-400">{t("no_events")}</p>
@@ -59,6 +84,11 @@ export default async function EventsPage() {
                                         </span>
                                     )}
                                 </div>
+                                {Array.isArray((event as { tags?: string[] }).tags) && (
+                                    <div className="mt-2.5">
+                                        <EventTagChips tags={(event as { tags?: string[] }).tags} size="xs" />
+                                    </div>
+                                )}
                             </div>
                         </div>
                     ))}

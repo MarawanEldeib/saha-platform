@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 import type { Database } from "@/types/database";
 import { logAuditEvent } from "@/lib/audit";
 import { sanitizeTextInput } from "@/lib/utils";
+import { sanitizeEventTags } from "@/lib/event-tags";
 import { geocodeAddress } from "@/lib/geocoding";
 import { facilityUpdateSchema } from "@/lib/validations";
 
@@ -283,7 +284,7 @@ export async function rejectEventAction(eventId: string) {
 // ---------------------------------------------------------------------------
 export async function adminUpdateEventAction(
     eventId: string,
-    raw: { name: string; description: string; event_date: string },
+    raw: { name: string; description: string; event_date: string; tags?: string[] },
 ) {
     try {
         const { adminClient, userId, role } = await assertAdmin();
@@ -291,6 +292,7 @@ export async function adminUpdateEventAction(
         const name = sanitizeTextInput(raw.name ?? "");
         const description = sanitizeTextInput(raw.description ?? "");
         const eventDate = raw.event_date;
+        const tags = sanitizeEventTags(raw.tags);
 
         if (!name || name.length < 3) return { error: "Event name must be at least 3 characters." };
         if (!eventDate) return { error: "Please select an event date." };
@@ -298,7 +300,7 @@ export async function adminUpdateEventAction(
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const { data: existing } = await (adminClient as any)
             .from("events")
-            .select("name, description, event_date")
+            .select("name, description, event_date, tags")
             .eq("id", eventId)
             .single();
         if (!existing) return { error: "Event not found" };
@@ -307,6 +309,8 @@ export async function adminUpdateEventAction(
             name,
             description: description || null,
             event_date: eventDate,
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            tags: tags as any,
         };
         const { error } = await adminClient
             .from("events")
@@ -325,8 +329,9 @@ export async function adminUpdateEventAction(
                     name: existing.name,
                     description: existing.description,
                     event_date: existing.event_date,
+                    tags: existing.tags,
                 },
-                next: { name, description: description || null, event_date: eventDate },
+                next: { name, description: description || null, event_date: eventDate, tags },
             },
         });
         revalidatePath("/", "layout");

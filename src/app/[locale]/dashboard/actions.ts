@@ -9,6 +9,7 @@ import { capWalletCredit, computeCheckoutAmounts } from "@/lib/booking-pricing";
 import { rateLimit } from "@/lib/rate-limit";
 import { facilityUpdateSchema, profileUpdateSchema, courtSchema, type CourtInput, availabilitySlotSchema, facilityHoursSchema } from "@/lib/validations";
 import { sanitizeTextInput } from "@/lib/utils";
+import { sanitizeEventTags } from "@/lib/event-tags";
 import { geocodeAddress } from "@/lib/geocoding";
 import { bookCourtCore } from "@/lib/booking-flow";
 import type { Database } from "@/types/database";
@@ -176,18 +177,21 @@ export async function submitEventAction(formData: FormData) {
     const description = (formData.get("description") as string)?.trim();
     const eventDate = formData.get("event_date") as string;
     const facilityId = formData.get("facility_id") as string;
+    const tags = sanitizeEventTags(formData.getAll("tags"));
 
     if (!name || name.length < 3) return { error: "Event name must be at least 3 characters." };
     if (!eventDate) return { error: "Please select an event date." };
     if (!facilityId) return { error: "No facility found. Complete onboarding first." };
 
-    const { error } = await supabase.from("events").insert({
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error } = await (supabase as any).from("events").insert({
         facility_id: facilityId,
         submitted_by: user.id,
         name,
         description: description || null,
         event_date: eventDate,
         status: "pending",
+        tags,
     });
 
     if (error) return { error: error.message };

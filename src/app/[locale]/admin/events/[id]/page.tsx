@@ -16,6 +16,7 @@ interface EventDetail {
     event_date: string;
     status: EventStatus;
     created_at: string;
+    tags: string[] | null;
     facilities: { name: string; city: string } | null;
     profiles: { display_name: string | null } | null;
 }
@@ -41,7 +42,7 @@ export default async function AdminEventDetailPage({
 
     const { data, error } = await supabase
         .from("events")
-        .select("id, name, description, event_date, status, created_at, facilities(name, city), profiles(display_name)")
+        .select("id, name, description, event_date, status, created_at, tags, facilities(name, city), profiles(display_name)")
         .eq("id", id)
         .single();
 
@@ -77,6 +78,7 @@ export default async function AdminEventDetailPage({
                     facility_city: event.facilities?.city ?? null,
                     submitter_name: event.profiles?.display_name ?? null,
                     created_at: event.created_at,
+                    tags: event.tags,
                 }}
             />
 
