@@ -5,6 +5,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import type { Database } from "@/types/database";
 import { logAuditEvent } from "@/lib/audit";
+import { sanitizeTextInput } from "@/lib/utils";
 
 type FacilityUpdate = Database["public"]["Tables"]["facilities"]["Update"];
 type EventUpdate = Database["public"]["Tables"]["events"]["Update"];
@@ -140,6 +141,70 @@ export async function rejectEventAction(eventId: string) {
             action: "event.reject",
             targetType: "event",
             targetId: eventId,
+        });
+        revalidatePath("/", "layout");
+        return { success: true };
+    } catch (e: unknown) {
+        return { error: e instanceof Error ? e.message : "Unexpected error" };
+    }
+}
+
+// ---------------------------------------------------------------------------
+// SAH-131: Admin event content edit. Unlike the owner edit
+// (updateEventAction in dashboard/actions.ts) this:
+//   - skips the ownership check (admin can edit any event)
+//   - does NOT reset status to 'pending' — admin edits are typically
+//     fixing typos/dates while keeping the existing approval state.
+//   - logs `event.update_admin` with previous values so the audit trail
+//     captures what the admin changed.
+// ---------------------------------------------------------------------------
+export async function adminUpdateEventAction(
+    eventId: string,
+    raw: { name: string; description: string; event_date: string },
+) {
+    try {
+        const { adminClient, userId, role } = await assertAdmin();
+
+        const name = sanitizeTextInput(raw.name ?? "");
+        const description = sanitizeTextInput(raw.description ?? "");
+        const eventDate = raw.event_date;
+
+        if (!name || name.length < 3) return { error: "Event name must be at least 3 characters." };
+        if (!eventDate) return { error: "Please select an event date." };
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { data: existing } = await (adminClient as any)
+            .from("events")
+            .select("name, description, event_date")
+            .eq("id", eventId)
+            .single();
+        if (!existing) return { error: "Event not found" };
+
+        const update: EventUpdate = {
+            name,
+            description: description || null,
+            event_date: eventDate,
+        };
+        const { error } = await adminClient
+            .from("events")
+            .update(update)
+            .eq("id", eventId);
+        if (error) return { error: error.message };
+
+        await logAuditEvent({
+            actorId: userId,
+            actorRole: role,
+            action: "event.update_admin",
+            targetType: "event",
+            targetId: eventId,
+            metadata: {
+                previous: {
+                    name: existing.name,
+                    description: existing.description,
+                    event_date: existing.event_date,
+                },
+                next: { name, description: description || null, event_date: eventDate },
+            },
         });
         revalidatePath("/", "layout");
         return { success: true };

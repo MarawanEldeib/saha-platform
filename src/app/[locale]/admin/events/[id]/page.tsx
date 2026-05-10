@@ -5,8 +5,8 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { EventStatusBadge } from "@/components/ui/Badge";
 import { format } from "date-fns";
-import { Calendar, Building2, User } from "lucide-react";
 import { EventReviewActions } from "./EventReviewActions";
+import { AdminEventCard } from "./AdminEventCard";
 import type { EventStatus } from "@/types/database";
 
 interface EventDetail {
@@ -67,29 +67,18 @@ export default async function AdminEventDetailPage({
                 <EventStatusBadge status={event.status} />
             </div>
 
-            <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-6 space-y-4">
-                <div className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
-                    <Calendar className="h-4 w-4 text-gray-400 shrink-0" />
-                    <span>{format(new Date(event.event_date), "PPP")}</span>
-                </div>
-                {event.facilities && (
-                    <div className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
-                        <Building2 className="h-4 w-4 text-gray-400 shrink-0" />
-                        <span>{event.facilities.name}, {event.facilities.city}</span>
-                    </div>
-                )}
-                {event.profiles && (
-                    <div className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
-                        <User className="h-4 w-4 text-gray-400 shrink-0" />
-                        <span>Submitted by {event.profiles.display_name ?? "Unknown"}</span>
-                    </div>
-                )}
-                {event.description && (
-                    <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed pt-2 border-t border-gray-100 dark:border-gray-800">
-                        {event.description}
-                    </p>
-                )}
-            </div>
+            <AdminEventCard
+                event={{
+                    id: event.id,
+                    name: event.name,
+                    description: event.description,
+                    event_date: event.event_date,
+                    facility_name: event.facilities?.name ?? null,
+                    facility_city: event.facilities?.city ?? null,
+                    submitter_name: event.profiles?.display_name ?? null,
+                    created_at: event.created_at,
+                }}
+            />
 
             <div className="bg-gray-50 dark:bg-gray-800 rounded-2xl p-5">
                 <h2 className="font-semibold text-gray-900 dark:text-white mb-4">Review Decision</h2>
