@@ -4,7 +4,7 @@ import * as React from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
-import { MapPin, Menu, X, LogOut, LayoutDashboard, ShieldCheck, CalendarDays, Settings } from "lucide-react";
+import { MapPin, Menu, X, LogOut, LayoutDashboard, ShieldCheck, CalendarDays, Settings, MessageSquare } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
 import type { Profile } from "@/types/database";
@@ -124,6 +124,9 @@ export function Navbar({ profile }: NavbarProps) {
                                             <CalendarDays className="h-4 w-4" />
                                             {t("bookings")}
                                         </Link>
+                                        <Link href={`/${locale}/messages`} className={ghostBtn} aria-label={t("messages")}>
+                                            <MessageSquare className="h-4 w-4" />
+                                        </Link>
                                     </>
                                 )}
                                 <Link
@@ -216,6 +219,10 @@ export function Navbar({ profile }: NavbarProps) {
                                         <Link href={`/${locale}/bookings`} onClick={() => setMenuOpen(false)} className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800">
                                             <CalendarDays className="h-4 w-4" />
                                             {t("bookings")}
+                                        </Link>
+                                        <Link href={`/${locale}/messages`} onClick={() => setMenuOpen(false)} className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800">
+                                            <MessageSquare className="h-4 w-4" />
+                                            {t("messages")}
                                         </Link>
                                     </>
                                 )}

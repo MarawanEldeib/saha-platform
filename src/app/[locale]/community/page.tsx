@@ -18,6 +18,7 @@ import { useRouter } from "next/navigation";
 
 interface Post {
     id: string;
+    user_id: string;
     message: string;
     post_date: string;
     skill_level: string;
@@ -50,9 +51,13 @@ export default function CommunityPage() {
     const [authState, setAuthState] = React.useState<
         | { status: "loading" }
         | { status: "anonymous" }
-        | { status: "player" }
+        | { status: "player"; userId: string }
         | { status: "non_player"; role: "business" | "admin" }
     >({ status: "loading" });
+    const [messagingPost, setMessagingPost] = React.useState<Post | null>(null);
+    const [messageDraft, setMessageDraft] = React.useState("");
+    const [messageSending, setMessageSending] = React.useState(false);
+    const [messageError, setMessageError] = React.useState<string | null>(null);
 
     const {
         register,
@@ -89,7 +94,7 @@ export default function CommunityPage() {
                     .eq("id", user.id)
                     .single();
                 const role = (profile as { role: string } | null)?.role;
-                if (role === "user") setAuthState({ status: "player" });
+                if (role === "user") setAuthState({ status: "player", userId: user.id });
                 else if (role === "business" || role === "admin") setAuthState({ status: "non_player", role });
                 else setAuthState({ status: "anonymous" });
             }
@@ -128,6 +133,27 @@ export default function CommunityPage() {
     };
 
     const canPost = authState.status === "player";
+    const myUserId = authState.status === "player" ? authState.userId : null;
+
+    async function sendQuickMessage() {
+        if (!messagingPost || !myUserId) return;
+        const body = messageDraft.trim();
+        if (!body) return;
+        setMessageSending(true);
+        setMessageError(null);
+        try {
+            const { sendMessageAction } = await import("../messages/actions");
+            const result = await sendMessageAction(messagingPost.user_id, body, messagingPost.id);
+            if (!result.ok) {
+                setMessageError(result.error);
+                return;
+            }
+            // Route into the new conversation thread.
+            router.push(`/${locale}/messages/${result.conversationId}`);
+        } finally {
+            setMessageSending(false);
+        }
+    }
 
     return (
         <div className="max-w-3xl mx-auto px-4 sm:px-6 py-12">
@@ -221,12 +247,64 @@ export default function CommunityPage() {
                                 </div>
                             </div>
                             <p className="text-sm text-gray-700 dark:text-gray-300">{post.message}</p>
-                            <div className="flex flex-wrap gap-3 text-xs text-gray-500 dark:text-gray-400">
+                            <div className="flex flex-wrap items-center gap-3 text-xs text-gray-500 dark:text-gray-400">
                                 <span className="flex items-center gap-1"><Calendar className="h-3.5 w-3.5" /> {format(new Date(post.post_date), "PP")}</span>
                                 {post.location_text && <span className="flex items-center gap-1"><MessageSquare className="h-3.5 w-3.5" /> {post.location_text}</span>}
+                                {canPost && myUserId && post.user_id !== myUserId && (
+                                    <button
+                                        type="button"
+                                        onClick={() => { setMessagingPost(post); setMessageDraft(""); setMessageError(null); }}
+                                        className="ms-auto inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-300 text-xs font-semibold hover:bg-emerald-100 dark:hover:bg-emerald-900/30 transition-colors"
+                                    >
+                                        <MessageSquare className="h-3.5 w-3.5" />
+                                        {t("message_player")}
+                                    </button>
+                                )}
                             </div>
                         </div>
                     ))}
+                </div>
+            )}
+
+            {/* Quick-message modal */}
+            {messagingPost && (
+                <div className="fixed inset-0 z-50 bg-black/50 flex items-end sm:items-center justify-center p-4">
+                    <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-xl w-full max-w-md p-5 space-y-4">
+                        <div>
+                            <h2 className="text-base font-semibold text-gray-900 dark:text-white">
+                                {t("message_to", { name: messagingPost.profiles?.display_name ?? t("anonymous") })}
+                            </h2>
+                            <p className="text-xs text-gray-500 dark:text-gray-500 mt-1 truncate">
+                                re: &quot;{messagingPost.message.slice(0, 80)}{messagingPost.message.length > 80 ? "…" : ""}&quot;
+                            </p>
+                        </div>
+                        <textarea
+                            value={messageDraft}
+                            onChange={(e) => setMessageDraft(e.target.value)}
+                            placeholder={t("message_placeholder")}
+                            rows={4}
+                            maxLength={2000}
+                            className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-emerald-500 resize-none"
+                            autoFocus
+                        />
+                        {messageError && <p className="text-xs text-red-500" role="alert">{messageError}</p>}
+                        <div className="flex justify-end gap-2">
+                            <Button
+                                variant="ghost"
+                                onClick={() => { setMessagingPost(null); setMessageDraft(""); setMessageError(null); }}
+                            >
+                                {tc("cancel")}
+                            </Button>
+                            <Button
+                                variant="primary"
+                                loading={messageSending}
+                                onClick={sendQuickMessage}
+                                disabled={!messageDraft.trim()}
+                            >
+                                {t("send")}
+                            </Button>
+                        </div>
+                    </div>
                 </div>
             )}
         </div>

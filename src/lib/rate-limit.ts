@@ -63,6 +63,7 @@ const POLICIES = {
     booking_create: { points: 20, windowSec: 60 * 60 },     // 20 / 1 h / IP
     review_submit: { points: 5, windowSec: 60 * 60 },       // 5 / 1 h / IP
     public_api: { points: 60, windowSec: 60 },              // 60 / 1 min / IP — generous for AI agents (SAH-35)
+    messages_send: { points: 30, windowSec: 60 * 60 },      // 30 / 1 h / IP — matchmaking DM spam guard (SAH-96)
 } as const;
 
 export type RatePolicy = keyof typeof POLICIES;
