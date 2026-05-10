@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { getLocale, getTranslations } from "next-intl/server";
 import { FacilityStatusBadge } from "@/components/ui/Badge";
 import { format } from "date-fns";
-import { MapPin, Globe, Phone, Pencil } from "lucide-react";
+import { MapPin, Globe, Phone, Pencil, Activity } from "lucide-react";
 import Link from "next/link";
 import { FacilityReviewActions } from "./ReviewActions";
 import type { FacilityStatus } from "@/types/database";
@@ -54,8 +54,14 @@ export default async function AdminFacilityDetailPage({
                         Submitted by {facility.profiles?.display_name ?? "Unknown"} on {format(new Date(facility.created_at), "PP")}
                     </p>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
                     <FacilityStatusBadge status={facility.status} />
+                    <Link
+                        href={`/${locale}/admin/facilities/${facility.id}/diagnostics`}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                    >
+                        <Activity className="h-3.5 w-3.5" /> Diagnostics
+                    </Link>
                     <Link
                         href={`/${locale}/admin/facilities/${facility.id}/edit`}
                         className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
