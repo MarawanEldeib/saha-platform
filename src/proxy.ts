@@ -32,7 +32,7 @@ function buildCsp(nonce: string): string {
         "style-src 'self' 'unsafe-inline'",
         "img-src 'self' data: blob: https: https://*.supabase.co",
         "font-src 'self' data: https://fonts.openmaptiles.org",
-        "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.stripe.com https://api.mapbox.com https://*.basemaps.cartocdn.com https://*.tiles.mapbox.com",
+        "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.stripe.com https://api.mapbox.com https://basemaps.cartocdn.com https://*.basemaps.cartocdn.com https://*.tiles.mapbox.com",
         "frame-src 'self' https://js.stripe.com https://checkout.stripe.com https://hooks.stripe.com",
         "worker-src 'self' blob:",
         "object-src 'none'",
