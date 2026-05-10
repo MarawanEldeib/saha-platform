@@ -229,6 +229,23 @@ export default async function FacilityDiagnosticsPage({
         if (slot.is_booked) cell[slot.date].booked++;
     }
 
+    // Per-court rollup so we can flag "this court has no slots defined" individually,
+    // not just the all-courts-empty case.
+    const courtHasSlots = new Map<string, boolean>();
+    for (const c of courts) {
+        const counts = matrix[c.id] ?? {};
+        courtHasSlots.set(c.id, Object.keys(counts).length > 0);
+    }
+
+    // Stale pending = pending status and older than 24h. A handful of these is
+    // normal (Stripe checkout abandonment); a pile suggests Stripe Connect or
+    // webhook problems on this facility.
+    // eslint-disable-next-line react-hooks/purity
+    const staleThresholdMs = Date.now() - 24 * 3_600_000;
+    const stalePendingCount = bookings.filter(
+        (b) => b.status === "pending" && new Date(b.created_at).getTime() < staleThresholdMs,
+    ).length;
+
     const facilityActive = facility.status === "active";
     const hasCoords = facility.location !== null;
 
@@ -396,10 +413,17 @@ export default async function FacilityDiagnosticsPage({
                                 </tr>
                             </thead>
                             <tbody>
-                                {courts.map((c) => (
+                                {courts.map((c) => {
+                                    const hasSlots = courtHasSlots.get(c.id) ?? false;
+                                    return (
                                     <tr key={c.id} className="border-b border-gray-100 dark:border-gray-800 last:border-0">
-                                        <td className="py-1.5 pe-3 text-gray-700 dark:text-gray-300 truncate max-w-[160px]">
-                                            {c.name}
+                                        <td className="py-1.5 pe-3 max-w-[200px]">
+                                            <div className="text-gray-700 dark:text-gray-300 truncate">{c.name}</div>
+                                            {!hasSlots && (
+                                                <div className="text-[10px] text-amber-600 dark:text-amber-400 normal-case">
+                                                    no slots defined
+                                                </div>
+                                            )}
                                         </td>
                                         {dates.map((d) => {
                                             const cell = matrix[c.id]?.[d];
@@ -424,7 +448,8 @@ export default async function FacilityDiagnosticsPage({
                                             );
                                         })}
                                     </tr>
-                                ))}
+                                    );
+                                })}
                             </tbody>
                         </table>
                         <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
@@ -440,7 +465,17 @@ export default async function FacilityDiagnosticsPage({
             <StatusCard
                 icon={<BookOpen className="h-4 w-4 text-gray-500" />}
                 title={`Recent bookings (last ${bookings.length})`}
+                tone={stalePendingCount >= 5 ? "warning" : "default"}
             >
+                {stalePendingCount > 0 && (
+                    <div className="mb-3 flex items-start gap-2 text-xs text-amber-700 dark:text-amber-400 bg-amber-50/50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-lg px-3 py-2">
+                        <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
+                        <span>
+                            <strong>{stalePendingCount}</strong> pending booking{stalePendingCount === 1 ? "" : "s"} older than 24h.
+                            Likely abandoned Stripe checkouts. If this number grows, check Stripe Connect status above and recent webhook events.
+                        </span>
+                    </div>
+                )}
                 {bookings.length === 0 ? (
                     <p className="text-sm text-gray-500 dark:text-gray-400">No bookings yet on this facility.</p>
                 ) : (
