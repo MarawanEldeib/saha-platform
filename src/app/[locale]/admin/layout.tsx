@@ -13,12 +13,13 @@ import {
     ScrollText,
     Settings,
     ShieldCheck,
+    MessageSquare,
 } from "lucide-react";
 import { MobileNavDrawer, type MobileNavIconName } from "@/components/layout/MobileNavDrawer";
 
 interface NavItem {
     href: string;
-    labelKey: "overview" | "users" | "facilities" | "bookings" | "finance" | "events" | "audit_log" | "settings";
+    labelKey: "overview" | "users" | "facilities" | "bookings" | "finance" | "events" | "reviews" | "audit_log" | "settings";
     icon: typeof LayoutDashboard;
     /** Icon name passed to the client-side mobile drawer (Server→Client
      * boundary can't carry function references). */
@@ -34,6 +35,7 @@ const navItems: NavItem[] = [
     { href: "admin/bookings", labelKey: "bookings", icon: BookOpen, iconName: "BookOpen" },
     { href: "admin/finance", labelKey: "finance", icon: DollarSign, iconName: "DollarSign", comingSoon: true },
     { href: "admin/events", labelKey: "events", icon: CalendarDays, iconName: "CalendarDays" },
+    { href: "admin/reviews", labelKey: "reviews", icon: MessageSquare, iconName: "MessageSquare" },
     { href: "admin/audit-log", labelKey: "audit_log", icon: ScrollText, iconName: "ScrollText" },
     { href: "admin/settings", labelKey: "settings", icon: Settings, iconName: "Settings", comingSoon: true },
 ];

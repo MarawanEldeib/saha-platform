@@ -11,6 +11,7 @@ import { facilityUpdateSchema } from "@/lib/validations";
 
 type FacilityUpdate = Database["public"]["Tables"]["facilities"]["Update"];
 type EventUpdate = Database["public"]["Tables"]["events"]["Update"];
+type ReviewUpdate = Database["public"]["Tables"]["reviews"]["Update"];
 
 // ---------------------------------------------------------------------------
 // Guard: only admin may call these actions
@@ -327,6 +328,104 @@ export async function adminUpdateEventAction(
                 },
                 next: { name, description: description || null, event_date: eventDate },
             },
+        });
+        revalidatePath("/", "layout");
+        return { success: true };
+    } catch (e: unknown) {
+        return { error: e instanceof Error ? e.message : "Unexpected error" };
+    }
+}
+
+// ---------------------------------------------------------------------------
+// SAH-130: Reviews — moderation
+//
+// `hideReviewAction`   — soft delete (sets hidden_at / hidden_by / reason).
+//                        Hidden rows are filtered out of public SELECT by RLS
+//                        but stay in the DB so we can audit / unhide later.
+// `unhideReviewAction` — clears hidden_*. Re-exposes the row.
+// `adminDeleteReviewAction` — hard delete. The owner can also delete their
+//                        own (SAH-124); this lets admin delete any.
+// ---------------------------------------------------------------------------
+export async function hideReviewAction(reviewId: string, reason: string) {
+    try {
+        const { adminClient, userId, role } = await assertAdmin();
+        const update: ReviewUpdate = {
+            hidden_at: new Date().toISOString(),
+            hidden_by: userId,
+            hidden_reason: reason || null,
+        };
+        const { error } = await adminClient
+            .from("reviews")
+            .update(update)
+            .eq("id", reviewId);
+        if (error) return { error: error.message };
+        await logAuditEvent({
+            actorId: userId,
+            actorRole: role,
+            action: "review.hide",
+            targetType: "review",
+            targetId: reviewId,
+            metadata: { reason: reason || null },
+        });
+        revalidatePath("/", "layout");
+        return { success: true };
+    } catch (e: unknown) {
+        return { error: e instanceof Error ? e.message : "Unexpected error" };
+    }
+}
+
+export async function unhideReviewAction(reviewId: string) {
+    try {
+        const { adminClient, userId, role } = await assertAdmin();
+        const update: ReviewUpdate = {
+            hidden_at: null,
+            hidden_by: null,
+            hidden_reason: null,
+        };
+        const { error } = await adminClient
+            .from("reviews")
+            .update(update)
+            .eq("id", reviewId);
+        if (error) return { error: error.message };
+        await logAuditEvent({
+            actorId: userId,
+            actorRole: role,
+            action: "review.unhide",
+            targetType: "review",
+            targetId: reviewId,
+        });
+        revalidatePath("/", "layout");
+        return { success: true };
+    } catch (e: unknown) {
+        return { error: e instanceof Error ? e.message : "Unexpected error" };
+    }
+}
+
+export async function adminDeleteReviewAction(reviewId: string) {
+    try {
+        const { adminClient, userId, role } = await assertAdmin();
+
+        // Snapshot the row before deletion so the audit trail captures what
+        // was removed (rating + comment + facility_id).
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { data: snapshot } = await (adminClient as any)
+            .from("reviews")
+            .select("rating, comment, facility_id, user_id, created_at")
+            .eq("id", reviewId)
+            .single();
+
+        const { error } = await adminClient
+            .from("reviews")
+            .delete()
+            .eq("id", reviewId);
+        if (error) return { error: error.message };
+        await logAuditEvent({
+            actorId: userId,
+            actorRole: role,
+            action: "review.delete_admin",
+            targetType: "review",
+            targetId: reviewId,
+            metadata: { snapshot: snapshot ?? null },
         });
         revalidatePath("/", "layout");
         return { success: true };

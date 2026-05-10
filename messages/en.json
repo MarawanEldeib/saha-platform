@@ -359,6 +359,7 @@
         "bookings": "Bookings",
         "finance": "Finance",
         "events": "Events",
+        "reviews": "Reviews",
         "audit_log": "Audit log",
         "settings": "Settings"
     },

@@ -17,6 +17,7 @@ import {
     Users,
     DollarSign,
     ScrollText,
+    MessageSquare,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -37,6 +38,7 @@ const ICON_MAP = {
     Users,
     DollarSign,
     ScrollText,
+    MessageSquare,
 } as const;
 
 export type MobileNavIconName = keyof typeof ICON_MAP;

@@ -214,6 +214,9 @@ export interface Database {
                     comment: string | null;
                     created_at: string;
                     updated_at: string;
+                    hidden_at: string | null;
+                    hidden_by: string | null;
+                    hidden_reason: string | null;
                 };
                 Insert: {
                     id?: string;
@@ -226,6 +229,9 @@ export interface Database {
                     rating?: number;
                     comment?: string | null;
                     updated_at?: string;
+                    hidden_at?: string | null;
+                    hidden_by?: string | null;
+                    hidden_reason?: string | null;
                 };
                 Relationships: [
                     {
