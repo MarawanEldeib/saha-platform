@@ -109,6 +109,25 @@ function RegisterForm() {
                             <p className="text-sm text-red-500 text-center" role="alert">{serverError}</p>
                         )}
 
+                        <label className="flex items-start gap-2 text-sm text-gray-600 dark:text-gray-400 cursor-pointer">
+                            <input
+                                type="checkbox"
+                                required
+                                className="mt-0.5 h-4 w-4 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500"
+                            />
+                            <span>
+                                {t("agree_prefix")}{" "}
+                                <Link href={`/${locale}/terms`} className="text-emerald-600 dark:text-emerald-400 hover:underline" target="_blank">
+                                    {t("agree_terms")}
+                                </Link>
+                                {" "}{t("agree_and")}{" "}
+                                <Link href={`/${locale}/community-guidelines`} className="text-emerald-600 dark:text-emerald-400 hover:underline" target="_blank">
+                                    {t("agree_guidelines")}
+                                </Link>
+                                .
+                            </span>
+                        </label>
+
                         <Button type="submit" variant="primary" size="lg" loading={isSubmitting} className="w-full mt-2">
                             {isSubmitting ? t("loading") : t("submit")}
                         </Button>
