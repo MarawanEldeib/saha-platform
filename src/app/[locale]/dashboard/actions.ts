@@ -9,6 +9,7 @@ import { capWalletCredit, computeCheckoutAmounts } from "@/lib/booking-pricing";
 import { rateLimit } from "@/lib/rate-limit";
 import { facilityUpdateSchema, profileUpdateSchema, courtSchema, type CourtInput, availabilitySlotSchema, facilityHoursSchema } from "@/lib/validations";
 import { sanitizeTextInput } from "@/lib/utils";
+import { geocodeAddress } from "@/lib/geocoding";
 import { bookCourtCore } from "@/lib/booking-flow";
 import type { Database } from "@/types/database";
 import type Stripe from "stripe";
@@ -22,37 +23,6 @@ import {
 
 type FacilityUpdate = Database["public"]["Tables"]["facilities"]["Update"];
 type FacilityInsert = Database["public"]["Tables"]["facility_sports"]["Insert"];
-
-// ---------------------------------------------------------------------------
-// Geocoding helper — uses Mapbox Geocoding API v5.
-// Returns a discriminated result so callers can distinguish "address didn't
-// resolve" (user-correctable) from "Mapbox isn't configured" (env issue,
-// dev-only). SAH-119 makes the dashboard refuse to save without a resolved
-// location when Mapbox is configured.
-// ---------------------------------------------------------------------------
-type GeocodeResult =
-    | { status: "ok"; wkt: string }
-    | { status: "no_match" }
-    | { status: "not_configured" };
-
-async function geocodeAddress(address: string, city: string): Promise<GeocodeResult> {
-    const token = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
-    if (!token) return { status: "not_configured" };
-    const query = encodeURIComponent(`${address}, ${city}, UAE`);
-    try {
-        const res = await fetch(
-            `https://api.mapbox.com/geocoding/v5/mapbox.places/${query}.json?access_token=${token}&limit=1&country=ae`,
-            { signal: AbortSignal.timeout(5000) },
-        );
-        if (!res.ok) return { status: "no_match" };
-        const data = await res.json() as { features?: { geometry?: { type: string; coordinates: [number, number] } }[] };
-        const coords = data.features?.[0]?.geometry?.coordinates;
-        if (!coords) return { status: "no_match" };
-        return { status: "ok", wkt: `POINT(${coords[0]} ${coords[1]})` };
-    } catch {
-        return { status: "no_match" };
-    }
-}
 
 // ---------------------------------------------------------------------------
 // Facility selection: set the cookie that scopes dashboard pages to a

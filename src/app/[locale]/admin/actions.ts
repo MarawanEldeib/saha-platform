@@ -6,6 +6,8 @@ import { createClient } from "@/lib/supabase/server";
 import type { Database } from "@/types/database";
 import { logAuditEvent } from "@/lib/audit";
 import { sanitizeTextInput } from "@/lib/utils";
+import { geocodeAddress } from "@/lib/geocoding";
+import { facilityUpdateSchema } from "@/lib/validations";
 
 type FacilityUpdate = Database["public"]["Tables"]["facilities"]["Update"];
 type EventUpdate = Database["public"]["Tables"]["events"]["Update"];
@@ -91,6 +93,127 @@ export async function rejectFacilityAction(facilityId: string, reason: string) {
             targetType: "facility",
             targetId: facilityId,
             metadata: { reason: reason || null },
+        });
+        revalidatePath("/", "layout");
+        return { success: true };
+    } catch (e: unknown) {
+        return { error: e instanceof Error ? e.message : "Unexpected error" };
+    }
+}
+
+// ---------------------------------------------------------------------------
+// SAH-132: Admin emergency-edit of facility core details (name, description,
+// address, city, postal_code, phone, website, trn). Use cases: owner is
+// unreachable but the listing has a typo, broken phone, or abusive
+// description. Sports / hours / photos stay owner-managed (this is "fix the
+// listing", not "manage the facility").
+//
+// vs the owner action (updateFacilityAction in dashboard/actions.ts):
+//   - skips ownership check (admin gates everything in admin/actions.ts)
+//   - requires a non-empty `reason` so the audit trail explains why
+//   - audits as `facility.update_admin` with previous + next values + reason
+// Reuses the same sanitize + geocode pipeline so the same address validation
+// applies (no silent location IS NULL — SAH-119 invariant).
+// ---------------------------------------------------------------------------
+export async function adminUpdateFacilityAction(
+    facilityId: string,
+    raw: {
+        name: string;
+        description: string;
+        address: string;
+        city: string;
+        postal_code: string;
+        phone: string;
+        website: string;
+        trn: string;
+    },
+    reason: string,
+) {
+    try {
+        const { adminClient, userId, role } = await assertAdmin();
+
+        const trimmedReason = (reason ?? "").trim();
+        if (!trimmedReason) {
+            return { error: "Please provide a reason for the admin edit (required for the audit log)." };
+        }
+
+        const sanitized = {
+            name: sanitizeTextInput(raw.name ?? ""),
+            description: sanitizeTextInput(raw.description ?? ""),
+            address: sanitizeTextInput(raw.address ?? ""),
+            city: sanitizeTextInput(raw.city ?? ""),
+            postal_code: sanitizeTextInput(raw.postal_code ?? ""),
+            phone: (raw.phone ?? "") || undefined,
+            website: (raw.website ?? "") || undefined,
+            trn: (raw.trn ?? "") || undefined,
+        };
+        const parsed = facilityUpdateSchema.safeParse(sanitized);
+        if (!parsed.success) return { error: parsed.error.issues[0].message };
+
+        // Snapshot previous values for the audit trail.
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { data: existing } = await (adminClient as any)
+            .from("facilities")
+            .select("name, description, address, city, postal_code, phone, website, trn, owner_id")
+            .eq("id", facilityId)
+            .single();
+        if (!existing) return { error: "Facility not found" };
+
+        // Only re-geocode when the address or city actually changed — saves
+        // a Mapbox call and keeps the location stable for typo-only edits.
+        const addressChanged =
+            parsed.data.address !== existing.address || parsed.data.city !== existing.city;
+
+        let locationUpdate: Partial<FacilityUpdate> = {};
+        if (addressChanged) {
+            const geo = await geocodeAddress(parsed.data.address, parsed.data.city);
+            if (geo.status === "no_match") {
+                return {
+                    error: "We couldn't locate that address on the map. Double-check the street and city, then try again.",
+                };
+            }
+            if (geo.status === "ok") {
+                locationUpdate = { location: geo.wkt as never };
+            }
+        }
+
+        const update: FacilityUpdate = {
+            ...parsed.data,
+            phone: parsed.data.phone ?? null,
+            website: parsed.data.website ?? null,
+            trn: parsed.data.trn || null,
+            updated_at: new Date().toISOString(),
+            ...locationUpdate,
+        };
+
+        const { error } = await adminClient
+            .from("facilities")
+            .update(update)
+            .eq("id", facilityId);
+        if (error) return { error: error.message };
+
+        await logAuditEvent({
+            actorId: userId,
+            actorRole: role,
+            action: "facility.update_admin",
+            targetType: "facility",
+            targetId: facilityId,
+            metadata: {
+                reason: trimmedReason,
+                owner_id: existing.owner_id,
+                previous: {
+                    name: existing.name,
+                    description: existing.description,
+                    address: existing.address,
+                    city: existing.city,
+                    postal_code: existing.postal_code,
+                    phone: existing.phone,
+                    website: existing.website,
+                    trn: existing.trn,
+                },
+                next: parsed.data,
+                geocoded: addressChanged,
+            },
         });
         revalidatePath("/", "layout");
         return { success: true };
