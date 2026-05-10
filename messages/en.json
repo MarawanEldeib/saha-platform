@@ -104,13 +104,15 @@
         "level_intermediate": "Intermediate",
         "level_advanced": "Advanced",
         "submit": "Post",
-        "login_prompt": "Log in to post a matchmaking request.",
+        "login_prompt": "Sign in to post",
         "no_posts": "No posts yet. Be the first!",
         "any_sport": "Any sport",
         "location_label": "Location (optional)",
         "location_placeholder": "e.g. Dubai Marina",
         "message_placeholder": "Describe what you're looking for...",
-        "anonymous": "Anonymous"
+        "anonymous": "Anonymous",
+        "non_player_title": "Player accounts only",
+        "non_player_body": "Matchmaking is a player feature. Your account is signed in as a facility owner / admin. Sign out and create a separate player account to post or respond to matchmaking requests."
     },
     "events": {
         "title": "Upcoming Events",

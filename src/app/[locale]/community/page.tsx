@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import Link from "next/link";
 import { useTranslations, useLocale } from "next-intl";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/Button";
@@ -9,7 +10,7 @@ import { Input } from "@/components/ui/Input";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { matchmakingSchema, type MatchmakingInput } from "@/lib/validations";
-import { Calendar, MessageSquare, Plus, X } from "lucide-react";
+import { Calendar, MessageSquare, Plus, X, Info } from "lucide-react";
 import { Badge } from "@/components/ui/Badge";
 import { format } from "date-fns";
 import type { Sport } from "@/types/database";
@@ -46,6 +47,12 @@ export default function CommunityPage() {
     const [loading, setLoading] = React.useState(true);
     const [showForm, setShowForm] = React.useState(false);
     const [serverError, setServerError] = React.useState<string | null>(null);
+    const [authState, setAuthState] = React.useState<
+        | { status: "loading" }
+        | { status: "anonymous" }
+        | { status: "player" }
+        | { status: "non_player"; role: "business" | "admin" }
+    >({ status: "loading" });
 
     const {
         register,
@@ -61,16 +68,32 @@ export default function CommunityPage() {
     React.useEffect(() => {
         const fetchData = async () => {
             const supabase = createClient();
-            const [{ data: postsData }, { data: sportsData }] = await Promise.all([
+            const [{ data: postsData }, { data: sportsData }, { data: { user } }] = await Promise.all([
                 supabase
                     .from("matchmaking_posts")
                     .select("*, sports(name), profiles(display_name)")
                     .eq("is_active", true)
                     .order("created_at", { ascending: false }),
                 supabase.from("sports").select("*").in("name", ["Padel", "Pickleball", "Squash", "Tennis", "Badminton"]).order("name"),
+                supabase.auth.getUser(),
             ]);
             if (postsData) setPosts(postsData as Post[]);
             if (sportsData) setSports(sportsData);
+
+            if (!user) {
+                setAuthState({ status: "anonymous" });
+            } else {
+                const { data: profile } = await supabase
+                    .from("profiles")
+                    .select("role")
+                    .eq("id", user.id)
+                    .single();
+                const role = (profile as { role: string } | null)?.role;
+                if (role === "user") setAuthState({ status: "player" });
+                else if (role === "business" || role === "admin") setAuthState({ status: "non_player", role });
+                else setAuthState({ status: "anonymous" });
+            }
+
             setLoading(false);
         };
         fetchData();
@@ -104,18 +127,40 @@ export default function CommunityPage() {
         if (postsData) setPosts(postsData as Post[]);
     };
 
+    const canPost = authState.status === "player";
+
     return (
         <div className="max-w-3xl mx-auto px-4 sm:px-6 py-12">
-            <div className="flex items-center justify-between mb-8">
+            <div className="flex items-center justify-between mb-8 gap-4 flex-wrap">
                 <div>
                     <h1 className="text-3xl font-bold text-gray-900 dark:text-white">{t("title")}</h1>
                     <p className="text-gray-500 dark:text-gray-400 mt-1.5">{t("subtitle")}</p>
                 </div>
-                <Button variant="primary" onClick={() => setShowForm(!showForm)}>
-                    {showForm ? <X className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
-                    {showForm ? tc("cancel") : t("new_post")}
-                </Button>
+                {canPost && (
+                    <Button variant="primary" onClick={() => setShowForm(!showForm)}>
+                        {showForm ? <X className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
+                        {showForm ? tc("cancel") : t("new_post")}
+                    </Button>
+                )}
+                {authState.status === "anonymous" && (
+                    <Link
+                        href={`/${locale}/login?next=/${locale}/community`}
+                        className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-emerald-600 text-white text-sm font-semibold hover:bg-emerald-700 transition-colors"
+                    >
+                        {t("login_prompt")}
+                    </Link>
+                )}
             </div>
+
+            {authState.status === "non_player" && (
+                <div className="mb-8 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-2xl p-4 flex items-start gap-3">
+                    <Info className="h-5 w-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+                    <div className="flex-1 text-sm">
+                        <p className="font-medium text-amber-900 dark:text-amber-200">{t("non_player_title")}</p>
+                        <p className="text-amber-800 dark:text-amber-300 mt-1">{t("non_player_body")}</p>
+                    </div>
+                </div>
+            )}
 
             {showForm && (
                 <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-6 mb-8 shadow-sm">
