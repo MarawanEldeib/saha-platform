@@ -4,6 +4,7 @@ import { getLocale, getTranslations } from "next-intl/server";
 import { FacilityStatusBadge } from "@/components/ui/Badge";
 import { StarRating } from "@/components/ui/StarRating";
 import { ReviewForm } from "@/components/facility/ReviewForm";
+import { ReviewList } from "@/components/facility/ReviewList";
 import { MapPin, Globe, Phone, Clock, Calendar } from "lucide-react";
 import { format } from "date-fns";
 import { DAY_KEYS, formatTime, getStorageUrl } from "@/lib/utils";
@@ -73,6 +74,12 @@ export default async function FacilityDetailPage({
         .single();
 
     if (error || !facility) notFound();
+
+    // SAH-124: pass the current user id to ReviewList so each row can show
+    // edit/delete affordances only on the author's own review. Anonymous
+    // viewers see all reviews read-only. Reuses the `user` already loaded
+    // above for the wallet/booking widget.
+    const currentUserId = user?.id ?? null;
 
     const hours = [...(facility.facility_hours ?? [])].sort(
         (a, b) => a.day_of_week - b.day_of_week
@@ -253,21 +260,10 @@ export default async function FacilityDetailPage({
                         {facility.reviews?.length === 0 && (
                             <p className="text-sm text-gray-500 dark:text-gray-400">{t("no_reviews")}</p>
                         )}
-                        <div className="space-y-4 mb-6">
-                            {facility.reviews?.map((review: { id: string; rating: number; comment: string | null; created_at: string; profiles: { display_name: string | null } }) => (
-                                <div key={review.id} className="p-4 bg-gray-50 dark:bg-gray-800 rounded-xl">
-                                    <div className="flex items-center gap-2 mb-2">
-                                        <StarRating value={review.rating} readOnly size={14} />
-                                        <span className="text-xs text-gray-500 dark:text-gray-400">
-                                            {review.profiles?.display_name ?? "Anonymous"} · {format(new Date(review.created_at), "PP")}
-                                        </span>
-                                    </div>
-                                    {review.comment && (
-                                        <p className="text-sm text-gray-700 dark:text-gray-300">{review.comment}</p>
-                                    )}
-                                </div>
-                            ))}
-                        </div>
+                        <ReviewList
+                            reviews={(facility.reviews ?? []) as never}
+                            currentUserId={currentUserId}
+                        />
                         <ReviewForm facilityId={facility.id} locale={locale} />
                     </div>
                 </div>
