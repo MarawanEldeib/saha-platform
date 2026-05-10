@@ -24,11 +24,12 @@ const spec = {
     openapi: "3.1.0",
     info: {
         title: "Saha Public API",
-        version: "0.1.0",
+        version: "0.2.0",
         description:
-            "Discover racket-sport facilities and their open booking slots in the UAE. " +
-            "Read endpoints are public (no auth). Write endpoints (POST /bookings) are " +
-            "stubbed pending SAH-118.",
+            "Discover racket-sport facilities, list open slots, and book courts in the UAE. " +
+            "Read endpoints are public (no auth). Write endpoints require a Supabase JWT " +
+            "in the Authorization header (Bearer token) — same token issued by Supabase " +
+            "Auth on sign-in.",
         contact: { name: "Saha", url: "https://sahasports.vercel.app" },
     },
     servers: [
@@ -127,18 +128,84 @@ const spec = {
         "/api/v1/bookings": {
             post: {
                 operationId: "createBooking",
-                summary: "Create a booking",
-                description: "Not yet implemented. Tracked in SAH-118.",
-                responses: { "501": { $ref: "#/components/responses/NotImplemented" } },
+                summary: "Create a booking and start Stripe Checkout",
+                description:
+                    "Locks the requested slot, creates a pending booking, and returns a Stripe " +
+                    "Checkout URL the caller should open in a browser to complete payment. " +
+                    "Slot lock is via conditional update on `is_booked` — concurrent calls for " +
+                    "the same slot get a 409. Pass an `Idempotency-Key` header to make retries " +
+                    "safe; the same key returns the cached response for 24 hours.",
+                security: [{ BearerAuth: [] }],
+                parameters: [
+                    {
+                        name: "Idempotency-Key",
+                        in: "header",
+                        required: false,
+                        schema: { type: "string", maxLength: 100 },
+                        description: "Caller-supplied key. Same key = same response replayed.",
+                    },
+                    {
+                        name: "locale",
+                        in: "query",
+                        required: false,
+                        schema: { type: "string", enum: ["en", "ar"] },
+                        description: "Locale for the Stripe Checkout return URLs. Defaults to en.",
+                    },
+                ],
+                requestBody: {
+                    required: true,
+                    content: {
+                        "application/json": {
+                            schema: { $ref: "#/components/schemas/CreateBookingRequest" },
+                        },
+                    },
+                },
+                responses: {
+                    "201": {
+                        description: "Booking created; redirect the user to checkout_url.",
+                        content: {
+                            "application/json": {
+                                schema: {
+                                    type: "object",
+                                    properties: {
+                                        data: { $ref: "#/components/schemas/BookingCheckout" },
+                                        replayed: { type: "boolean", description: "True when the response is from idempotency cache." },
+                                    },
+                                },
+                            },
+                        },
+                    },
+                    "400": { $ref: "#/components/responses/BadRequest" },
+                    "401": { $ref: "#/components/responses/Unauthorized" },
+                    "409": { $ref: "#/components/responses/Conflict" },
+                    "429": { $ref: "#/components/responses/RateLimited" },
+                },
             },
         },
         "/api/v1/bookings/{id}": {
             get: {
                 operationId: "getBooking",
-                summary: "Get a booking",
-                description: "Not yet implemented. Tracked in SAH-118.",
+                summary: "Get one booking by id",
+                description:
+                    "Returns a single booking. RLS limits visibility to the player who booked it, " +
+                    "the facility owner, and admins.",
+                security: [{ BearerAuth: [] }],
                 parameters: [{ name: "id", in: "path", required: true, schema: { type: "string", format: "uuid" } }],
-                responses: { "501": { $ref: "#/components/responses/NotImplemented" } },
+                responses: {
+                    "200": {
+                        description: "Booking detail",
+                        content: {
+                            "application/json": {
+                                schema: {
+                                    type: "object",
+                                    properties: { data: { $ref: "#/components/schemas/Booking" } },
+                                },
+                            },
+                        },
+                    },
+                    "401": { $ref: "#/components/responses/Unauthorized" },
+                    "404": { $ref: "#/components/responses/NotFound" },
+                },
             },
         },
     },
@@ -217,27 +284,91 @@ const spec = {
                     offset: { type: "integer", minimum: 0 },
                 },
             },
+            CreateBookingRequest: {
+                type: "object",
+                required: ["availability_id", "num_players"],
+                properties: {
+                    availability_id: { type: "string", format: "uuid", description: "Slot id from getFacilityAvailability" },
+                    num_players: { type: "integer", minimum: 1, maximum: 20 },
+                    notes: { type: ["string", "null"], maxLength: 500 },
+                    credit_to_apply: { type: "number", minimum: 0, description: "Optional wallet credit (capped server-side)" },
+                },
+            },
+            BookingCheckout: {
+                type: "object",
+                properties: {
+                    booking_id: { type: "string", format: "uuid" },
+                    checkout_url: { type: "string", format: "uri", description: "Open this URL in a browser to complete payment via Stripe." },
+                    expires_at: { type: "integer", description: "Unix seconds. The Stripe Checkout session expires at this time (~30 min)." },
+                    applied_credit: { type: "number", description: "Wallet credit actually applied (capped at the platform fee)." },
+                },
+            },
+            Booking: {
+                type: "object",
+                properties: {
+                    id: { type: "string", format: "uuid" },
+                    date: { type: "string", format: "date" },
+                    start_time: { type: "string", example: "18:00" },
+                    end_time: { type: "string", example: "19:00" },
+                    num_players: { type: "integer" },
+                    total_price: { type: "number" },
+                    currency: { type: "string", example: "AED" },
+                    status: { type: "string", enum: ["pending", "confirmed", "cancelled", "completed", "no_show"] },
+                    qr_code_token: { type: "string", format: "uuid" },
+                    notes: { type: ["string", "null"] },
+                    created_at: { type: "string", format: "date-time" },
+                    court: {
+                        type: ["object", "null"],
+                        properties: {
+                            id: { type: "string", format: "uuid" },
+                            name: { type: "string" },
+                            sport: { type: ["string", "null"] },
+                        },
+                    },
+                    payment: {
+                        type: ["object", "null"],
+                        properties: {
+                            status: { type: "string", enum: ["pending", "succeeded", "failed", "refunded"] },
+                            amount: { type: "number" },
+                            currency: { type: "string" },
+                            checkout_session_id: { type: ["string", "null"] },
+                        },
+                    },
+                },
+            },
             Error: {
                 type: "object",
                 properties: { error: { type: "string" } },
                 required: ["error"],
             },
         },
+        securitySchemes: {
+            BearerAuth: {
+                type: "http",
+                scheme: "bearer",
+                bearerFormat: "JWT",
+                description: "Supabase access token. Obtain via the Supabase Auth flow (sign-in returns access_token). Pass as `Authorization: Bearer <token>`.",
+            },
+        },
         responses: {
             BadRequest: {
-                description: "Invalid query parameters",
+                description: "Invalid query parameters or body",
+                content: { "application/json": { schema: { $ref: "#/components/schemas/Error" } } },
+            },
+            Unauthorized: {
+                description: "Missing or invalid Authorization header / cookie session",
                 content: { "application/json": { schema: { $ref: "#/components/schemas/Error" } } },
             },
             NotFound: {
                 description: "Resource not found",
                 content: { "application/json": { schema: { $ref: "#/components/schemas/Error" } } },
             },
-            RateLimited: {
-                description: "Too many requests; check the retry_after field",
+            Conflict: {
+                description: "Slot is no longer available, or facility is not yet ready to receive payments",
                 content: { "application/json": { schema: { $ref: "#/components/schemas/Error" } } },
             },
-            NotImplemented: {
-                description: "Endpoint exists in the contract but is not yet served",
+            RateLimited: {
+                description: "Too many requests; check the retry_after field",
                 content: { "application/json": { schema: { $ref: "#/components/schemas/Error" } } },
             },
         },

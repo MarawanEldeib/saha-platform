@@ -13,9 +13,20 @@
  * would drift over time. The fetch round-trip is on the same Vercel
  * region, so it's cheap.
  *
- * Write tools (create_booking, get_booking) are deferred to SAH-118
- * along with Bearer-JWT auth — same rationale as the 501 stubs in the
- * REST API.
+ * Why no write tools (create_booking, get_booking) on MCP today?
+ * SAH-118 shipped Bearer-JWT auth on the REST API but the MCP ecosystem
+ * (Claude Desktop, Cursor, Cline) doesn't yet support per-request
+ * Authorization headers in the standard mcpServers config. Without per-
+ * caller auth at the MCP layer, a hosted write tool would let any
+ * connected client book on someone else's behalf — a no-go.
+ *
+ * AI agents that need to actually book today should:
+ *   1. Use the REST API directly with a Bearer JWT (POST /api/v1/bookings)
+ *   2. Or surface the facility's booking URL as a deep link for the user
+ *      to complete in a browser
+ *
+ * When OAuth-for-MCP standardizes (currently in spec discussion), add
+ * `create_booking` + `get_booking` here.
  */
 
 import { createMcpHandler } from "mcp-handler";

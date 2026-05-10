@@ -9,6 +9,7 @@ import { capWalletCredit, computeCheckoutAmounts } from "@/lib/booking-pricing";
 import { rateLimit } from "@/lib/rate-limit";
 import { facilityUpdateSchema, profileUpdateSchema, courtSchema, type CourtInput, availabilitySlotSchema, facilityHoursSchema } from "@/lib/validations";
 import { sanitizeTextInput } from "@/lib/utils";
+import { bookCourtCore } from "@/lib/booking-flow";
 import type { Database } from "@/types/database";
 import type Stripe from "stripe";
 import { getStripe, PLATFORM_FEE_PERCENT } from "@/lib/stripe";
@@ -790,193 +791,25 @@ export async function createBookingAndCheckoutAction(
         return { error: `Too many booking attempts. Try again in ${rl.retryAfter}s.` };
     }
 
-    // Authoritative slot data — never trust client times.
-    const { data: slot } = await supabase
-        .from("court_availability")
-        .select("id, court_id, date, start_time, end_time, is_booked")
-        .eq("id", availabilityId)
-        .single();
-    if (!slot) return { error: "Slot not found" };
-    if (slot.is_booked) return { error: "Slot is no longer available" };
-
-    const { data: court } = await supabase
-        .from("courts")
-        .select("id, name, price_per_hour, capacity, facility_id, facilities(id, name, stripe_account_id, currency)")
-        .eq("id", slot.court_id)
-        .single();
-    if (!court) return { error: "Court not found" };
-
-    if (numPlayers < 1 || numPlayers > (court.capacity ?? 1)) {
-        return { error: "Invalid number of players" };
-    }
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const facilityData = (court as any).facilities;
-    const stripeAccountId = facilityData?.stripe_account_id as string | null;
-    const currency = (facilityData?.currency as string) ?? "AED";
-
-    // Block if facility hasn't connected Stripe — funds would otherwise land
-    // in the platform account.
-    if (!stripeAccountId) {
-        return { error: "This facility is not yet ready to receive payments." };
-    }
-
-    // Verify the connected account is fully onboarded before creating the
-    // checkout session. Without this, Stripe accepts the session but blocks
-    // the transfer at capture time, leaving funds in the platform account.
-    try {
-        const account = await getStripe().accounts.retrieve(stripeAccountId);
-        if (!account.charges_enabled || !account.details_submitted) {
-            return { error: "This facility is not yet ready to receive payments." };
-        }
-    } catch {
-        return { error: "Could not verify the facility's payment account. Please try again." };
-    }
-
-    // Compute price from authoritative slot times.
-    const [sh, sm] = slot.start_time.split(":").map(Number);
-    const [eh, em] = slot.end_time.split(":").map(Number);
-    const durationHours = ((eh * 60 + em) - (sh * 60 + sm)) / 60;
-    if (durationHours <= 0) return { error: "Invalid slot" };
-    const totalPrice = Math.round(court.price_per_hour * durationHours * 100) / 100;
-
-    // Lock the slot to prevent double-booking. Conditional on is_booked=false
-    // makes this a CAS — if a concurrent caller locked it first, this returns
-    // zero rows and we abort.
-    const { data: lockedRows, error: lockError } = await supabase
-        .from("court_availability")
-        .update({ is_booked: true } as never)
-        .eq("id", availabilityId)
-        .eq("is_booked", false)
-        .select("id");
-
-    if (lockError || !lockedRows || lockedRows.length === 0) {
-        return { error: "Slot is no longer available" };
-    }
-
-    // Create booking record (pending) using slot-canonical times.
-    const { data: booking, error: bookingError } = await supabase
-        .from("bookings")
-        .insert({
-            availability_id: availabilityId,
-            court_id: slot.court_id,
-            player_id: user.id,
-            date: slot.date,
-            start_time: slot.start_time,
-            end_time: slot.end_time,
-            num_players: numPlayers,
-            total_price: totalPrice,
-            currency,
-            status: "pending",
-        } as never)
-        .select("id")
-        .single();
-
-    if (bookingError || !booking) {
-        await supabase.from("court_availability").update({ is_booked: false } as never).eq("id", availabilityId);
-        return { error: "Failed to create booking" };
-    }
-
-    // Create pending payment record
-    await supabase.from("payments").insert({
-        booking_id: booking.id,
-        amount: totalPrice,
-        currency,
-        status: "pending",
-    } as never);
-
-    // SAH-93: optionally redeem wallet credit. The cap helper ensures
-    // application_fee_amount can never go negative — the platform absorbs
-    // the discount, owner stays whole. See src/lib/booking-pricing.ts.
-    let appliedCredit = 0;
-    if (creditToApply && creditToApply > 0) {
-        // Look up the wallet balance so the cap accounts for it too — keeps
-        // a malicious client from passing a higher number than they have.
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const { data: walletRow } = await (supabase as any)
-            .from("wallet_balances")
-            .select("credit_aed")
-            .eq("user_id", user.id)
-            .maybeSingle();
-        const walletBalance = Number(walletRow?.credit_aed ?? 0);
-        const requested = capWalletCredit(creditToApply, walletBalance, totalPrice, PLATFORM_FEE_PERCENT);
-        if (requested > 0) {
-            try {
-                const admin = createAdminClient();
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                const { data: spent } = await (admin as any).rpc("spend_wallet_credit", {
-                    p_user_id: user.id,
-                    p_amount: requested,
-                    p_booking_id: booking.id,
-                });
-                appliedCredit = typeof spent === "number" ? spent : Number(spent ?? 0);
-            } catch (err) {
-                console.error("[loyalty] spend_wallet_credit failed", err);
-            }
-        }
-    }
-
-    const { chargeCents: chargeAmount, feeCents: feeAmount } =
-        computeCheckoutAmounts(totalPrice, appliedCredit, PLATFORM_FEE_PERCENT);
-
     const headersList = await headers();
     const host = headersList.get("host") ?? "localhost:3000";
     const appUrl = host.startsWith("localhost") ? `http://${host}` : `https://${host}`;
 
-    const sessionParams: Stripe.Checkout.SessionCreateParams = {
-        mode: "payment",
-        line_items: [{
-            quantity: 1,
-            price_data: {
-                currency: currency.toLowerCase(),
-                unit_amount: chargeAmount,
-                product_data: {
-                    name: facilityData?.name ? `${facilityData.name} — ${court.name}` : court.name,
-                    description: appliedCredit > 0
-                        ? `${slot.date} · ${slot.start_time}–${slot.end_time} (${appliedCredit.toFixed(2)} ${currency} wallet credit applied)`
-                        : `${slot.date} · ${slot.start_time}–${slot.end_time}`,
-                },
-            },
-        }],
-        metadata: {
-            booking_id: booking.id,
-            availability_id: availabilityId,
-            wallet_credit_applied: String(appliedCredit),
-        },
-        success_url: `${appUrl}/${locale}/bookings/${booking.id}?success=1`,
-        cancel_url: `${appUrl}/${locale}/bookings/${booking.id}?cancelled=1`,
-        expires_at: Math.floor(Date.now() / 1000) + 30 * 60, // 30 min to pay
-        payment_intent_data: {
-            application_fee_amount: feeAmount,
-            transfer_data: { destination: stripeAccountId },
-        },
-    };
+    // SAH-118: shared core handles slot-lock + booking insert + Stripe Checkout.
+    // The same helper backs `POST /api/v1/bookings` so behaviour stays identical
+    // across the website and AI-agent flows.
+    const result = await bookCourtCore({
+        supabase,
+        userId: user.id,
+        availabilityId,
+        numPlayers,
+        creditToApply,
+        appUrl,
+        locale,
+    });
 
-    let session: Stripe.Checkout.Session;
-    try {
-        session = await getStripe().checkout.sessions.create(sessionParams);
-    } catch {
-        // Stripe rejected the session — release the slot, mark booking cancelled,
-        // refund any wallet credit we already spent, and surface a clear error.
-        await supabase.from("bookings").update({ status: "cancelled" } as never).eq("id", booking.id);
-        await supabase.from("court_availability").update({ is_booked: false } as never).eq("id", availabilityId);
-        if (appliedCredit > 0) {
-            try {
-                const admin = createAdminClient();
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                await (admin as any).rpc("refund_wallet_credit", {
-                    p_user_id: user.id,
-                    p_amount: appliedCredit,
-                    p_booking_id: booking.id,
-                });
-            } catch (err) {
-                console.error("[loyalty] credit refund after Stripe failure failed", err);
-            }
-        }
-        return { error: "Could not start payment. Please try again." };
-    }
-
-    return { checkoutUrl: session.url };
+    if (!result.ok) return { error: result.error };
+    return { checkoutUrl: result.checkoutUrl };
 }
 
 // ---------------------------------------------------------------------------

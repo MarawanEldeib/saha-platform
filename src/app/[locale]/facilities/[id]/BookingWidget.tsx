@@ -71,7 +71,7 @@ export function BookingWidget({ courts, isLoggedIn, locale, currency = "AED", wa
             const result = weeks > 1
                 ? await createRecurringBookingAndCheckoutAction(selectedSlot.id, 1, weeks)
                 : await createBookingAndCheckoutAction(selectedSlot.id, 1, credit);
-            if (result.error) {
+            if ("error" in result) {
                 setError(result.error);
                 setSlots(null);
                 setSelectedSlot(null);
