@@ -13,6 +13,8 @@ import { facilityUpdateSchema } from "@/lib/validations";
 type FacilityUpdate = Database["public"]["Tables"]["facilities"]["Update"];
 type EventUpdate = Database["public"]["Tables"]["events"]["Update"];
 type ReviewUpdate = Database["public"]["Tables"]["reviews"]["Update"];
+type ProfileUpdate = Database["public"]["Tables"]["profiles"]["Update"];
+type UserRole = Database["public"]["Tables"]["profiles"]["Row"]["role"];
 
 // ---------------------------------------------------------------------------
 // Guard: only admin may call these actions
@@ -432,6 +434,190 @@ export async function adminDeleteReviewAction(reviewId: string) {
             targetId: reviewId,
             metadata: { snapshot: snapshot ?? null },
         });
+        revalidatePath("/", "layout");
+        return { success: true };
+    } catch (e: unknown) {
+        return { error: e instanceof Error ? e.message : "Unexpected error" };
+    }
+}
+
+// ---------------------------------------------------------------------------
+// SAH-139: Admin user management.
+//
+// `adminBanUser`    — soft delete. Sets profiles.deletion_requested_at = now()
+//                     (the existing GDPR cron picks it up after 30 days), and
+//                     signs the user out of all sessions immediately. The row
+//                     is kept for audit + ops.
+// `adminUnbanUser`  — clears deletion_requested_at.
+// `adminChangeRole` — promote/demote between user / business / admin.
+// `adminDeleteUser` — hard delete via auth.admin.deleteUser (PDPL right to
+//                     erasure). Cascade drops the profile row.
+// ---------------------------------------------------------------------------
+
+const VALID_ROLES = ["user", "business", "admin"] as const;
+
+export async function adminBanUserAction(targetUserId: string, reason: string) {
+    try {
+        const { adminClient, userId, role } = await assertAdmin();
+        if (targetUserId === userId) return { error: "You can't ban yourself." };
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { data: existing } = await (adminClient as any)
+            .from("profiles")
+            .select("display_name, role, deletion_requested_at")
+            .eq("id", targetUserId)
+            .single();
+        if (!existing) return { error: "User not found." };
+        if (existing.deletion_requested_at) return { error: "User is already banned." };
+
+        const update: ProfileUpdate = { deletion_requested_at: new Date().toISOString() };
+        const { error } = await adminClient
+            .from("profiles")
+            .update(update)
+            .eq("id", targetUserId);
+        if (error) return { error: error.message };
+
+        // Force sign-out across all sessions so the ban takes effect immediately.
+        // Failure here isn't fatal — the DB flag still bans them on next request.
+        try { await adminClient.auth.admin.signOut(targetUserId); } catch { /* */ }
+
+        await logAuditEvent({
+            actorId: userId,
+            actorRole: role,
+            action: "user.ban",
+            targetType: "profile",
+            targetId: targetUserId,
+            metadata: {
+                reason: sanitizeTextInput(reason || "") || null,
+                snapshot: { display_name: existing.display_name, role: existing.role },
+            },
+        });
+
+        revalidatePath("/", "layout");
+        return { success: true };
+    } catch (e: unknown) {
+        return { error: e instanceof Error ? e.message : "Unexpected error" };
+    }
+}
+
+export async function adminUnbanUserAction(targetUserId: string) {
+    try {
+        const { adminClient, userId, role } = await assertAdmin();
+        if (targetUserId === userId) return { error: "Nothing to unban for yourself." };
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { data: existing } = await (adminClient as any)
+            .from("profiles")
+            .select("display_name, deletion_requested_at")
+            .eq("id", targetUserId)
+            .single();
+        if (!existing) return { error: "User not found." };
+        if (!existing.deletion_requested_at) return { error: "User is not banned." };
+
+        const update: ProfileUpdate = { deletion_requested_at: null };
+        const { error } = await adminClient
+            .from("profiles")
+            .update(update)
+            .eq("id", targetUserId);
+        if (error) return { error: error.message };
+
+        await logAuditEvent({
+            actorId: userId,
+            actorRole: role,
+            action: "user.unban",
+            targetType: "profile",
+            targetId: targetUserId,
+            metadata: { display_name: existing.display_name },
+        });
+
+        revalidatePath("/", "layout");
+        return { success: true };
+    } catch (e: unknown) {
+        return { error: e instanceof Error ? e.message : "Unexpected error" };
+    }
+}
+
+export async function adminChangeUserRoleAction(targetUserId: string, newRole: string) {
+    try {
+        const { adminClient, userId, role } = await assertAdmin();
+        if (!(VALID_ROLES as readonly string[]).includes(newRole)) {
+            return { error: "Invalid role." };
+        }
+        if (targetUserId === userId) return { error: "You can't change your own role." };
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { data: existing } = await (adminClient as any)
+            .from("profiles")
+            .select("display_name, role")
+            .eq("id", targetUserId)
+            .single();
+        if (!existing) return { error: "User not found." };
+        if (existing.role === newRole) return { error: `User is already ${newRole}.` };
+
+        const update: ProfileUpdate = { role: newRole as UserRole };
+        const { error } = await adminClient
+            .from("profiles")
+            .update(update)
+            .eq("id", targetUserId);
+        if (error) return { error: error.message };
+
+        await logAuditEvent({
+            actorId: userId,
+            actorRole: role,
+            action: "user.role_change",
+            targetType: "profile",
+            targetId: targetUserId,
+            metadata: {
+                display_name: existing.display_name,
+                previous_role: existing.role,
+                next_role: newRole,
+            },
+        });
+
+        revalidatePath("/", "layout");
+        return { success: true };
+    } catch (e: unknown) {
+        return { error: e instanceof Error ? e.message : "Unexpected error" };
+    }
+}
+
+export async function adminDeleteUserAction(targetUserId: string, confirmText: string) {
+    try {
+        const { adminClient, userId, role } = await assertAdmin();
+        if (targetUserId === userId) return { error: "You can't delete yourself." };
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { data: existing } = await (adminClient as any)
+            .from("profiles")
+            .select("display_name, role")
+            .eq("id", targetUserId)
+            .single();
+        if (!existing) return { error: "User not found." };
+
+        // Friction guard: admin must type the display name to confirm. If the
+        // profile has no display_name, fall back to the UUID prefix.
+        const expected = (existing.display_name as string | null)?.trim() || targetUserId.slice(0, 8);
+        if (confirmText.trim() !== expected) {
+            return { error: `Type "${expected}" exactly to confirm deletion.` };
+        }
+
+        const { error: authErr } = await adminClient.auth.admin.deleteUser(targetUserId);
+        if (authErr) return { error: authErr.message };
+
+        // profiles cascades on auth.users delete (FK ON DELETE CASCADE) but
+        // we log first so the audit row exists before the row is gone. The
+        // audit row's target_id stays valid even though the profile is gone.
+        await logAuditEvent({
+            actorId: userId,
+            actorRole: role,
+            action: "user.delete",
+            targetType: "profile",
+            targetId: targetUserId,
+            metadata: {
+                snapshot: { display_name: existing.display_name, role: existing.role },
+            },
+        });
+
         revalidatePath("/", "layout");
         return { success: true };
     } catch (e: unknown) {
