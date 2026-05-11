@@ -51,7 +51,7 @@ export default async function AdminEventDetailPage({
     const event = data as unknown as EventDetail;
 
     return (
-        <div className="max-w-2xl mx-auto px-4 sm:px-6 py-10 space-y-8">
+        <div className="max-w-2xl mx-auto space-y-8">
             <div className="flex items-center gap-4">
                 <Link href={`/${locale}/admin/events`} className="text-sm text-gray-500 hover:text-gray-900 dark:hover:text-white">
                     ← Event Queue

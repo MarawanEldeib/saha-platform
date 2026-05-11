@@ -145,9 +145,11 @@ export default async function AuditLogPage({
                 )}
             </form>
 
-            {/* Table */}
-            <div className="border border-gray-200 dark:border-gray-800 rounded-xl overflow-hidden">
-                <table className="w-full text-sm">
+            {/* Table — wrapped in overflow-x-auto so mobile scrolls horizontally
+                instead of bursting the layout. The metadata column carries JSON
+                that can be wide, and the table has 5 columns total. */}
+            <div className="border border-gray-200 dark:border-gray-800 rounded-xl overflow-x-auto">
+                <table className="w-full text-sm min-w-[720px]">
                     <thead className="bg-gray-50 dark:bg-gray-800/50 text-xs text-gray-500 dark:text-gray-400">
                         <tr>
                             <th className="text-start px-4 py-3 font-medium">When</th>

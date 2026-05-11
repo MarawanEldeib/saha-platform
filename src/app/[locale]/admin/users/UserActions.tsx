@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { MoreHorizontal, Shield, ShieldOff, UserCog, Trash2, X } from "lucide-react";
 import {
@@ -25,10 +26,25 @@ type Modal =
 
 export function UserActions({ userId, displayName, currentRole, isBanned }: Props) {
     const router = useRouter();
+    const triggerRef = React.useRef<HTMLButtonElement | null>(null);
     const [open, setOpen] = React.useState(false);
+    const [menuPos, setMenuPos] = React.useState<{ top: number; right: number } | null>(null);
     const [modal, setModal] = React.useState<Modal>(null);
     const [isPending, startTransition] = React.useTransition();
     const [error, setError] = React.useState<string | null>(null);
+
+    // Portal-positioned menu — avoids being clipped by the table wrapper's
+    // overflow-x-auto on mobile, which would otherwise hide the dropdown.
+    const openMenu = () => {
+        const rect = triggerRef.current?.getBoundingClientRect();
+        if (rect) {
+            setMenuPos({
+                top: rect.bottom + window.scrollY + 4,
+                right: window.innerWidth - rect.right - window.scrollX,
+            });
+        }
+        setOpen(true);
+    };
 
     // Inputs
     const [banReason, setBanReason] = React.useState("");
@@ -73,18 +89,22 @@ export function UserActions({ userId, displayName, currentRole, isBanned }: Prop
     return (
         <div className="relative inline-block text-left">
             <button
+                ref={triggerRef}
                 type="button"
-                onClick={() => setOpen((v) => !v)}
+                onClick={() => (open ? setOpen(false) : openMenu())}
                 className="inline-flex items-center justify-center p-1.5 rounded-lg text-gray-500 hover:text-gray-900 hover:bg-gray-100 dark:hover:bg-gray-800"
                 aria-label="User actions"
             >
                 <MoreHorizontal className="h-4 w-4" />
             </button>
 
-            {open && (
+            {open && menuPos && typeof document !== "undefined" && createPortal(
                 <>
-                    <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
-                    <div className="absolute right-0 z-20 mt-1 w-44 origin-top-right rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-lg">
+                    <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
+                    <div
+                        className="fixed z-50 w-44 origin-top-right rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-lg"
+                        style={{ top: menuPos.top, right: menuPos.right }}
+                    >
                         <div className="py-1 text-sm">
                             {!isBanned ? (
                                 <button
@@ -116,7 +136,8 @@ export function UserActions({ userId, displayName, currentRole, isBanned }: Prop
                             </button>
                         </div>
                     </div>
-                </>
+                </>,
+                document.body
             )}
 
             {modal && (
