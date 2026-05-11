@@ -46,7 +46,7 @@ export default async function AdminFacilityDetailPage({
     const facility = data as unknown as FacilityDetail;
 
     return (
-        <div className="max-w-2xl mx-auto px-4 sm:px-6 py-10 space-y-8">
+        <div className="max-w-2xl mx-auto space-y-8">
             <div className="flex items-start justify-between gap-4">
                 <div>
                     <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{facility.name}</h1>

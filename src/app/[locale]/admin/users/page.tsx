@@ -186,8 +186,8 @@ export default async function AdminUsersPage({
                             <tr>
                                 <th className="text-start px-4 py-3 font-medium">User</th>
                                 <th className="text-start px-4 py-3 font-medium">Role</th>
-                                <th className="text-start px-4 py-3 font-medium">No-shows</th>
-                                <th className="text-start px-4 py-3 font-medium">Joined</th>
+                                <th className="text-start px-4 py-3 font-medium hidden md:table-cell">No-shows</th>
+                                <th className="text-start px-4 py-3 font-medium hidden md:table-cell">Joined</th>
                                 <th className="text-start px-4 py-3 font-medium">State</th>
                                 <th className="px-4 py-3" />
                             </tr>
@@ -228,10 +228,10 @@ export default async function AdminUsersPage({
                                                 {p.role}
                                             </span>
                                         </td>
-                                        <td className="px-4 py-3 tabular-nums text-gray-700 dark:text-gray-300">
+                                        <td className="px-4 py-3 tabular-nums text-gray-700 dark:text-gray-300 hidden md:table-cell">
                                             {p.no_show_count}
                                         </td>
-                                        <td className="px-4 py-3 tabular-nums text-gray-500 dark:text-gray-400">
+                                        <td className="px-4 py-3 tabular-nums text-gray-500 dark:text-gray-400 hidden md:table-cell">
                                             {format(new Date(p.created_at), "MMM d, yyyy")}
                                         </td>
                                         <td className="px-4 py-3">

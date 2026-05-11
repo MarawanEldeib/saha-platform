@@ -250,7 +250,7 @@ export default async function FacilityDiagnosticsPage({
     const hasCoords = facility.location !== null;
 
     return (
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-6">
+        <div className="max-w-6xl mx-auto space-y-6">
             <div className="flex items-center gap-4 flex-wrap">
                 <Link
                     href={`/${locale}/admin/facilities/${facility.id}`}
