@@ -16,6 +16,33 @@ type ReviewUpdate = Database["public"]["Tables"]["reviews"]["Update"];
 type ProfileUpdate = Database["public"]["Tables"]["profiles"]["Update"];
 type UserRole = Database["public"]["Tables"]["profiles"]["Row"]["role"];
 
+// SAH-141: platform-settings keys we accept. Keep in sync with
+// src/lib/platform-settings.ts (the DEFAULTS map).
+const SETTING_VALIDATORS: Record<string, (raw: unknown) => unknown | null> = {
+    platform_fee_percent: (v) => {
+        const n = Number(v);
+        return Number.isFinite(n) && n >= 0 && n <= 30 ? n : null;
+    },
+    default_currency: (v) =>
+        typeof v === "string" && /^[A-Z]{3}$/.test(v) ? v : null,
+    min_booking_lead_minutes: (v) => {
+        const n = Number(v);
+        return Number.isFinite(n) && n >= 0 && n <= 24 * 60 ? Math.floor(n) : null;
+    },
+    cancel_refund_window_hours: (v) => {
+        const n = Number(v);
+        return Number.isFinite(n) && n >= 0 && n <= 168 ? Math.floor(n) : null;
+    },
+    loyalty_threshold: (v) => {
+        const n = Number(v);
+        return Number.isFinite(n) && n >= 1 && n <= 1000 ? Math.floor(n) : null;
+    },
+    feature_events: (v) => (typeof v === "boolean" ? v : null),
+    feature_community: (v) => (typeof v === "boolean" ? v : null),
+    feature_group_booking: (v) => (typeof v === "boolean" ? v : null),
+    feature_messaging: (v) => (typeof v === "boolean" ? v : null),
+};
+
 // ---------------------------------------------------------------------------
 // Guard: only admin may call these actions
 // ---------------------------------------------------------------------------
@@ -625,3 +652,60 @@ export async function adminDeleteUserAction(targetUserId: string, confirmText: s
     }
 }
 
+
+// ---------------------------------------------------------------------------
+// SAH-141: Platform settings — admin-only updates with audit logging.
+//
+// Each setting goes through the validator map above. Unknown keys are
+// rejected so a typo in a form post can't clobber other rows. Audit
+// metadata captures the previous + next value for forensic review.
+// ---------------------------------------------------------------------------
+export async function updatePlatformSettingAction(key: string, rawValue: unknown) {
+    try {
+        const { adminClient, userId, role } = await assertAdmin();
+
+        const validator = SETTING_VALIDATORS[key];
+        if (!validator) return { error: `Unknown setting: ${key}` };
+
+        const validated = validator(rawValue);
+        if (validated === null) {
+            return { error: `Invalid value for ${key}.` };
+        }
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { data: existing } = await (adminClient as any)
+            .from("platform_settings")
+            .select("value")
+            .eq("key", key)
+            .maybeSingle();
+        const previousValue = (existing as { value: unknown } | null)?.value ?? null;
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { error } = await (adminClient as any)
+            .from("platform_settings")
+            .upsert(
+                {
+                    key,
+                    value: validated,
+                    updated_at: new Date().toISOString(),
+                    updated_by: userId,
+                },
+                { onConflict: "key" },
+            );
+        if (error) return { error: error.message };
+
+        await logAuditEvent({
+            actorId: userId,
+            actorRole: role,
+            action: "settings.update",
+            targetType: "platform_setting",
+            targetId: null,
+            metadata: { key, previous: previousValue, next: validated },
+        });
+
+        revalidatePath("/", "layout");
+        return { success: true };
+    } catch (e: unknown) {
+        return { error: e instanceof Error ? e.message : "Unexpected error" };
+    }
+}

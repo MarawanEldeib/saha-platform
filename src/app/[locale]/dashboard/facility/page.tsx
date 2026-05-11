@@ -5,7 +5,8 @@ import { FacilityEditForm } from "./FacilityEditForm";
 import { StripeConnectSection } from "./StripeConnectSection";
 import { ShareableLinkCard } from "./ShareableLinkCard";
 import { getActiveFacility } from "@/lib/facility-context";
-import { getStripe, PLATFORM_FEE_PERCENT } from "@/lib/stripe";
+import { getStripe } from "@/lib/stripe";
+import { getPlatformFeePercent } from "@/lib/platform-settings";
 
 export const metadata = { title: "Manage Facility – Saha" };
 
@@ -82,7 +83,7 @@ export default async function FacilityPage() {
                 chargesEnabled={chargesEnabled}
                 detailsSubmitted={detailsSubmitted}
                 payoutsEnabled={payoutsEnabled}
-                platformFeePercent={PLATFORM_FEE_PERCENT}
+                platformFeePercent={await getPlatformFeePercent()}
             />
         </div>
     );

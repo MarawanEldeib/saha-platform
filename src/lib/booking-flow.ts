@@ -22,7 +22,8 @@ import type Stripe from "stripe";
 import type { Database } from "@/types/database";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { capWalletCredit, computeCheckoutAmounts } from "@/lib/booking-pricing";
-import { getStripe, PLATFORM_FEE_PERCENT } from "@/lib/stripe";
+import { getStripe } from "@/lib/stripe";
+import { getPlatformFeePercent } from "@/lib/platform-settings";
 
 export interface BookCourtParams {
     /** Authed Supabase client (RLS will enforce access). */
@@ -162,6 +163,8 @@ export async function bookCourtCore(params: BookCourtParams): Promise<BookCourtR
     // SAH-93: optionally redeem wallet credit. Capped so the platform fee
     // can never go negative — owner stays whole; platform absorbs the cost.
     let appliedCredit = 0;
+    const feePercent = await getPlatformFeePercent();
+
     if (creditToApply && creditToApply > 0) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const { data: walletRow } = await (supabase as any)
@@ -170,7 +173,7 @@ export async function bookCourtCore(params: BookCourtParams): Promise<BookCourtR
             .eq("user_id", userId)
             .maybeSingle();
         const walletBalance = Number(walletRow?.credit_aed ?? 0);
-        const requested = capWalletCredit(creditToApply, walletBalance, totalPrice, PLATFORM_FEE_PERCENT);
+        const requested = capWalletCredit(creditToApply, walletBalance, totalPrice, feePercent);
         if (requested > 0) {
             try {
                 const admin = createAdminClient();
@@ -188,7 +191,7 @@ export async function bookCourtCore(params: BookCourtParams): Promise<BookCourtR
     }
 
     const { chargeCents: chargeAmount, feeCents: feeAmount } =
-        computeCheckoutAmounts(totalPrice, appliedCredit, PLATFORM_FEE_PERCENT);
+        computeCheckoutAmounts(totalPrice, appliedCredit, feePercent);
 
     const sessionParams: Stripe.Checkout.SessionCreateParams = {
         mode: "payment",

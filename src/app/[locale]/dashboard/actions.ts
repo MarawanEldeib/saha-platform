@@ -14,7 +14,8 @@ import { geocodeAddress } from "@/lib/geocoding";
 import { bookCourtCore } from "@/lib/booking-flow";
 import type { Database } from "@/types/database";
 import type Stripe from "stripe";
-import { getStripe, PLATFORM_FEE_PERCENT } from "@/lib/stripe";
+import { getStripe } from "@/lib/stripe";
+import { getPlatformFeePercent } from "@/lib/platform-settings";
 import { logAuditEvent } from "@/lib/audit";
 import {
     FACILITY_COOKIE_NAME,
@@ -1234,7 +1235,8 @@ export async function createRecurringBookingAndCheckoutAction(
     const host = headersList.get("host") ?? "localhost:3000";
     const appUrl = host.startsWith("localhost") ? `http://${host}` : `https://${host}`;
 
-    const feeAmount = Math.round(totalPrice * 100 * PLATFORM_FEE_PERCENT / 100);
+    const feePercent = await getPlatformFeePercent();
+    const feeAmount = Math.round(totalPrice * 100 * feePercent / 100);
     const sessionParams: Stripe.Checkout.SessionCreateParams = {
         mode: "payment",
         line_items: [{
