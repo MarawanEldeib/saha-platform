@@ -670,16 +670,37 @@ export async function createCourtAction(facilityId: string, input: CourtInput) {
     const parsed = courtSchema.safeParse(input);
     if (!parsed.success) return { error: parsed.error.issues[0].message };
 
-    const { error } = await supabase.from("courts").insert({
+    const sportId = parsed.data.sport_id === "" ? null : parseInt(parsed.data.sport_id, 10);
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: inserted, error } = await (supabase as any).from("courts").insert({
         facility_id: facilityId,
         name: parsed.data.name,
-        sport_id: parsed.data.sport_id === "" ? null : parseInt(parsed.data.sport_id, 10),
+        sport_id: sportId,
         capacity: parsed.data.capacity,
         price_per_hour: parsed.data.price_per_hour,
         is_active: true,
-    });
+    }).select("id").single();
 
     if (error) return { error: error.message };
+
+    // SAH-138: audit. Owner-side mutation — log with the new court id so
+    // /admin/audit-log can reconstruct who created what when.
+    await logAuditEvent({
+        actorId: user.id,
+        actorRole: "business",
+        action: "court.create",
+        targetType: "court",
+        targetId: (inserted as { id: string } | null)?.id ?? null,
+        metadata: {
+            facility_id: facilityId,
+            name: parsed.data.name,
+            sport_id: sportId,
+            capacity: parsed.data.capacity,
+            price_per_hour: parsed.data.price_per_hour,
+        },
+    });
+
     revalidatePath(`/${locale}/dashboard/courts`);
     return { success: true };
 }
@@ -693,9 +714,10 @@ export async function updateCourtAction(courtId: string, input: CourtInput) {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return { error: "Not authenticated" };
 
-    const { data: courtRow } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: courtRow } = await (supabase as any)
         .from("courts")
-        .select("facility_id")
+        .select("facility_id, name, sport_id, capacity, price_per_hour")
         .eq("id", courtId)
         .single();
     if (!courtRow) return { error: "Court not found" };
@@ -711,17 +733,44 @@ export async function updateCourtAction(courtId: string, input: CourtInput) {
     const parsed = courtSchema.safeParse(input);
     if (!parsed.success) return { error: parsed.error.issues[0].message };
 
+    const nextSportId = parsed.data.sport_id === "" ? null : parseInt(parsed.data.sport_id, 10);
+
     const { error } = await supabase
         .from("courts")
         .update({
             name: parsed.data.name,
-            sport_id: parsed.data.sport_id === "" ? null : parseInt(parsed.data.sport_id, 10),
+            sport_id: nextSportId,
             capacity: parsed.data.capacity,
             price_per_hour: parsed.data.price_per_hour,
         })
         .eq("id", courtId);
 
     if (error) return { error: error.message };
+
+    // SAH-138: audit with both previous and next snapshots so we can see
+    // exactly what an owner changed (e.g. silent price hike).
+    await logAuditEvent({
+        actorId: user.id,
+        actorRole: "business",
+        action: "court.update",
+        targetType: "court",
+        targetId: courtId,
+        metadata: {
+            previous: {
+                name: courtRow.name,
+                sport_id: courtRow.sport_id,
+                capacity: courtRow.capacity,
+                price_per_hour: courtRow.price_per_hour,
+            },
+            next: {
+                name: parsed.data.name,
+                sport_id: nextSportId,
+                capacity: parsed.data.capacity,
+                price_per_hour: parsed.data.price_per_hour,
+            },
+        },
+    });
+
     revalidatePath(`/${locale}/dashboard/courts`);
     return { success: true };
 }
@@ -756,6 +805,18 @@ export async function toggleCourtActiveAction(courtId: string, isActive: boolean
         .eq("id", courtId);
 
     if (error) return { error: error.message };
+
+    // SAH-138: distinguish activate vs deactivate as separate action keys so
+    // /admin/audit-log filters work cleanly.
+    await logAuditEvent({
+        actorId: user.id,
+        actorRole: "business",
+        action: isActive ? "court.activate" : "court.deactivate",
+        targetType: "court",
+        targetId: courtId,
+        metadata: { facility_id: courtRow.facility_id, is_active: isActive },
+    });
+
     revalidatePath(`/${locale}/dashboard/courts`);
     return { success: true };
 }
@@ -769,9 +830,10 @@ export async function deleteCourtAction(courtId: string) {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return { error: "Not authenticated" };
 
-    const { data: courtRow } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: courtRow } = await (supabase as any)
         .from("courts")
-        .select("facility_id")
+        .select("facility_id, name, sport_id, capacity, price_per_hour, is_active")
         .eq("id", courtId)
         .single();
     if (!courtRow) return { error: "Court not found" };
@@ -790,6 +852,27 @@ export async function deleteCourtAction(courtId: string) {
         .eq("id", courtId);
 
     if (error) return { error: error.message };
+
+    // SAH-138: snapshot the deleted court so we can reconstruct it if a
+    // deletion turns out to be wrong (e.g. owner deletes a court mid-dispute).
+    await logAuditEvent({
+        actorId: user.id,
+        actorRole: "business",
+        action: "court.delete",
+        targetType: "court",
+        targetId: courtId,
+        metadata: {
+            facility_id: courtRow.facility_id,
+            snapshot: {
+                name: courtRow.name,
+                sport_id: courtRow.sport_id,
+                capacity: courtRow.capacity,
+                price_per_hour: courtRow.price_per_hour,
+                is_active: courtRow.is_active,
+            },
+        },
+    });
+
     revalidatePath(`/${locale}/dashboard/courts`);
     return { success: true };
 }
@@ -825,11 +908,32 @@ export async function saveFacilityHoursAction(
         close_time: h.is_closed ? null : h.close_time,
     }));
 
+    // SAH-138: fetch previous hours so the audit row carries both states.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: previousHours } = await (supabase as any)
+        .from("facility_hours")
+        .select("day_of_week, is_closed, open_time, close_time")
+        .eq("facility_id", facilityId)
+        .order("day_of_week");
+
     const { error } = await supabase
         .from("facility_hours")
         .upsert(rows, { onConflict: "facility_id,day_of_week" });
 
     if (error) return { error: error.message };
+
+    await logAuditEvent({
+        actorId: user.id,
+        actorRole: "business",
+        action: "facility.hours_update",
+        targetType: "facility",
+        targetId: facilityId,
+        metadata: {
+            previous: previousHours ?? [],
+            next: parsed.data.hours,
+        },
+    });
+
     revalidatePath(`/${locale}/dashboard/facility`);
     return { success: true };
 }
