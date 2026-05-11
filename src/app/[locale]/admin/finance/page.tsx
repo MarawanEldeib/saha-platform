@@ -6,7 +6,7 @@ import Link from "next/link";
 import { format } from "date-fns";
 import { DollarSign, TrendingUp, AlertTriangle, RefreshCw, Filter, ExternalLink } from "lucide-react";
 import type { Metadata } from "next";
-import { PLATFORM_FEE_PERCENT } from "@/lib/stripe";
+import { getPlatformFeePercent } from "@/lib/platform-settings";
 
 export const metadata: Metadata = { title: "Admin · Finance — Saha" };
 
@@ -51,6 +51,7 @@ export default async function AdminFinancePage({
         .from("profiles").select("role").eq("id", user.id).single();
     if ((profile as { role: string } | null)?.role !== "admin") redirect(`/${locale}`);
 
+    const platformFeePercent = await getPlatformFeePercent();
     const sp = await searchParams;
     const now = new Date();
     const defaultFrom = new Date(now.getTime() - 90 * 86_400_000);
@@ -109,8 +110,8 @@ export default async function AdminFinancePage({
         (sum, r) => sum + Number((r as { total_price: number | string }).total_price ?? 0), 0);
     const gross30d = (revenue30dRows ?? []).reduce(
         (sum, r) => sum + Number((r as { total_price: number | string }).total_price ?? 0), 0);
-    const lifetimeFees = lifetimeGross * (PLATFORM_FEE_PERCENT / 100);
-    const fees30d = gross30d * (PLATFORM_FEE_PERCENT / 100);
+    const lifetimeFees = lifetimeGross * (platformFeePercent / 100);
+    const fees30d = gross30d * (platformFeePercent / 100);
 
     // Total dispute amount at risk (sum metadata.amount, which is in cents from Stripe).
     const disputeRows = (openDisputesData ?? []) as Array<{ metadata: { amount?: number; currency?: string } | null }>;
@@ -134,7 +135,7 @@ export default async function AdminFinancePage({
             const amount = Number(r.total_price ?? 0);
             existing.bookings += 1;
             existing.gross += amount;
-            existing.fees += amount * (PLATFORM_FEE_PERCENT / 100);
+            existing.fees += amount * (platformFeePercent / 100);
             facilityMap.set(fac.id, existing);
         }
         const amount = Number(r.total_price ?? 0);
@@ -158,7 +159,7 @@ export default async function AdminFinancePage({
                 <DollarSign className="h-5 w-5 text-emerald-500" />
                 <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Finance</h1>
                 <span className="text-xs text-gray-500 dark:text-gray-400">
-                    Platform fee: {PLATFORM_FEE_PERCENT}%
+                    Platform fee: {platformFeePercent}%
                 </span>
             </div>
 
@@ -216,7 +217,7 @@ export default async function AdminFinancePage({
                     icon={<DollarSign className="h-4 w-4" />}
                 />
                 <KpiCard
-                    label={`Platform fees (${PLATFORM_FEE_PERCENT}%)`}
+                    label={`Platform fees (${platformFeePercent}%)`}
                     value={aedFmt.format(lifetimeFees)}
                     sub={`${aedFmt.format(fees30d)} in last 30d`}
                     icon={<DollarSign className="h-4 w-4" />}

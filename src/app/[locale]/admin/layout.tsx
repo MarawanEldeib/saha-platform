@@ -37,7 +37,7 @@ const navItems: NavItem[] = [
     { href: "admin/events", labelKey: "events", icon: CalendarDays, iconName: "CalendarDays" },
     { href: "admin/reviews", labelKey: "reviews", icon: MessageSquare, iconName: "MessageSquare" },
     { href: "admin/audit-log", labelKey: "audit_log", icon: ScrollText, iconName: "ScrollText" },
-    { href: "admin/settings", labelKey: "settings", icon: Settings, iconName: "Settings", comingSoon: true },
+    { href: "admin/settings", labelKey: "settings", icon: Settings, iconName: "Settings" },
 ];
 
 export default async function AdminLayout({
