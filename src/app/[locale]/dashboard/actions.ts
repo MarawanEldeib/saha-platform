@@ -1337,24 +1337,39 @@ export async function updateProfileAction(formData: FormData) {
     const parsed = profileUpdateSchema.safeParse(raw);
     if (!parsed.success) return { error: parsed.error.issues[0].message };
 
-    // SAH-79: changing the phone number invalidates the previous
-    // verification — flip phone_verified to false on update so the next
-    // booking confirmation send is gated until the user re-verifies.
+    // SAH-79: phone changes must go through the verify-before-persist
+    // path (startPhoneVerificationAction → checkPhoneVerificationAction).
+    // This action accepts:
+    //   - display_name updates
+    //   - clearing the phone (empty string -> null)
+    // It rejects setting a non-empty phone — the client must verify first.
     const { data: existing } = await supabase
         .from("profiles")
         .select("phone")
         .eq("id", user.id)
         .single();
     const previousPhone = (existing as { phone: string | null } | null)?.phone ?? null;
-    const phoneChanged = (parsed.data.phone || null) !== previousPhone;
+    const nextPhone = parsed.data.phone ? parsed.data.phone : null;
+    const phoneChanged = nextPhone !== previousPhone;
 
-    const { error } = await supabase
+    if (phoneChanged && nextPhone !== null) {
+        return { error: "Verify the new phone number via WhatsApp first." };
+    }
+
+    const update: Record<string, unknown> = {
+        display_name: parsed.data.display_name,
+    };
+    if (phoneChanged) {
+        // Clearing the phone — drop verified state too.
+        update.phone = null;
+        update.phone_verified = false;
+        update.phone_verification_sid = null;
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error } = await (supabase as any)
         .from("profiles")
-        .update({
-            display_name: parsed.data.display_name,
-            phone: parsed.data.phone || null,
-            ...(phoneChanged ? { phone_verified: false, phone_verification_sid: null } : {}),
-        } as never)
+        .update(update)
         .eq("id", user.id);
 
     if (error) return { error: error.message };
@@ -1363,74 +1378,97 @@ export async function updateProfileAction(formData: FormData) {
 }
 
 // ---------------------------------------------------------------------------
-// SAH-79: WhatsApp OTP — send a code to the caller's stored phone.
-// Returns 'not_configured' when Twilio Verify isn't set up so the UI can
-// show "save phone but skip OTP" gracefully instead of erroring.
+// SAH-79: WhatsApp OTP — verify-before-persist.
+//
+// The caller provides the phone number they WANT to set (it isn't yet
+// persisted to profiles). Twilio Verify sends a code via WhatsApp. The
+// matching check action takes (phone, code) and only writes the phone +
+// flips phone_verified=true on approval.
+//
+// Rate limits: 3 sends per hour per target phone (prevents OTP spam to
+// someone else's number), 5 sends per day per signed-in user (prevents a
+// single attacker from cycling through phone numbers).
 // ---------------------------------------------------------------------------
-export async function startPhoneVerificationAction() {
+
+const PHONE_E164 = /^\+[1-9]\d{6,14}$/;
+
+export async function startPhoneVerificationAction(phone: string) {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return { error: "Not authenticated" };
 
-    const { data: profile } = await supabase
+    const normalized = (phone ?? "").trim();
+    if (!PHONE_E164.test(normalized)) {
+        return { error: "Enter a valid number with country code (e.g. +971501234567)." };
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: existing } = await (supabase as any)
         .from("profiles")
         .select("phone, phone_verified")
         .eq("id", user.id)
         .single();
+    if (existing && existing.phone === normalized && existing.phone_verified) {
+        return { error: "This number is already verified." };
+    }
 
-    const phone = (profile as { phone: string | null } | null)?.phone;
-    if (!phone) return { error: "Save your phone number first." };
-    if ((profile as { phone_verified: boolean } | null)?.phone_verified) {
-        return { error: "Phone is already verified." };
+    const { rateLimitByOwnerKey } = await import("@/lib/rate-limit");
+    const phoneRl = await rateLimitByOwnerKey("phone_otp_per_phone", normalized);
+    if (!phoneRl.success) {
+        return { error: `Too many codes sent to this number. Try again in ${Math.ceil(phoneRl.retryAfter / 60)} min.`, retryAfter: phoneRl.retryAfter };
+    }
+    const userRl = await rateLimitByOwnerKey("phone_otp_per_user", user.id);
+    if (!userRl.success) {
+        return { error: `Daily verification limit reached. Try again in ${Math.ceil(userRl.retryAfter / 3600)} h.`, retryAfter: userRl.retryAfter };
     }
 
     const { startWhatsAppVerification } = await import("@/lib/twilio");
-    const result = await startWhatsAppVerification(phone);
+    const result = await startWhatsAppVerification(normalized);
 
-    if (result.status === "not_configured") {
-        return { notConfigured: true };
-    }
+    if (result.status === "not_configured") return { notConfigured: true };
     if (result.status === "error") return { error: result.message };
 
-    if ("sid" in result) {
-        await supabase
-            .from("profiles")
-            .update({ phone_verification_sid: result.sid } as never)
-            .eq("id", user.id);
-    }
     return { success: true, status: result.status };
 }
 
-export async function checkPhoneVerificationAction(code: string) {
+export async function checkPhoneVerificationAction(phone: string, code: string) {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return { error: "Not authenticated" };
 
-    const { data: profile } = await supabase
-        .from("profiles")
-        .select("phone")
-        .eq("id", user.id)
-        .single();
-
-    const phone = (profile as { phone: string | null } | null)?.phone;
-    if (!phone) return { error: "No phone on file." };
+    const normalized = (phone ?? "").trim();
+    if (!PHONE_E164.test(normalized)) {
+        return { error: "Phone number is invalid." };
+    }
+    if (!code || code.length < 4) return { error: "Enter the code from WhatsApp." };
 
     const { checkWhatsAppVerification } = await import("@/lib/twilio");
-    const result = await checkWhatsAppVerification(phone, code);
+    const result = await checkWhatsAppVerification(normalized, code);
 
     if (result.status === "not_configured") return { notConfigured: true };
-    if (result.status === "approved") {
-        await supabase
-            .from("profiles")
-            .update({ phone_verified: true, phone_verification_sid: null } as never)
-            .eq("id", user.id);
-        revalidatePath("/", "layout");
-        return { success: true };
-    }
     if (result.status === "incorrect") return { error: "Incorrect code. Try again." };
     if (result.status === "expired") return { error: "Code expired — request a new one." };
     if (result.status === "pending") return { error: "Verification still pending." };
-    return { error: result.message ?? "Verification failed." };
+    if (result.status === "error") return { error: result.message ?? "Verification failed." };
+
+    if (result.status === "approved") {
+        // Atomic: write phone + phone_verified together. The DB trigger
+        // (20260511070000_profile_phone_requires_verified.sql) enforces
+        // this contract as a second line of defence.
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { error } = await (supabase as any)
+            .from("profiles")
+            .update({
+                phone: normalized,
+                phone_verified: true,
+                phone_verification_sid: null,
+            })
+            .eq("id", user.id);
+        if (error) return { error: error.message };
+        revalidatePath("/", "layout");
+        return { success: true };
+    }
+    return { error: "Verification failed." };
 }
 
 // ---------------------------------------------------------------------------
