@@ -64,6 +64,8 @@ const POLICIES = {
     review_submit: { points: 5, windowSec: 60 * 60 },       // 5 / 1 h / IP
     public_api: { points: 60, windowSec: 60 },              // 60 / 1 min / IP — generous for AI agents (SAH-35)
     messages_send: { points: 30, windowSec: 60 * 60 },      // 30 / 1 h / IP — matchmaking DM spam guard (SAH-96)
+    phone_otp_per_phone: { points: 3, windowSec: 60 * 60 }, // 3 / 1 h / phone — SAH-79
+    phone_otp_per_user: { points: 5, windowSec: 24 * 60 * 60 }, // 5 / 24 h / user — SAH-79
 } as const;
 
 export type RatePolicy = keyof typeof POLICIES;
@@ -82,6 +84,25 @@ export async function rateLimit(policy: RatePolicy, suffix?: string): Promise<Ra
     } catch (err) {
         // Don't fail-closed on Upstash errors — better to serve the request
         // than to lock out real users when the rate-limit backend hiccups.
+        console.warn("[rate-limit] backend error, allowing request", err);
+        return { success: true, retryAfter: 0 };
+    }
+}
+
+// SAH-79: per-phone and per-user OTP throttles need a key that ISN'T tied
+// to the caller's IP — same phone from different IPs still consumes the
+// same budget. This variant uses the supplied ownerKey directly.
+export async function rateLimitByOwnerKey(policy: RatePolicy, ownerKey: string): Promise<RateLimitResult> {
+    const cfg = POLICIES[policy];
+    const limiter = getLimiter(policy, cfg.points, cfg.windowSec);
+    if (!limiter) {
+        return { success: true, retryAfter: 0 };
+    }
+    try {
+        const { success, reset } = await limiter.limit(`${policy}:owner:${ownerKey}`);
+        const retryAfter = success ? 0 : Math.max(0, Math.ceil((reset - Date.now()) / 1000));
+        return { success, retryAfter };
+    } catch (err) {
         console.warn("[rate-limit] backend error, allowing request", err);
         return { success: true, retryAfter: 0 };
     }

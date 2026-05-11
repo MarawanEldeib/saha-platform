@@ -2,10 +2,16 @@
 
 import React from "react";
 import { useRouter } from "next/navigation";
-import { updateProfileAction, updateAvatarAction, removeAvatarAction } from "../actions";
+import {
+    updateProfileAction,
+    updateAvatarAction,
+    removeAvatarAction,
+    startPhoneVerificationAction,
+    checkPhoneVerificationAction,
+} from "../actions";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
-import { CheckCircle, Camera, Loader2 } from "lucide-react";
+import { CheckCircle, Camera, Loader2, ShieldCheck, MessageCircle } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { createClient } from "@/lib/supabase/client";
 
@@ -13,6 +19,8 @@ interface Props {
     initialName: string;
     initialPhone: string;
     initialAvatar?: string | null;
+    /** SAH-79: drives the verify badge + skip-OTP logic when phone is unchanged. */
+    initialPhoneVerified?: boolean;
 }
 
 async function cropToSquareJpeg(file: File): Promise<Blob> {
@@ -46,7 +54,7 @@ async function cropToSquareJpeg(file: File): Promise<Blob> {
     });
 }
 
-export function ProfileForm({ initialName, initialPhone, initialAvatar }: Props) {
+export function ProfileForm({ initialName, initialPhone, initialAvatar, initialPhoneVerified = false }: Props) {
     const t = useTranslations("account");
     const router = useRouter();
 
@@ -57,6 +65,19 @@ export function ProfileForm({ initialName, initialPhone, initialAvatar }: Props)
     const [uploading, setUploading] = React.useState(false);
     const [removing, setRemoving] = React.useState(false);
     const fileInputRef = React.useRef<HTMLInputElement>(null);
+
+    // SAH-79 verify state.
+    const [displayName, setDisplayName] = React.useState(initialName);
+    const [phone, setPhone] = React.useState(initialPhone);
+    const [verifyStage, setVerifyStage] = React.useState<"idle" | "code-sent">("idle");
+    const [otpCode, setOtpCode] = React.useState("");
+    const [verifyLoading, setVerifyLoading] = React.useState(false);
+    const [verifyError, setVerifyError] = React.useState<string | null>(null);
+    const [verifyConfigured, setVerifyConfigured] = React.useState(true);
+
+    const phoneChanged = phone.trim() !== initialPhone.trim();
+    const phoneCleared = phoneChanged && phone.trim() === "";
+    const phoneSetToNew = phoneChanged && phone.trim() !== "";
 
     const handleAvatarClick = () => fileInputRef.current?.click();
 
@@ -110,16 +131,68 @@ export function ProfileForm({ initialName, initialPhone, initialAvatar }: Props)
         }
     };
 
+    // ----- Phone verify flow (SAH-79) ---------------------------------------
+
+    const handleSendCode = async () => {
+        setVerifyError(null);
+        setVerifyLoading(true);
+        try {
+            const res = await startPhoneVerificationAction(phone.trim());
+            if ("notConfigured" in res && res.notConfigured) {
+                setVerifyConfigured(false);
+                setVerifyError("Phone verification isn't configured on this environment.");
+                return;
+            }
+            if (res?.error) { setVerifyError(res.error); return; }
+            setVerifyStage("code-sent");
+        } finally {
+            setVerifyLoading(false);
+        }
+    };
+
+    const handleConfirmCode = async () => {
+        setVerifyError(null);
+        setVerifyLoading(true);
+        try {
+            const res = await checkPhoneVerificationAction(phone.trim(), otpCode.trim());
+            if ("notConfigured" in res && res.notConfigured) {
+                setVerifyConfigured(false);
+                setVerifyError("Phone verification isn't configured on this environment.");
+                return;
+            }
+            if (res?.error) { setVerifyError(res.error); return; }
+            // Success — phone is persisted server-side.
+            setVerifyStage("idle");
+            setOtpCode("");
+            setSuccess(true);
+            router.refresh();
+        } finally {
+            setVerifyLoading(false);
+        }
+    };
+
+    // ----- Profile (display_name + optional phone-clear) save ----------------
+
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         setError(null);
         setSuccess(false);
+
+        // Phone-set-to-new requires the verify flow — refuse to submit it here.
+        if (phoneSetToNew) {
+            setError("Verify the new phone number via WhatsApp first.");
+            return;
+        }
+
         setLoading(true);
-        const fd = new FormData(e.currentTarget);
+        const fd = new FormData();
+        fd.set("display_name", displayName);
+        fd.set("phone", phoneCleared ? "" : initialPhone);
         const result = await updateProfileAction(fd);
         setLoading(false);
         if (result?.error) { setError(result.error); return; }
         setSuccess(true);
+        router.refresh();
     };
 
     const initials = initialName
@@ -187,26 +260,105 @@ export function ProfileForm({ initialName, initialPhone, initialAvatar }: Props)
                 <Input
                     label={t("display_name")}
                     name="display_name"
-                    defaultValue={initialName}
+                    value={displayName}
+                    onChange={(e) => setDisplayName(e.target.value)}
                     required
                 />
-                <div className="space-y-1">
-                    <Input
-                        label={t("phone_label")}
+
+                {/* Phone + verify state machine */}
+                <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                        <label htmlFor="phone-input" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                            {t("phone_label")}
+                        </label>
+                        {!phoneChanged && initialPhone && initialPhoneVerified && (
+                            <span className="inline-flex items-center gap-1 text-xs font-medium text-emerald-700 dark:text-emerald-400">
+                                <ShieldCheck className="h-3.5 w-3.5" /> Verified
+                            </span>
+                        )}
+                        {!phoneChanged && initialPhone && !initialPhoneVerified && (
+                            <span className="text-xs font-medium text-amber-600 dark:text-amber-400">Not verified</span>
+                        )}
+                    </div>
+                    <input
+                        id="phone-input"
                         name="phone"
                         type="tel"
+                        value={phone}
+                        onChange={(e) => { setPhone(e.target.value); setVerifyStage("idle"); setVerifyError(null); }}
                         placeholder={t("phone_placeholder")}
-                        defaultValue={initialPhone}
+                        className="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
                     />
                     <p className="text-xs text-gray-500 dark:text-gray-400">{t("phone_hint")}</p>
+
+                    {phoneSetToNew && verifyStage === "idle" && (
+                        <div className="rounded-lg border border-amber-200 dark:border-amber-900/50 bg-amber-50 dark:bg-amber-950/20 px-3 py-2.5 text-xs space-y-2">
+                            <p className="text-amber-700 dark:text-amber-400">
+                                We&apos;ll send a 6-digit code to <span className="font-mono">{phone.trim()}</span> on WhatsApp. The number isn&apos;t saved until you confirm the code.
+                            </p>
+                            {verifyError && <p className="text-red-600 dark:text-red-400">{verifyError}</p>}
+                            <Button
+                                type="button"
+                                variant="primary"
+                                size="sm"
+                                onClick={handleSendCode}
+                                loading={verifyLoading}
+                                disabled={!verifyConfigured}
+                            >
+                                <MessageCircle className="h-3.5 w-3.5 me-1.5" />
+                                Send WhatsApp code
+                            </Button>
+                        </div>
+                    )}
+
+                    {phoneSetToNew && verifyStage === "code-sent" && (
+                        <div className="rounded-lg border border-emerald-200 dark:border-emerald-900/50 bg-emerald-50 dark:bg-emerald-950/20 px-3 py-2.5 text-xs space-y-2">
+                            <p className="text-emerald-700 dark:text-emerald-400">
+                                Code sent to <span className="font-mono">{phone.trim()}</span>. Check WhatsApp.
+                            </p>
+                            <div className="flex gap-2">
+                                <input
+                                    type="text"
+                                    inputMode="numeric"
+                                    autoComplete="one-time-code"
+                                    value={otpCode}
+                                    onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, "").slice(0, 8))}
+                                    placeholder="6-digit code"
+                                    className="flex-1 px-3 py-1.5 text-sm rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white font-mono tracking-widest"
+                                />
+                                <Button
+                                    type="button"
+                                    variant="primary"
+                                    size="sm"
+                                    onClick={handleConfirmCode}
+                                    loading={verifyLoading}
+                                    disabled={otpCode.length < 4}
+                                >
+                                    Confirm
+                                </Button>
+                            </div>
+                            {verifyError && <p className="text-red-600 dark:text-red-400">{verifyError}</p>}
+                            <button
+                                type="button"
+                                onClick={handleSendCode}
+                                disabled={verifyLoading}
+                                className="text-xs text-gray-600 dark:text-gray-400 hover:underline disabled:opacity-50"
+                            >
+                                Resend code
+                            </button>
+                        </div>
+                    )}
                 </div>
+
                 {error && <p className="text-sm text-red-500" role="alert">{error}</p>}
                 {success && (
                     <p className="text-sm text-emerald-600 flex items-center gap-1">
                         <CheckCircle className="h-4 w-4" /> {t("saved")}
                     </p>
                 )}
-                <Button type="submit" variant="primary" loading={loading}>{t("save")}</Button>
+                <Button type="submit" variant="primary" loading={loading} disabled={phoneSetToNew}>
+                    {t("save")}
+                </Button>
             </form>
         </div>
     );
