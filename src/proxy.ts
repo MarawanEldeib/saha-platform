@@ -133,28 +133,27 @@ export async function proxy(request: NextRequest) {
         return redirect;
     }
 
-    // SAH-80: admins must complete TOTP MFA challenge to enter /admin.
-    // The /admin/2fa route is excluded so the challenge UI itself stays
-    // reachable on aal1 sessions.
+    // SAH-80: admins must reach aal2 to enter /admin. The /admin/2fa route
+    // is excluded so the challenge/enrolment UI itself stays reachable on
+    // aal1 sessions.
+    //
+    // Three states from getAuthenticatorAssuranceLevel():
+    //   currentLevel=aal1 / nextLevel=aal2 → factor enrolled, not challenged → bounce to /admin/2fa challenge
+    //   currentLevel=aal1 / nextLevel=aal1 → NO factor enrolled at all      → bounce to /admin/2fa enrolment
+    //   currentLevel=aal2                  → fully authenticated             → pass through
     if (
         role === "admin" &&
         matchesAny(pathname, ADMIN_ONLY) &&
         !pathname.includes("/admin/2fa")
     ) {
         const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
-        // currentLevel='aal1' nextLevel='aal2' means a factor is enrolled
-        // but the session hasn't been challenged yet — force challenge.
-        if (aal && aal.currentLevel === "aal1" && aal.nextLevel === "aal2") {
+        if (aal && aal.currentLevel !== "aal2") {
             const challengeUrl = new URL(`/${locale}/admin/2fa`, request.url);
             challengeUrl.searchParams.set("next", pathname);
             const redirect = NextResponse.redirect(challengeUrl);
             attachCspHeaders(redirect, nonce, csp);
             return redirect;
         }
-        // currentLevel='aal1' nextLevel='aal1' means no factor enrolled.
-        // We don't force enrolment automatically — admins set it up via the
-        // /admin/2fa page when they're ready, or it's prompted post-Supabase
-        // dashboard MFA toggle (see OPS.md).
     }
 
     if (matchesAny(pathname, BUSINESS_OR_ADMIN) && role !== "business" && role !== "admin") {

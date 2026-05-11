@@ -62,6 +62,16 @@ async function assertAdmin() {
         throw new Error("Forbidden");
     }
 
+    // SAH-80: require aal2 (TOTP MFA satisfied) for every mutating admin
+    // action. Middleware already redirects /admin/* page loads to
+    // /admin/2fa when the session is at aal1, but server actions can be
+    // invoked from a stale tab whose session has aged back to aal1, or
+    // via a direct POST from outside the page flow. Belt-and-braces.
+    const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+    if (aal && aal.currentLevel !== "aal2") {
+        throw new Error("Two-factor authentication required. Sign in again at /admin/2fa.");
+    }
+
     return { supabase, adminClient: createAdminClient(), userId: user.id, role };
 }
 

@@ -1,7 +1,8 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { getLocale } from "next-intl/server";
-import { Settings as SettingsIcon, AlertTriangle } from "lucide-react";
+import Link from "next/link";
+import { Settings as SettingsIcon, AlertTriangle, ShieldCheck, ShieldAlert } from "lucide-react";
 import type { Metadata } from "next";
 import { listPlatformSettings } from "@/lib/platform-settings";
 import { SettingsForm } from "./SettingsForm";
@@ -23,6 +24,15 @@ export default async function AdminSettingsPage() {
 
     const get = (k: string) => byKey.get(k)?.value;
 
+    // SAH-80: surface the current admin's TOTP MFA state directly on the
+    // settings page so they can enrol / re-verify without hunting for
+    // /admin/2fa in the URL bar.
+    const { data: factorsList } = await supabase.auth.mfa.listFactors();
+    const verifiedFactors = factorsList?.totp?.filter((f) => f.status === "verified") ?? [];
+    const hasFactor = verifiedFactors.length > 0;
+    const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+    const aalSatisfied = aal?.currentLevel === "aal2";
+
     return (
         <div className="space-y-6 max-w-2xl">
             <div className="flex items-center gap-3">
@@ -37,6 +47,56 @@ export default async function AdminSettingsPage() {
                     The platform fee in particular affects every new Stripe Checkout session — verify a test booking after changing.
                 </div>
             </div>
+
+            {/* SAH-80: two-factor authentication status */}
+            <section className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-5 space-y-3">
+                <h2 className="text-sm font-semibold text-gray-900 dark:text-white">Two-factor authentication</h2>
+                <div className="flex items-start gap-3">
+                    {hasFactor && aalSatisfied ? (
+                        <>
+                            <ShieldCheck className="h-5 w-5 text-emerald-500 shrink-0 mt-0.5" />
+                            <div className="text-sm">
+                                <div className="font-medium text-gray-900 dark:text-white">TOTP enrolled · session at aal2</div>
+                                <div className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                                    Factor: {verifiedFactors[0]!.friendly_name ?? "(unnamed)"} · added{" "}
+                                    {verifiedFactors[0]!.created_at
+                                        ? new Date(verifiedFactors[0]!.created_at!).toLocaleDateString()
+                                        : "—"}
+                                </div>
+                            </div>
+                        </>
+                    ) : hasFactor ? (
+                        <>
+                            <ShieldAlert className="h-5 w-5 text-amber-500 shrink-0 mt-0.5" />
+                            <div className="text-sm">
+                                <div className="font-medium text-gray-900 dark:text-white">TOTP enrolled but session at aal1</div>
+                                <div className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                                    Verify a 6-digit code to lift this session to aal2.
+                                </div>
+                            </div>
+                        </>
+                    ) : (
+                        <>
+                            <ShieldAlert className="h-5 w-5 text-red-500 shrink-0 mt-0.5" />
+                            <div className="text-sm">
+                                <div className="font-medium text-gray-900 dark:text-white">No second factor enrolled</div>
+                                <div className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                                    Required for admin role. Mutating actions will be rejected until you finish enrolment.
+                                </div>
+                            </div>
+                        </>
+                    )}
+                </div>
+                <Link
+                    href={`/${locale}/admin/2fa`}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gray-900 dark:bg-white text-white dark:text-gray-900 text-xs font-medium hover:opacity-90"
+                >
+                    {hasFactor ? "Manage / re-verify" : "Enrol now"}
+                </Link>
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                    Lost access? See <span className="font-mono">docs/RUNBOOK_ADMIN.md</span> for the Supabase factor-reset procedure.
+                </p>
+            </section>
 
             {/* Pricing */}
             <Section title="Pricing">

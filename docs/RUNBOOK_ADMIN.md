@@ -170,4 +170,45 @@ ORDER BY created_at;
 
 ---
 
-*Last updated: 2026-05-09.*
+## Admin TOTP MFA — recovery procedure (SAH-80)
+
+Admins are required to enrol a TOTP factor and pass a challenge on every login session (`aal2`). Middleware bounces any `/admin/*` page to `/admin/2fa`, and `assertAdmin()` rejects mutating server actions on `aal1`.
+
+### If an admin loses their authenticator (phone wiped, app reset)
+
+There is no self-serve reset on purpose — the whole point of MFA is that one stolen credential isn't enough. Recovery is manual.
+
+**Procedure:**
+
+1. **Verify identity out-of-band.** Confirm the request is real before touching the DB — phone call or WhatsApp video to a number we already have on file, not the email account that may itself be compromised.
+2. **Delete the stale factor via Supabase service-role.** Open the Supabase SQL editor (or run via the MCP) and remove the factor row:
+
+   ```sql
+   DELETE FROM auth.mfa_factors
+   WHERE user_id = '<admin user uuid>';
+   ```
+
+   This drops both the verified factor and any half-enrolled unverified ones.
+3. **Tell the admin to log in again.** Their next session lands at `aal1` with no factor enrolled. Middleware bounces them to `/admin/2fa`, which detects "no factor" and switches to enrolment mode (QR code).
+4. **Verify the new factor.** They scan, enter a 6-digit code, the row flips to `aal2`, and middleware lets them through.
+
+### If a factor needs to be replaced (e.g. phone upgrade, no outage yet)
+
+The admin can do this themselves while still logged in:
+
+1. Open `/admin/settings` → "Manage / re-verify" → land on `/admin/2fa`.
+2. The page renders in challenge mode for the existing factor; pass the challenge to reach `aal2`.
+3. Then in Supabase Studio (Auth → Users → this admin → MFA), remove the old factor.
+4. Re-load `/admin/2fa` — now in enrolment mode — scan the new device.
+
+### Why not put "remove my factor" in the UI?
+
+Because then a stolen session could remove the factor and re-enrol from a malicious device. Keeping it manual + out-of-band verification is the security boundary.
+
+### Audit trail
+
+Every successful login + every `auth.mfa.verify` call is logged in Supabase's `auth.audit_log_entries`. Cross-reference against our own `audit_log` (admin actions) if you suspect a compromise.
+
+---
+
+*Last updated: 2026-05-11.*
