@@ -192,7 +192,7 @@ export default async function AdminBookingsPage({
                                     </td>
                                     <td className="px-4 py-3 text-end">
                                         <Link
-                                            href={`/${locale}/bookings/${b.id}`}
+                                            href={`/${locale}/admin/bookings/${b.id}`}
                                             className="inline-flex items-center gap-1 text-xs text-emerald-600 dark:text-emerald-400 hover:underline"
                                         >
                                             View <ExternalLink className="h-3 w-3" />
