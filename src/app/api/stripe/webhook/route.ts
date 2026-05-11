@@ -159,6 +159,23 @@ export async function POST(req: NextRequest) {
                 const playerEmail = user?.email;
 
                 if (playerEmail) {
+                    // SAH-90: render the Tax Invoice PDF and attach. Failure
+                    // here is non-blocking — the email still goes out, the
+                    // player can re-download from /bookings/[id]/invoice.
+                    let invoicePdf: { buffer: Buffer; invoiceNumber: string } | null = null;
+                    try {
+                        const { renderInvoicePdf } = await import("@/lib/pdf/render-invoice");
+                        const rendered = await renderInvoicePdf(booking.id);
+                        if (rendered) {
+                            invoicePdf = {
+                                buffer: rendered.buffer,
+                                invoiceNumber: rendered.data.invoiceNumber,
+                            };
+                        }
+                    } catch (err) {
+                        console.error("[webhook] invoice PDF render failed", err);
+                    }
+
                     await sendBookingConfirmationEmail({
                         bookingId: booking.id,
                         playerName: profile.display_name || "Player",
@@ -174,6 +191,7 @@ export async function POST(req: NextRequest) {
                         totalPrice: booking.total_price || 0,
                         currency: booking.currency || "USD",
                         appUrl: process.env.NEXT_PUBLIC_APP_URL ?? "",
+                        invoicePdf,
                     }).catch((error) => {
                         console.error("Error sending booking confirmation email:", error);
                         /* Email not blocking — fire and forget */
