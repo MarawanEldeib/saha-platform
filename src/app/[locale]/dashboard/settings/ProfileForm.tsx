@@ -21,6 +21,8 @@ interface Props {
     initialAvatar?: string | null;
     /** SAH-79: drives the verify badge + skip-OTP logic when phone is unchanged. */
     initialPhoneVerified?: boolean;
+    /** SAH-90: optional 15-digit UAE TRN to print on tax invoices. */
+    initialTrn?: string;
 }
 
 async function cropToSquareJpeg(file: File): Promise<Blob> {
@@ -54,7 +56,7 @@ async function cropToSquareJpeg(file: File): Promise<Blob> {
     });
 }
 
-export function ProfileForm({ initialName, initialPhone, initialAvatar, initialPhoneVerified = false }: Props) {
+export function ProfileForm({ initialName, initialPhone, initialAvatar, initialPhoneVerified = false, initialTrn = "" }: Props) {
     const t = useTranslations("account");
     const router = useRouter();
 
@@ -69,6 +71,8 @@ export function ProfileForm({ initialName, initialPhone, initialAvatar, initialP
     // SAH-79 verify state.
     const [displayName, setDisplayName] = React.useState(initialName);
     const [phone, setPhone] = React.useState(initialPhone);
+    // SAH-90: optional player TRN.
+    const [trn, setTrn] = React.useState(initialTrn);
     const [verifyStage, setVerifyStage] = React.useState<"idle" | "code-sent">("idle");
     const [otpCode, setOtpCode] = React.useState("");
     const [verifyLoading, setVerifyLoading] = React.useState(false);
@@ -188,6 +192,7 @@ export function ProfileForm({ initialName, initialPhone, initialAvatar, initialP
         const fd = new FormData();
         fd.set("display_name", displayName);
         fd.set("phone", phoneCleared ? "" : initialPhone);
+        fd.set("trn", trn.trim());
         const result = await updateProfileAction(fd);
         setLoading(false);
         if (result?.error) { setError(result.error); return; }
@@ -348,6 +353,27 @@ export function ProfileForm({ initialName, initialPhone, initialAvatar, initialP
                             </button>
                         </div>
                     )}
+                </div>
+
+                {/* SAH-90: optional player TRN for tax-invoice corporate expenses */}
+                <div className="space-y-1">
+                    <label htmlFor="trn-input" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                        TRN (optional)
+                    </label>
+                    <input
+                        id="trn-input"
+                        name="trn"
+                        type="text"
+                        inputMode="numeric"
+                        maxLength={15}
+                        value={trn}
+                        onChange={(e) => setTrn(e.target.value.replace(/\D/g, "").slice(0, 15))}
+                        placeholder="100123456789012"
+                        className="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    />
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                        15-digit UAE Tax Registration Number. Prints on your booking tax invoices for corporate expensing.
+                    </p>
                 </div>
 
                 {error && <p className="text-sm text-red-500" role="alert">{error}</p>}

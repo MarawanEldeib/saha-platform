@@ -18,6 +18,7 @@ export interface Database {
                     phone: string | null;
                     phone_verified: boolean;
                     phone_verification_sid: string | null;
+                    trn: string | null;
                     no_show_count: number;
                     deletion_requested_at: string | null;
                     created_at: string;
@@ -31,6 +32,7 @@ export interface Database {
                     phone?: string | null;
                     phone_verified?: boolean;
                     phone_verification_sid?: string | null;
+                    trn?: string | null;
                     no_show_count?: number;
                     deletion_requested_at?: string | null;
                     created_at?: string;
@@ -43,6 +45,7 @@ export interface Database {
                     phone?: string | null;
                     phone_verified?: boolean;
                     phone_verification_sid?: string | null;
+                    trn?: string | null;
                     no_show_count?: number;
                     deletion_requested_at?: string | null;
                     updated_at?: string;

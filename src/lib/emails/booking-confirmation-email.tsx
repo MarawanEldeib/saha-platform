@@ -362,21 +362,33 @@ function generateGoogleCalendarLink(params: CalendarLinkParams): string {
 }
 
 export async function sendBookingConfirmationEmail(
-  props: BookingConfirmationEmailProps & { resendApiKey?: string }
+  props: BookingConfirmationEmailProps & {
+    resendApiKey?: string;
+    /** SAH-90: optional Tax-Invoice PDF, attached as `invoice-<short>.pdf`. */
+    invoicePdf?: { buffer: Buffer; invoiceNumber: string } | null;
+  }
 ): Promise<{ success: boolean; error?: string }> {
   try {
-    const { resendApiKey, ...emailProps } = props;
+    const { resendApiKey, invoicePdf, ...emailProps } = props;
     const html = await generateBookingConfirmationEmail(emailProps);
 
     // Import Resend dynamically to avoid issues if not configured
     const { Resend } = await import("resend");
     const resend = new Resend(resendApiKey || process.env.RESEND_API_KEY);
 
+    const attachments = invoicePdf
+      ? [{
+          filename: `${invoicePdf.invoiceNumber}.pdf`,
+          content: invoicePdf.buffer,
+        }]
+      : undefined;
+
     const result = await resend.emails.send({
       from: "Saha <noreply@saha.ae>",
       to: props.playerEmail,
       subject: `Booking Confirmed - ${props.courtName} on ${props.date}`,
       html,
+      attachments,
     });
 
     if (result.error) {

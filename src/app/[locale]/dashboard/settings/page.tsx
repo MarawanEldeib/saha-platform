@@ -14,7 +14,7 @@ export default async function SettingsPage() {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data: profile } = await (supabase as any)
         .from("profiles")
-        .select("display_name, role, phone, phone_verified")
+        .select("display_name, role, phone, phone_verified, trn")
         .eq("id", user.id)
         .single();
 
@@ -31,6 +31,7 @@ export default async function SettingsPage() {
                     initialName={profile?.display_name || ""}
                     initialPhone={profile?.phone || ""}
                     initialPhoneVerified={!!profile?.phone_verified}
+                    initialTrn={profile?.trn || ""}
                 />
             </div>
 

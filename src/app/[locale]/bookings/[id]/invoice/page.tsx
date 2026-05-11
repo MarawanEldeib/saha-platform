@@ -34,6 +34,7 @@ interface InvoiceData {
     } | null;
     profiles: {
         display_name: string | null;
+        trn: string | null;
     } | null;
 }
 
@@ -54,7 +55,7 @@ export default async function InvoicePage({ params }: { params: Promise<{ id: st
             id, date, start_time, end_time, num_players, total_price, currency,
             status, invoice_number, invoiced_at, player_id,
             courts(name, facility_id, facilities(id, name, address, city, country, phone, website, trn)),
-            profiles(display_name)
+            profiles(display_name, trn)
         `)
         .eq("id", id)
         .single();
@@ -150,6 +151,9 @@ export default async function InvoicePage({ params }: { params: Promise<{ id: st
                             <p className="text-xs uppercase text-gray-500 mb-1">Issued to</p>
                             <p className="font-semibold text-gray-900">{booking.profiles?.display_name ?? "Player"}</p>
                             <p className="text-gray-500">Booking ID: {booking.id.slice(0, 8)}</p>
+                            {booking.profiles?.trn && (
+                                <p className="text-gray-900 font-medium mt-1">TRN: {booking.profiles.trn}</p>
+                            )}
                         </div>
                     </section>
 

@@ -158,6 +158,9 @@ export type DeclineReasonInput = z.infer<typeof declineReasonSchema>;
 export const profileUpdateSchema = z.object({
     display_name: z.string().min(2, "Name must be at least 2 characters"),
     phone: z.string().regex(/^\+?[1-9]\d{6,14}$/, "Enter a valid number with country code (e.g. +971501234567)").optional().or(z.literal("")),
+    // SAH-90: optional player TRN — 15 digits per UAE FTA spec. Used to
+    // print the player's TRN on the tax invoice for corporate expenses.
+    trn: z.string().regex(/^\d{15}$/, "TRN must be 15 digits").optional().or(z.literal("")),
 });
 export type ProfileUpdateInput = z.infer<typeof profileUpdateSchema>;
 
