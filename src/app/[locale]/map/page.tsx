@@ -4,7 +4,7 @@ import React from "react";
 import { useTranslations, useLocale } from "next-intl";
 import dynamic from "next/dynamic";
 import { createClient } from "@/lib/supabase/client";
-import { Search, Loader2, ChevronRight, ChevronUp, MapPin, Sparkles } from "lucide-react";
+import { Search, Loader2, ChevronRight, ChevronUp, MapPin, Sparkles, X } from "lucide-react";
 import Link from "next/link";
 import type { Sport } from "@/types/database";
 import { parseSearchQueryAction } from "@/app/[locale]/dashboard/actions";
@@ -56,6 +56,13 @@ export default function MapPage() {
     const [aiHidden, setAiHidden] = React.useState(false);
     const [prayerFriendlyOnly, setPrayerFriendlyOnly] = React.useState(false);
 
+    // SAH-41: AI-applied filters. Stored as state so the existing fetch
+    // useEffect can pass them to the RPC, and so the chip below can render
+    // a clear-button. `aiLabel` is the human summary shown on the chip.
+    const [dayOfWeekFilter, setDayOfWeekFilter] = React.useState<number | null>(null);
+    const [timeWindow, setTimeWindow] = React.useState<{ start: string; end: string } | null>(null);
+    const [aiLabel, setAiLabel] = React.useState<string | null>(null);
+
     // Fetch sports for filter
     React.useEffect(() => {
         const fetchSports = async () => {
@@ -92,11 +99,15 @@ export default function MapPage() {
         const fetchFacilities = async () => {
             setLoading(true);
             const supabase = createClient();
-            const { data, error } = await supabase.rpc("facilities_within_radius", {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const { data, error } = await (supabase as any).rpc("facilities_within_radius", {
                 lat: userLat,
                 lng: userLng,
                 radius_km: 15,
                 sport_filter: selectedSport,
+                day_of_week_filter: dayOfWeekFilter,
+                time_window_start: timeWindow?.start ?? null,
+                time_window_end: timeWindow?.end ?? null,
             });
 
             if (!error && data) {
@@ -106,7 +117,7 @@ export default function MapPage() {
         };
 
         fetchFacilities();
-    }, [userLat, userLng, selectedSport]);
+    }, [userLat, userLng, selectedSport, dayOfWeekFilter, timeWindow]);
 
     const filteredFacilities = facilities
         .filter((f) =>
@@ -122,6 +133,81 @@ export default function MapPage() {
         setSelectedFacility(f);
         if (f) setSheetExpanded(false);
     };
+
+    // SAH-41: translate parsed AI filters into our filter state.
+    //  - sport      → selectedSport dropdown
+    //  - city       → searchQuery (existing client-side substring filter against f.city)
+    //  - date       → day-of-week int (facility_hours uses 0=Mon)
+    //  - time_of_day → time window passed to the RPC's facility_hours overlap check
+    const TIME_WINDOWS: Record<string, { start: string; end: string }> = {
+        morning: { start: "06:00", end: "12:00" },
+        afternoon: { start: "12:00", end: "17:00" },
+        evening: { start: "17:00", end: "22:00" },
+    };
+    const TIME_LABELS: Record<string, string> = {
+        morning: t("ai_time_morning"),
+        afternoon: t("ai_time_afternoon"),
+        evening: t("ai_time_evening"),
+    };
+    const DAY_LABELS = [
+        t("ai_day_mon"), t("ai_day_tue"), t("ai_day_wed"),
+        t("ai_day_thu"), t("ai_day_fri"), t("ai_day_sat"), t("ai_day_sun"),
+    ];
+
+    function applyAiFilters(filters: {
+        sport?: string | null;
+        city?: string | null;
+        date?: string | null;
+        time_of_day?: string | null;
+    }) {
+        const parts: string[] = [];
+
+        if (filters.sport) {
+            const match = sports.find((s) => s.name.toLowerCase() === filters.sport!.toLowerCase());
+            if (match) {
+                setSelectedSport(match.id);
+                parts.push(sportName(match.name));
+            }
+        }
+
+        if (filters.city) {
+            setSearchQuery(filters.city);
+            parts.push(filters.city);
+        }
+
+        let dow: number | null = null;
+        if (filters.date) {
+            const parsed = new Date(`${filters.date}T00:00:00`);
+            if (!Number.isNaN(parsed.getTime())) {
+                // JS getDay: 0=Sun..6=Sat → schema: 0=Mon..6=Sun
+                dow = (parsed.getDay() + 6) % 7;
+                setDayOfWeekFilter(dow);
+                parts.push(DAY_LABELS[dow]);
+            }
+        }
+
+        if (filters.time_of_day && TIME_WINDOWS[filters.time_of_day]) {
+            const window = TIME_WINDOWS[filters.time_of_day];
+            setTimeWindow(window);
+            parts.push(TIME_LABELS[filters.time_of_day]);
+            // Time-of-day only makes sense with a day. If the AI gave time
+            // but no date, infer "today" so the RPC still narrows.
+            if (dow === null && !filters.date) {
+                const today = (new Date().getDay() + 6) % 7;
+                setDayOfWeekFilter(today);
+            }
+        }
+
+        setAiLabel(parts.length > 0 ? parts.join(" · ") : null);
+    }
+
+    function clearAiFilters() {
+        setSelectedSport(null);
+        setSearchQuery("");
+        setDayOfWeekFilter(null);
+        setTimeWindow(null);
+        setAiLabel(null);
+    }
 
     // Sidebar content is rendered once and slotted into both layouts
     // (mobile bottom-sheet + desktop side-by-side) so search/filters/list
@@ -143,7 +229,8 @@ export default function MapPage() {
                     />
                 </div>
 
-                {/* SAH-41: AI search */}
+                {/* SAH-41: AI search — parses free text into sport/city/date/time-of-day
+                    and applies all four to the existing filters. */}
                 {!aiHidden && searchQuery.trim().length >= 4 && (
                     <button
                         type="button"
@@ -157,10 +244,7 @@ export default function MapPage() {
                                     return;
                                 }
                                 if ("filters" in res && res.filters) {
-                                    const knownSport = sports.find((s) =>
-                                        s.name.toLowerCase() === (res.filters!.sport ?? "").toLowerCase()
-                                    );
-                                    if (knownSport) setSelectedSport(knownSport.id);
+                                    applyAiFilters(res.filters);
                                 }
                             } finally {
                                 setAiPending(false);
@@ -169,8 +253,26 @@ export default function MapPage() {
                         className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/30 disabled:opacity-50 transition-colors"
                     >
                         {aiPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
-                        {aiPending ? "Thinking…" : "AI search"}
+                        {aiPending ? t("ai_thinking") : t("ai_search")}
                     </button>
+                )}
+
+                {/* SAH-41: AI applied-filters chip with clear button. */}
+                {aiLabel && (
+                    <div className="flex items-center justify-between gap-2 px-3 py-1.5 rounded-lg bg-emerald-100 dark:bg-emerald-900/30 text-xs text-emerald-800 dark:text-emerald-200">
+                        <span className="truncate">
+                            <Sparkles className="inline h-3 w-3 me-1" />
+                            {aiLabel}
+                        </span>
+                        <button
+                            type="button"
+                            onClick={clearAiFilters}
+                            aria-label={t("ai_clear")}
+                            className="shrink-0 rounded-full p-0.5 hover:bg-emerald-200 dark:hover:bg-emerald-800/50"
+                        >
+                            <X className="h-3 w-3" />
+                        </button>
+                    </div>
                 )}
 
                 {/* Sport filter */}
