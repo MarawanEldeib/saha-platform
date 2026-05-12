@@ -14,6 +14,13 @@
 
 import { Document, Page, Text, View, StyleSheet, Image } from "@react-pdf/renderer";
 import React from "react";
+import { BRAND_NAME } from "@/lib/constants";
+
+// SAH-163: hostname displayed in the PDF footer comes from env so preview
+// reports show the preview host rather than the production hostname.
+const APP_HOST = (process.env.NEXT_PUBLIC_APP_URL ?? "https://sahasports.vercel.app")
+    .replace(/^https?:\/\//, "")
+    .replace(/\/$/, "");
 
 export interface BookingRow {
     date: string;
@@ -202,11 +209,11 @@ export function BookingReportDocument(props: BookingReportData): React.ReactElem
                 <View style={styles.headerRow}>
                     <View style={styles.brand}>
                         {logoUrl ? <Image src={logoUrl} style={styles.logo} /> : null}
-                        <Text style={styles.brandName}>Saha</Text>
+                        <Text style={styles.brandName}>{BRAND_NAME}</Text>
                     </View>
                     <View style={styles.headerMeta}>
                         <Text>Generated {generatedAt}</Text>
-                        <Text style={{ color: "#6b7280" }}>sahasports.vercel.app</Text>
+                        <Text style={{ color: "#6b7280" }}>{APP_HOST}</Text>
                     </View>
                 </View>
 
@@ -314,7 +321,7 @@ export function BookingReportDocument(props: BookingReportData): React.ReactElem
                 </View>
 
                 <View style={styles.footer} fixed>
-                    <Text>Saha · Booking report · {periodFrom} → {periodTo}</Text>
+                    <Text>{BRAND_NAME} · Booking report · {periodFrom} → {periodTo}</Text>
                     <Text render={({ pageNumber, totalPages }) => `Page ${pageNumber} / ${totalPages}`} />
                 </View>
             </Page>

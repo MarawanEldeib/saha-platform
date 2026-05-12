@@ -14,6 +14,7 @@ import {
     AlertTriangle,
 } from "lucide-react";
 import type { FacilityStatus, EventStatus } from "@/types/database";
+import { ADMIN_RECENT_ITEMS_LIMIT } from "@/lib/constants";
 
 interface ProfileRow { role: string }
 interface PendingFacility {
@@ -95,13 +96,13 @@ export default async function AdminPage() {
             .select("id, name, status, city, created_at, profiles(display_name)")
             .eq("status", "pending")
             .order("created_at", { ascending: false })
-            .limit(8),
+            .limit(ADMIN_RECENT_ITEMS_LIMIT),
         supabase
             .from("events")
             .select("id, name, status, event_date, facilities(name)")
             .eq("status", "pending")
             .order("event_date", { ascending: true })
-            .limit(8),
+            .limit(ADMIN_RECENT_ITEMS_LIMIT),
     ]);
 
     const recentFacilities = (rest[0]?.data ?? []) as unknown as PendingFacility[];

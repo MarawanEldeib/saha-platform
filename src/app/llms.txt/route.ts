@@ -5,25 +5,32 @@
  * Points consumers at the OpenAPI spec (SAH-35) and the human-readable
  * facility pages. Update this file whenever the API surface or major
  * features change.
+ *
+ * SAH-163: URLs derived from NEXT_PUBLIC_APP_URL so preview deploys and
+ * future white-label hosts don't leak the production hostname.
  */
 
-const body = `# Saha
+import { BRAND_NAME } from "@/lib/constants";
 
-> Saha is a UAE-first booking platform for racket sports — Padel, Tennis, Squash, Badminton, and Pickleball. Players discover and book courts; facility owners list their courts and accept payments via Stripe Connect.
+function buildBody(): string {
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://sahasports.vercel.app";
+    return `# ${BRAND_NAME}
+
+> ${BRAND_NAME} is a UAE-first booking platform for racket sports — Padel, Tennis, Squash, Badminton, and Pickleball. Players discover and book courts; facility owners list their courts and accept payments via Stripe Connect.
 
 The platform supports English and Arabic (RTL). Payments settle in AED with a 90/10 split (owner / platform). Booking confirmations and reminders go via email and WhatsApp.
 
 ## API
 
-- [OpenAPI 3.1 spec](https://sahasports.vercel.app/api/openapi.json): machine-readable contract for all REST endpoints
-- [API documentation](https://sahasports.vercel.app/docs/API.md): human-readable usage guide with examples
-- [MCP server](https://sahasports.vercel.app/api/mcp): hosted Model Context Protocol endpoint for Claude Desktop, Cursor, and Cline
+- [OpenAPI 3.1 spec](${appUrl}/api/openapi.json): machine-readable contract for all REST endpoints
+- [API documentation](${appUrl}/docs/API.md): human-readable usage guide with examples
+- [MCP server](${appUrl}/api/mcp): hosted Model Context Protocol endpoint for Claude Desktop, Cursor, and Cline
 
 ### Read endpoints (public, no auth)
 
-- [List facilities](https://sahasports.vercel.app/api/v1/facilities): filter by sport, city, or geo radius
-- [Facility detail](https://sahasports.vercel.app/api/v1/facilities/{id}): UUID or slug; includes hours, sports, photos, ratings
-- [Open slots](https://sahasports.vercel.app/api/v1/facilities/{id}/availability): bookable slots for a date
+- [List facilities](${appUrl}/api/v1/facilities): filter by sport, city, or geo radius
+- [Facility detail](${appUrl}/api/v1/facilities/{id}): UUID or slug; includes hours, sports, photos, ratings
+- [Open slots](${appUrl}/api/v1/facilities/{id}/availability): bookable slots for a date
 
 ### Write endpoints (auth required, in development)
 
@@ -32,10 +39,10 @@ The platform supports English and Arabic (RTL). Payments settle in AED with a 90
 
 ## Pages
 
-- [Home](https://sahasports.vercel.app): landing page with featured facilities
-- [Facility map](https://sahasports.vercel.app/en/map): interactive map of all active facilities
-- [Events](https://sahasports.vercel.app/en/events): upcoming events at facilities
-- [Sign in](https://sahasports.vercel.app/en/login): supports email/password and Google OAuth
+- [Home](${appUrl}): landing page with featured facilities
+- [Facility map](${appUrl}/en/map): interactive map of all active facilities
+- [Events](${appUrl}/en/events): upcoming events at facilities
+- [Sign in](${appUrl}/en/login): supports email/password and Google OAuth
 
 ## Capabilities
 
@@ -50,9 +57,10 @@ The platform supports English and Arabic (RTL). Payments settle in AED with a 90
 
 - [Repository](https://github.com/MarawanEldeib/saha): source code (public)
 `;
+}
 
 export async function GET() {
-    return new Response(body, {
+    return new Response(buildBody(), {
         headers: {
             "Content-Type": "text/plain; charset=utf-8",
             "Cache-Control": "public, s-maxage=3600, stale-while-revalidate=86400",

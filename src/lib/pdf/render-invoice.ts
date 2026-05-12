@@ -15,8 +15,7 @@
 import { format } from "date-fns";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { InvoiceDocument, type InvoicePdfData } from "./InvoiceDocument";
-
-const VAT_RATE = 0.05;
+import { getActiveRegion } from "@/lib/regions";
 
 export async function renderInvoicePdf(bookingId: string): Promise<{ buffer: Buffer; data: InvoicePdfData } | null> {
     const admin = createAdminClient();
@@ -49,9 +48,10 @@ export async function renderInvoicePdf(bookingId: string): Promise<{ buffer: Buf
     }
     if (!invoiceNumber) return null;
 
+    const region = getActiveRegion();
     const hasTrn = Boolean(facility.trn);
     const subtotal = Number(booking.total_price);
-    const vat = hasTrn ? Math.round(subtotal * VAT_RATE * 100) / 100 : 0;
+    const vat = hasTrn ? Math.round(subtotal * region.vatRate * 100) / 100 : 0;
     const total = subtotal + vat;
     const issuedAtSrc = booking.invoiced_at ? new Date(booking.invoiced_at) : new Date();
 
@@ -81,7 +81,7 @@ export async function renderInvoicePdf(bookingId: string): Promise<{ buffer: Buf
         subtotal,
         vat,
         total,
-        currency: booking.currency ?? "AED",
+        currency: booking.currency ?? region.currency,
         hasTrn,
     };
 

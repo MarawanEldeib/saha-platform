@@ -1,11 +1,12 @@
 import { cookies } from "next/headers";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/types/database";
+import { COOKIE_RETENTION_DAYS } from "@/lib/constants";
 
 const COOKIE_NAME = "saha_facility_id";
 // Cookie persists for a year — owners stay on the same facility unless they
 // explicitly switch.
-const COOKIE_MAX_AGE = 60 * 60 * 24 * 365;
+const COOKIE_MAX_AGE = COOKIE_RETENTION_DAYS * 24 * 60 * 60;
 
 type SahaClient = SupabaseClient<Database>;
 

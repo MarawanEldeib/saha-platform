@@ -6,6 +6,8 @@
  * (which silently break the map and radius search — SAH-119).
  */
 
+import { getActiveRegion } from "@/lib/regions";
+
 export type GeocodeResult =
     | { status: "ok"; wkt: string }
     | { status: "no_match" }
@@ -14,10 +16,11 @@ export type GeocodeResult =
 export async function geocodeAddress(address: string, city: string): Promise<GeocodeResult> {
     const token = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
     if (!token) return { status: "not_configured" };
-    const query = encodeURIComponent(`${address}, ${city}, UAE`);
+    const region = getActiveRegion();
+    const query = encodeURIComponent(`${address}, ${city}, ${region.displayName}`);
     try {
         const res = await fetch(
-            `https://api.mapbox.com/geocoding/v5/mapbox.places/${query}.json?access_token=${token}&limit=1&country=ae`,
+            `https://api.mapbox.com/geocoding/v5/mapbox.places/${query}.json?access_token=${token}&limit=1&country=${region.geocodingCountry}`,
             { signal: AbortSignal.timeout(5000) },
         );
         if (!res.ok) return { status: "no_match" };
