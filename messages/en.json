@@ -67,7 +67,20 @@
         "view_map": "Map",
         "view_list": "List",
         "prayer_friendly_filter": "Prayer-friendly only",
-        "prayer_friendly_chip": "🕌 Prayer-friendly"
+        "prayer_friendly_chip": "🕌 Prayer-friendly",
+        "ai_search": "AI search",
+        "ai_thinking": "Thinking…",
+        "ai_clear": "Clear AI filters",
+        "ai_time_morning": "morning",
+        "ai_time_afternoon": "afternoon",
+        "ai_time_evening": "evening",
+        "ai_day_mon": "Mon",
+        "ai_day_tue": "Tue",
+        "ai_day_wed": "Wed",
+        "ai_day_thu": "Thu",
+        "ai_day_fri": "Fri",
+        "ai_day_sat": "Sat",
+        "ai_day_sun": "Sun"
     },
     "facility": {
         "hours": "Opening Hours",

@@ -67,7 +67,20 @@
         "view_map": "الخريطة",
         "view_list": "القائمة",
         "prayer_friendly_filter": "صديقة للمصلين فقط",
-        "prayer_friendly_chip": "🕌 صديقة للمصلين"
+        "prayer_friendly_chip": "🕌 صديقة للمصلين",
+        "ai_search": "بحث بالذكاء الاصطناعي",
+        "ai_thinking": "جارٍ التفكير…",
+        "ai_clear": "مسح فلاتر الذكاء الاصطناعي",
+        "ai_time_morning": "صباحًا",
+        "ai_time_afternoon": "ظهرًا",
+        "ai_time_evening": "مساءً",
+        "ai_day_mon": "الإثنين",
+        "ai_day_tue": "الثلاثاء",
+        "ai_day_wed": "الأربعاء",
+        "ai_day_thu": "الخميس",
+        "ai_day_fri": "الجمعة",
+        "ai_day_sat": "السبت",
+        "ai_day_sun": "الأحد"
     },
     "facility": {
         "hours": "ساعات العمل",
