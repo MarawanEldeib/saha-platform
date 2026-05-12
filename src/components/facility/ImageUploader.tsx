@@ -252,7 +252,7 @@ export function ImageUploader({ facilityId, initialImages = [], maxImages = DEFA
                 void uploadItem(nextItem);
             });
         },
-        [maxImages, uploadItem]
+        [maxImages, uploadItem, t]
     );
 
     const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
