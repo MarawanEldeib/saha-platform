@@ -286,6 +286,9 @@
         "confirm_delete_group": "Delete group \"{name}\"? Members stay in your contacts."
     },
     "community": {
+        "deprecation_title": "We're moving to /matches",
+        "deprecation_body": "The new Matches page replaces this Community board. Post a game, invite contacts and groups, request to join private matches, and chat with your team — all in one place.",
+        "deprecation_cta": "Open the new Matches page",
         "title": "Player Matchmaking",
         "subtitle": "Find training partners, hitting partners, and doubles teams in your area.",
         "new_post": "Post a Request",

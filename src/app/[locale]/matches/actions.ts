@@ -20,6 +20,11 @@ import { rateLimit } from "@/lib/rate-limit";
 import { tr } from "@/lib/i18n-errors";
 import { matchCreateSchema, type MatchCreateInput } from "@/lib/validations";
 import { captureRouteError } from "@/lib/sentry-helpers";
+import {
+    notifyMatchInvites,
+    notifyJoinRequestDecision,
+    notifyMatchChat,
+} from "@/lib/match-notifications";
 
 const ROUTE = "matches/actions";
 
@@ -295,6 +300,8 @@ export async function respondToJoinRequestAction(
     }
 
     revalidatePath(`/matches/${request.match_id}`);
+    // Phase 5: notify the requester of the host's decision.
+    void notifyJoinRequestDecision(request.match_id, request.requester_user_id, decision);
     return { ok: true };
 }
 
@@ -330,6 +337,8 @@ export async function sendMatchMessageAction(
         return { ok: false, error: await tr("common.unexpected_error") };
     }
     revalidatePath(`/matches/${matchId}`);
+    // Phase 5: notify the other participants.
+    void notifyMatchChat(matchId, user.id, trimmed);
     return { ok: true };
 }
 
@@ -389,6 +398,8 @@ export async function inviteToMatchAction(
     const bulk = await (supabase as any).from("match_invites").insert(rows);
     if (!bulk.error) {
         revalidatePath(`/matches/${matchId}`);
+        // SAH-152 Phase 5: fire-and-forget notification fan-out.
+        void notifyMatchInvites(matchId, rows.map((r) => r.invitee_user_id));
         return { ok: true, data: { invited: rows.length } };
     }
     if (bulk.error.code !== "23505") {
@@ -399,12 +410,19 @@ export async function inviteToMatchAction(
     // Duplicate-key in the bulk path — fall back to per-row inserts so the
     // non-duplicate invites still go through.
     let inserted = 0;
+    const insertedIds: string[] = [];
     for (const row of rows) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const single = await (supabase as any).from("match_invites").insert(row);
-        if (!single.error) inserted++;
+        if (!single.error) {
+            inserted++;
+            insertedIds.push(row.invitee_user_id);
+        }
     }
     revalidatePath(`/matches/${matchId}`);
+    if (insertedIds.length > 0) {
+        void notifyMatchInvites(matchId, insertedIds);
+    }
     return { ok: true, data: { invited: inserted } };
 }
 
