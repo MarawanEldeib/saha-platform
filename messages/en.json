@@ -3,6 +3,7 @@
         "home": "Home",
         "map": "Find Courts",
         "community": "Community",
+        "matches": "Matches",
         "events": "Events",
         "login": "Log In",
         "register": "Sign Up",
@@ -118,6 +119,32 @@
         "status_pending": "Pending Approval",
         "status_suspended": "Suspended",
         "closed": "Closed"
+    },
+    "matches": {
+        "title": "Matchmaking Feed",
+        "subtitle": "Find your next game. High intensity, local courts.",
+        "post_a_game": "Post a Game",
+        "join_game": "Join Game",
+        "join_disabled_tooltip": "Joining ships in the next release",
+        "empty": "No open games right now — be the first to post one.",
+        "sport_unspecified": "Sport TBD",
+        "format_casual": "Casual",
+        "phase_note": "Phase 1: read-only feed. Posting still uses the existing Community form; joining ships in Phase 2.",
+        "skill": {
+            "beginner": "Beginner",
+            "intermediate": "Intermediate",
+            "advanced": "Advanced",
+            "competitive": "Competitive"
+        },
+        "fill": {
+            "filling_fast": "Spots filling fast",
+            "looking_for_players": "Looking for players",
+            "need_opponent": "Need an opponent"
+        },
+        "relative": {
+            "today": "Today",
+            "tomorrow": "Tomorrow"
+        }
     },
     "community": {
         "title": "Player Matchmaking",

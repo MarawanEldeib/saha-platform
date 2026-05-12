@@ -318,6 +318,15 @@ export interface Database {
                     location_text: string | null;
                     is_active: boolean;
                     created_at: string;
+                    preferred_times: string[] | null;
+                    // SAH-152 Phase 1: Match semantics layered over the existing table.
+                    title: string;
+                    scheduled_for: string;
+                    court_id: string | null;
+                    format: string;
+                    capacity: number;
+                    status: "open" | "live" | "completed" | "cancelled";
+                    gate: "open" | "request" | "invite_only";
                 };
                 Insert: {
                     id?: string;
@@ -328,6 +337,14 @@ export interface Database {
                     message: string;
                     location_text?: string | null;
                     is_active?: boolean;
+                    preferred_times?: string[] | null;
+                    title?: string;
+                    scheduled_for?: string;
+                    court_id?: string | null;
+                    format?: string;
+                    capacity?: number;
+                    status?: "open" | "live" | "completed" | "cancelled";
+                    gate?: "open" | "request" | "invite_only";
                 };
                 Update: {
                     skill_level?: SkillLevel;
@@ -335,6 +352,14 @@ export interface Database {
                     message?: string;
                     location_text?: string | null;
                     is_active?: boolean;
+                    preferred_times?: string[] | null;
+                    title?: string;
+                    scheduled_for?: string;
+                    court_id?: string | null;
+                    format?: string;
+                    capacity?: number;
+                    status?: "open" | "live" | "completed" | "cancelled";
+                    gate?: "open" | "request" | "invite_only";
                 };
                 Relationships: [
                     {
@@ -350,8 +375,140 @@ export interface Database {
                         isOneToOne: false;
                         referencedRelation: "sports";
                         referencedColumns: ["id"];
+                    },
+                    {
+                        foreignKeyName: "matchmaking_posts_court_id_fkey";
+                        columns: ["court_id"];
+                        isOneToOne: false;
+                        referencedRelation: "courts";
+                        referencedColumns: ["id"];
                     }
                 ];
+            };
+            match_participants: {
+                Row: {
+                    match_id: string;
+                    user_id: string;
+                    role: "host" | "player";
+                    joined_at: string;
+                };
+                Insert: {
+                    match_id: string;
+                    user_id: string;
+                    role?: "host" | "player";
+                    joined_at?: string;
+                };
+                Update: {
+                    role?: "host" | "player";
+                };
+                Relationships: [];
+            };
+            match_invites: {
+                Row: {
+                    id: string;
+                    match_id: string;
+                    invitee_user_id: string;
+                    inviter_id: string;
+                    status: "pending" | "accepted" | "declined" | "expired" | "cancelled";
+                    sent_at: string;
+                    responded_at: string | null;
+                };
+                Insert: {
+                    id?: string;
+                    match_id: string;
+                    invitee_user_id: string;
+                    inviter_id: string;
+                    status?: "pending" | "accepted" | "declined" | "expired" | "cancelled";
+                };
+                Update: {
+                    status?: "pending" | "accepted" | "declined" | "expired" | "cancelled";
+                    responded_at?: string | null;
+                };
+                Relationships: [];
+            };
+            match_join_requests: {
+                Row: {
+                    id: string;
+                    match_id: string;
+                    requester_user_id: string;
+                    status: "pending" | "accepted" | "declined";
+                    created_at: string;
+                    responded_at: string | null;
+                };
+                Insert: {
+                    id?: string;
+                    match_id: string;
+                    requester_user_id: string;
+                    status?: "pending" | "accepted" | "declined";
+                };
+                Update: {
+                    status?: "pending" | "accepted" | "declined";
+                    responded_at?: string | null;
+                };
+                Relationships: [];
+            };
+            match_messages: {
+                Row: {
+                    id: string;
+                    match_id: string;
+                    sender_id: string;
+                    body: string;
+                    read_at: string | null;
+                    created_at: string;
+                };
+                Insert: {
+                    id?: string;
+                    match_id: string;
+                    sender_id: string;
+                    body: string;
+                };
+                Update: {
+                    read_at?: string | null;
+                };
+                Relationships: [];
+            };
+            player_contacts: {
+                Row: {
+                    owner_id: string;
+                    contact_user_id: string;
+                    created_at: string;
+                };
+                Insert: {
+                    owner_id: string;
+                    contact_user_id: string;
+                };
+                Update: never;
+                Relationships: [];
+            };
+            player_groups: {
+                Row: {
+                    id: string;
+                    owner_id: string;
+                    name: string;
+                    created_at: string;
+                };
+                Insert: {
+                    id?: string;
+                    owner_id: string;
+                    name: string;
+                };
+                Update: {
+                    name?: string;
+                };
+                Relationships: [];
+            };
+            player_group_members: {
+                Row: {
+                    group_id: string;
+                    member_user_id: string;
+                    added_at: string;
+                };
+                Insert: {
+                    group_id: string;
+                    member_user_id: string;
+                };
+                Update: never;
+                Relationships: [];
             };
             conversations: {
                 Row: {
