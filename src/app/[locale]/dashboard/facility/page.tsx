@@ -49,15 +49,21 @@ export default async function FacilityPage() {
 
     // SAH-64: fetch live Stripe account state so the section can show
     // "ready" vs "onboarding incomplete" instead of just "connected".
+    // Also surface `requirements.currently_due` so owners see exactly which
+    // documents Stripe is waiting on (instead of a generic "verifying").
     let chargesEnabled = false;
     let detailsSubmitted = false;
     let payoutsEnabled = false;
+    let currentlyDue: string[] = [];
+    let disabledReason: string | null = null;
     if (facility.stripe_account_id) {
         try {
             const account = await getStripe().accounts.retrieve(facility.stripe_account_id);
             chargesEnabled = !!account.charges_enabled;
             detailsSubmitted = !!account.details_submitted;
             payoutsEnabled = !!account.payouts_enabled;
+            currentlyDue = account.requirements?.currently_due ?? [];
+            disabledReason = account.requirements?.disabled_reason ?? null;
         } catch {
             // Stripe lookup failed — treat as not-yet-ready. UI will show
             // "complete onboarding" state.
@@ -83,6 +89,8 @@ export default async function FacilityPage() {
                 chargesEnabled={chargesEnabled}
                 detailsSubmitted={detailsSubmitted}
                 payoutsEnabled={payoutsEnabled}
+                currentlyDue={currentlyDue}
+                disabledReason={disabledReason}
                 platformFeePercent={await getPlatformFeePercent()}
             />
         </div>
