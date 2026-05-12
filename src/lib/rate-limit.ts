@@ -69,6 +69,7 @@ const POLICIES = {
     review_submit: { points: 5, windowSec: 60 * 60 },       // 5 / 1 h / IP
     public_api: { points: 60, windowSec: 60 },              // 60 / 1 min / IP — generous for AI agents (SAH-35)
     messages_send: { points: 30, windowSec: 60 * 60 },      // 30 / 1 h / IP — matchmaking DM spam guard (SAH-96)
+    matchmaking_post: { points: 10, windowSec: 60 * 60 },   // 10 / 1 h / IP — game-post spam guard (SAH-152)
     phone_otp_per_phone: { points: 3, windowSec: 60 * 60 }, // 3 / 1 h / phone — SAH-79
     phone_otp_per_user: { points: 5, windowSec: 24 * 60 * 60 }, // 5 / 24 h / user — SAH-79
 } as const;

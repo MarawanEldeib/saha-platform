@@ -122,7 +122,7 @@ export default async function MatchesPage() {
 
     // Pull participants for every match in one query, then group client-side.
     const matchIds = matches.map((m) => m.id);
-    let participantsByMatch = new Map<string, ParticipantRow[]>();
+    const participantsByMatch = new Map<string, ParticipantRow[]>();
     if (matchIds.length > 0) {
         const partResult = await supabase
             .from("match_participants")
@@ -155,7 +155,7 @@ export default async function MatchesPage() {
                     <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">{t("subtitle")}</p>
                 </div>
                 <Link
-                    href={`/${locale}/community`}
+                    href={`/${locale}/matches/new`}
                     className="inline-flex items-center gap-1.5 self-start sm:self-auto px-5 py-2.5 rounded-xl font-semibold text-sm bg-lime-300 hover:bg-lime-400 text-gray-900 transition-colors shadow-sm"
                 >
                     <Plus className="h-4 w-4" />
@@ -168,7 +168,7 @@ export default async function MatchesPage() {
                 <div className="rounded-2xl border border-dashed border-gray-300 dark:border-gray-700 p-12 text-center">
                     <p className="text-gray-600 dark:text-gray-400">{t("empty")}</p>
                     <Link
-                        href={`/${locale}/community`}
+                        href={`/${locale}/matches/new`}
                         className="mt-4 inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-medium text-sm"
                     >
                         <Plus className="h-4 w-4" /> {t("post_a_game")}
@@ -194,24 +194,26 @@ export default async function MatchesPage() {
                                 key={m.id}
                                 className="rounded-2xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 p-5 shadow-sm hover:shadow-md transition-shadow"
                             >
-                                <div className="flex items-start justify-between gap-3 mb-3">
-                                    <div className="flex items-center gap-3 min-w-0">
-                                        <div className="h-10 w-10 rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-xl shrink-0">
-                                            {sportEmoji}
-                                        </div>
-                                        <div className="min-w-0">
-                                            <h2 className="font-semibold text-gray-900 dark:text-white truncate">
-                                                {m.title}
-                                            </h2>
-                                            <p className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1 mt-0.5">
-                                                <MapPin className="h-3 w-3 shrink-0" />
-                                                <span className="truncate">
-                                                    {m.location_text ?? sportName(m.sports?.name)}
-                                                </span>
-                                            </p>
+                                <Link href={`/${locale}/matches/${m.id}`} className="block group">
+                                    <div className="flex items-start justify-between gap-3 mb-3">
+                                        <div className="flex items-center gap-3 min-w-0">
+                                            <div className="h-10 w-10 rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-xl shrink-0">
+                                                {sportEmoji}
+                                            </div>
+                                            <div className="min-w-0">
+                                                <h2 className="font-semibold text-gray-900 dark:text-white truncate group-hover:text-emerald-600">
+                                                    {m.title}
+                                                </h2>
+                                                <p className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1 mt-0.5">
+                                                    <MapPin className="h-3 w-3 shrink-0" />
+                                                    <span className="truncate">
+                                                        {m.location_text ?? sportName(m.sports?.name)}
+                                                    </span>
+                                                </p>
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
+                                </Link>
 
                                 <div className="flex items-center gap-2 text-xs mb-3">
                                     <span className="font-medium text-emerald-700 dark:text-emerald-400">
@@ -268,13 +270,12 @@ export default async function MatchesPage() {
                                             <Users className="h-5 w-5 text-gray-400 dark:text-gray-600" />
                                         )}
                                     </div>
-                                    <button
-                                        disabled
-                                        title={t("join_disabled_tooltip")}
-                                        className="px-4 py-1.5 rounded-lg border border-emerald-600 text-emerald-700 dark:text-emerald-400 dark:border-emerald-500 text-sm font-semibold opacity-60 cursor-not-allowed"
+                                    <Link
+                                        href={`/${locale}/matches/${m.id}`}
+                                        className="px-4 py-1.5 rounded-lg border border-emerald-600 text-emerald-700 dark:text-emerald-400 dark:border-emerald-500 text-sm font-semibold hover:bg-emerald-50 dark:hover:bg-emerald-900/20"
                                     >
                                         {t("join_game")}
-                                    </button>
+                                    </Link>
                                 </div>
                             </article>
                         );
@@ -282,10 +283,6 @@ export default async function MatchesPage() {
                 </div>
             )}
 
-            {/* Phase 1 note for testers / Marawan */}
-            <p className="mt-8 text-xs text-gray-500 dark:text-gray-500 text-center">
-                {t("phase_note")}
-            </p>
         </div>
     );
 }
