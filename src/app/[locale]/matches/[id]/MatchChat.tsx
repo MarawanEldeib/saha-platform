@@ -1,11 +1,13 @@
 "use client";
 
 /**
- * SAH-152 Phase 4: match-scoped chat.
+ * SAH-152 Phase 4 + Phase 6: match-scoped chat.
  *
- * Participant-only (RLS). Composer + scrollable message thread. Polls
- * server every 8 s for new rows — realtime channels are deferred to
- * Phase 5 so we don't add a websocket cost yet.
+ * Participant-only (RLS). Composer + scrollable thread. Phase 6 swapped the
+ * 8 s poll for a Supabase Realtime subscription on `match_messages`. The
+ * new payload only carries the row (no profile join), so on each INSERT
+ * event we run a single-row select with the FK join to hydrate sender
+ * name + avatar before appending.
  */
 
 import * as React from "react";
@@ -28,8 +30,6 @@ interface Props {
     viewerId: string;
     initialMessages: ChatMessage[];
 }
-
-const POLL_MS = 8000;
 
 function Avatar({ url, name }: { url: string | null; name: string }) {
     const initial = (name?.trim()[0] ?? "?").toUpperCase();
@@ -61,41 +61,64 @@ export function MatchChat({ matchId, viewerId, initialMessages }: Props) {
         }
     }, [messages]);
 
-    // Poll for new messages.
+    // Realtime subscription. RLS still enforces the auth boundary — the
+    // websocket only delivers rows the caller is permitted to SELECT.
     React.useEffect(() => {
         const supabase = createClient();
-        let cancelled = false;
+        const channel = supabase
+            .channel(`match-chat:${matchId}`)
+            .on(
+                "postgres_changes",
+                {
+                    event: "INSERT",
+                    schema: "public",
+                    table: "match_messages",
+                    filter: `match_id=eq.${matchId}`,
+                },
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                async (payload: { new: any }) => {
+                    const row = payload.new as {
+                        id: string; sender_id: string; body: string; created_at: string;
+                    };
+                    // Hydrate sender profile in a single follow-up query.
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    const { data: profile } = await (supabase as any)
+                        .from("profiles")
+                        .select("display_name, avatar_url")
+                        .eq("id", row.sender_id)
+                        .single();
 
-        async function fetchLatest() {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const { data } = await (supabase as any)
-                .from("match_messages")
-                .select(`
-                    id, sender_id, body, created_at,
-                    profiles!match_messages_sender_id_fkey(display_name, avatar_url)
-                `)
-                .eq("match_id", matchId)
-                .order("created_at", { ascending: true })
-                .limit(200);
-            if (cancelled) return;
-            const rows = ((data ?? []) as Array<{
-                id: string; sender_id: string; body: string; created_at: string;
-                profiles: { display_name: string | null; avatar_url: string | null } | null;
-            }>).map((r) => ({
-                id: r.id,
-                sender_id: r.sender_id,
-                body: r.body,
-                created_at: r.created_at,
-                sender_display_name: r.profiles?.display_name ?? null,
-                sender_avatar_url: r.profiles?.avatar_url ?? null,
-            }));
-            setMessages(rows);
-        }
+                    const hydrated: ChatMessage = {
+                        id: row.id,
+                        sender_id: row.sender_id,
+                        body: row.body,
+                        created_at: row.created_at,
+                        sender_display_name: (profile as { display_name: string | null } | null)?.display_name ?? null,
+                        sender_avatar_url: (profile as { avatar_url: string | null } | null)?.avatar_url ?? null,
+                    };
 
-        const interval = setInterval(fetchLatest, POLL_MS);
+                    setMessages((prev) => {
+                        // Dedup against the optimistic provisional row + already-present rows.
+                        if (prev.some((m) => m.id === hydrated.id)) return prev;
+                        const provisionalIdx = prev.findIndex(
+                            (m) =>
+                                m.id.startsWith("provisional-") &&
+                                m.sender_id === hydrated.sender_id &&
+                                m.body === hydrated.body,
+                        );
+                        if (provisionalIdx !== -1) {
+                            const next = [...prev];
+                            next[provisionalIdx] = hydrated;
+                            return next;
+                        }
+                        return [...prev, hydrated];
+                    });
+                },
+            )
+            .subscribe();
+
         return () => {
-            cancelled = true;
-            clearInterval(interval);
+            void supabase.removeChannel(channel);
         };
     }, [matchId]);
 
