@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { CheckCircle2, AlertCircle, ExternalLink, CreditCard, ArrowDownToLine, BadgeCheck, Wallet, Loader2, Clock } from "lucide-react";
+import { CheckCircle2, AlertCircle, ExternalLink, CreditCard, ArrowDownToLine, BadgeCheck, Wallet, Loader2, Clock, FileWarning } from "lucide-react";
 import { useTranslations } from "next-intl";
 
 type Props = {
@@ -13,9 +13,47 @@ type Props = {
     detailsSubmitted: boolean;
     /** Stripe `payouts_enabled` — bank/iban accepted, payouts will land. */
     payoutsEnabled: boolean;
+    /**
+     * Stripe `requirements.currently_due` — items Stripe is actively
+     * waiting on the owner to provide (documents, bank details, etc.).
+     * Empty when Stripe is reviewing on its own side. SAH-64.
+     */
+    currentlyDue: string[];
+    /**
+     * Stripe `requirements.disabled_reason` — short machine-readable code
+     * explaining why the account is currently restricted. Surfaced as
+     * extra context on the needs-action banner.
+     */
+    disabledReason: string | null;
     /** Platform-side fee, mirrored in the disclosure copy. */
     platformFeePercent: number;
 };
+
+/**
+ * Translate Stripe's verbose requirement keys into user-readable labels.
+ * Keys are dot-paths like `documents.bank_account_ownership_verification.files`
+ * or `person_1TVN.documents.passport.files`. Match on the suffix to keep
+ * the map small.
+ */
+function labelForRequirement(key: string): string {
+    const k = key.toLowerCase();
+    if (k.includes("bank_account_ownership_verification")) return "Bank-account ownership proof (statement or letter)";
+    if (k.includes("company_license")) return "Company trade license";
+    if (k.includes("company_memorandum_of_association")) return "Memorandum of Association";
+    if (k.includes("company_registration_verification")) return "Company registration document";
+    if (k.includes("proof_of_registration")) return "Proof of business registration";
+    if (k.includes("passport.files") || k.endsWith(".passport")) return "Passport photo / scan";
+    if (k.includes("national_id_front") || k.includes("id_document.front")) return "ID document — front";
+    if (k.includes("national_id_back") || k.includes("id_document.back")) return "ID document — back";
+    if (k.includes("address.line1") || k.includes("address.city") || k.includes("address.country")) return "Business address";
+    if (k.includes("phone")) return "Business phone number";
+    if (k.includes("dob")) return "Owner date of birth";
+    if (k.includes("verification.document")) return "Identity verification document";
+    if (k.includes("external_account")) return "Bank account for payouts";
+    if (k.includes("tos_acceptance")) return "Accept Stripe terms of service";
+    // Fallback — strip the prefix and humanise.
+    return key.replace(/^person_[A-Za-z0-9]+\./, "").replace(/\./g, " · ").replace(/_/g, " ");
+}
 
 /**
  * SAH-64: Stripe Connect onboarding entry point for facility owners.
@@ -38,6 +76,8 @@ export function StripeConnectSection({
     chargesEnabled: initialChargesEnabled,
     detailsSubmitted: initialDetailsSubmitted,
     payoutsEnabled: initialPayoutsEnabled,
+    currentlyDue,
+    disabledReason,
     platformFeePercent,
 }: Props) {
     const t = useTranslations("facility_form");
@@ -50,20 +90,22 @@ export function StripeConnectSection({
 
     const ownerSharePercent = 100 - platformFeePercent;
 
-    // SAH-64: split "incomplete" into two sub-states. After bzo finished
-    // Stripe onboarding, details_submitted flips to true but charges/
-    // payouts stay false until Stripe completes KYC review (hours/days).
-    // The owner already did their part — show "verifying" instead of a
-    // checklist of "things you still need to do" which felt unfair.
-    //   ready      — account exists + charges_enabled (players can pay)
-    //   verifying  — owner submitted details, Stripe is reviewing
-    //   incomplete — owner still has fields to fill in Stripe form
-    //   none       — no account at all
-    const state: "ready" | "verifying" | "incomplete" | "none" =
+    // SAH-64: five state machine.
+    //   ready        — account exists + charges_enabled (players can pay)
+    //   needs_action — details submitted but Stripe is asking the owner
+    //                  for more (docs, bank, ID). Specific requirements
+    //                  rendered as a list so the owner can act, not guess.
+    //   verifying    — details submitted, no outstanding requirements;
+    //                  Stripe is reviewing on its own time (hours/days).
+    //   incomplete   — owner never finished the initial Connect form.
+    //   none         — no account at all.
+    const hasOutstandingRequirements = currentlyDue.length > 0;
+    const state: "ready" | "needs_action" | "verifying" | "incomplete" | "none" =
         !hasAccount ? "none"
         : chargesEnabled ? "ready"
-        : initialDetailsSubmitted ? "verifying"
-        : "incomplete";
+        : initialDetailsSubmitted
+            ? (hasOutstandingRequirements ? "needs_action" : "verifying")
+            : "incomplete";
 
     async function startOnboarding() {
         setRedirecting(true);
@@ -117,6 +159,11 @@ export function StripeConnectSection({
                     <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 shrink-0">
                         <BadgeCheck className="h-3.5 w-3.5" />
                         {tStripe("badge_ready")}
+                    </span>
+                ) : state === "needs_action" ? (
+                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 shrink-0">
+                        <FileWarning className="h-3.5 w-3.5" />
+                        {tStripe("badge_needs_action")}
                     </span>
                 ) : state === "verifying" ? (
                     <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 shrink-0">
@@ -182,6 +229,40 @@ export function StripeConnectSection({
                         className="text-xs text-gray-400 hover:text-red-500 dark:hover:text-red-400 transition-colors disabled:opacity-50 pt-3 shrink-0"
                     >
                         {disconnecting ? "…" : t("stripe_disconnect")}
+                    </button>
+                </div>
+            )}
+
+            {state === "needs_action" && (
+                <div className="space-y-3 pt-1 border-t border-gray-100 dark:border-gray-800">
+                    <div className="flex items-start gap-2 text-sm text-red-700 dark:text-red-300 pt-3">
+                        <FileWarning className="h-4 w-4 mt-0.5 shrink-0" />
+                        <span>{tStripe("needs_action_body")}</span>
+                    </div>
+                    <ul className="text-sm text-gray-700 dark:text-gray-300 space-y-1.5 ms-6 list-disc">
+                        {currentlyDue.map((req) => (
+                            <li key={req}>
+                                {labelForRequirement(req)}
+                                <span className="block text-[10px] text-gray-400 dark:text-gray-500 font-mono">{req}</span>
+                            </li>
+                        ))}
+                    </ul>
+                    {disabledReason && (
+                        <p className="text-xs text-gray-500 dark:text-gray-400 ms-6">
+                            {tStripe("needs_action_reason", { reason: disabledReason })}
+                        </p>
+                    )}
+                    <button
+                        onClick={startOnboarding}
+                        disabled={redirecting}
+                        className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-[#635BFF] text-white text-sm font-semibold hover:bg-[#5851e5] disabled:opacity-60 transition-colors shadow-sm"
+                    >
+                        {redirecting ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                            <ExternalLink className="h-4 w-4" />
+                        )}
+                        {redirecting ? t("stripe_redirecting") : tStripe("continue_verification")}
                     </button>
                 </div>
             )}
