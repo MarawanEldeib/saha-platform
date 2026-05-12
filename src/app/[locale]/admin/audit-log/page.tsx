@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { ADMIN_PAGE_SIZE } from "@/lib/constants";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { redirect } from "next/navigation";
 import { getLocale } from "next-intl/server";
@@ -20,7 +21,7 @@ interface AuditRow {
     created_at: string;
 }
 
-const PAGE_SIZE = 50;
+const PAGE_SIZE = ADMIN_PAGE_SIZE;
 
 const ACTION_TONES: Record<string, string> = {
     "facility.approve": "bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400",

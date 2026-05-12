@@ -1,4 +1,5 @@
 import { format, parse } from "date-fns";
+import { FROM_ADDRESS } from "@/lib/email-config";
 
 interface BookingConfirmationEmailProps {
   bookingId: string;
@@ -384,7 +385,7 @@ export async function sendBookingConfirmationEmail(
       : undefined;
 
     const result = await resend.emails.send({
-      from: "Saha <noreply@saha.ae>",
+      from: FROM_ADDRESS,
       to: props.playerEmail,
       subject: `Booking Confirmed - ${props.courtName} on ${props.date}`,
       html,

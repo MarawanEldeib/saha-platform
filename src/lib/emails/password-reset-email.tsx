@@ -7,6 +7,8 @@
  * its own email.
  */
 
+import { FROM_ADDRESS } from "@/lib/email-config";
+
 interface PasswordResetEmailProps {
     recipientEmail: string;
     recipientName: string | null;
@@ -126,7 +128,7 @@ export async function sendPasswordResetEmail(
             : "Reset your Saha password";
 
         const result = await resend.emails.send({
-            from: "Saha <noreply@saha.ae>",
+            from: FROM_ADDRESS,
             to: props.recipientEmail,
             subject,
             html,

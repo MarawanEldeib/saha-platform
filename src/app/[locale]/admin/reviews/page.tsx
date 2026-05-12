@@ -1,4 +1,5 @@
 import { createAdminClient } from "@/lib/supabase/admin";
+import { ADMIN_PAGE_SIZE } from "@/lib/constants";
 import { createClient } from "@/lib/supabase/server";
 import { getLocale } from "next-intl/server";
 import { redirect } from "next/navigation";
@@ -22,7 +23,7 @@ interface ReviewRow {
 
 export const metadata = { title: "Reviews – Admin" };
 
-const PAGE_SIZE = 50;
+const PAGE_SIZE = ADMIN_PAGE_SIZE;
 
 export default async function AdminReviewsPage({
     searchParams,
