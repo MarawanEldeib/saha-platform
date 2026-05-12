@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { MAX_REVIEW_COMMENT_LENGTH } from "@/lib/constants";
 
 // ---------------------------------------------------------------------------
 // Auth Schemas
@@ -116,7 +117,7 @@ export const reviewSchema = z.object({
     // handled together so the quick-tap form (stars only) validates.
     comment: z
         .string()
-        .max(1000, "Comment is too long")
+        .max(MAX_REVIEW_COMMENT_LENGTH, "Comment is too long")
         .refine((v) => v.length === 0 || v.length >= 10, {
             message: "Comment must be at least 10 characters",
         })

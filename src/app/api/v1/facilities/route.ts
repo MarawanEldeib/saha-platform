@@ -16,6 +16,7 @@ import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { apiError, apiJson, apiPreflight, apiServerError } from "@/lib/api-response";
 import { rateLimit } from "@/lib/rate-limit";
+import { API_LIMIT_DEFAULT, API_LIMIT_MAX } from "@/lib/constants";
 
 const Query = z.object({
     sport: z.string().min(1).max(40).optional(),
@@ -23,7 +24,7 @@ const Query = z.object({
     lat: z.coerce.number().min(-90).max(90).optional(),
     lng: z.coerce.number().min(-180).max(180).optional(),
     radius_km: z.coerce.number().min(0.1).max(100).default(10),
-    limit: z.coerce.number().int().min(1).max(100).default(20),
+    limit: z.coerce.number().int().min(1).max(API_LIMIT_MAX).default(API_LIMIT_DEFAULT),
     offset: z.coerce.number().int().min(0).default(0),
 });
 

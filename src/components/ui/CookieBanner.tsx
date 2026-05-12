@@ -3,6 +3,7 @@
 import * as React from "react";
 import { useTranslations } from "next-intl";
 import { Button } from "./Button";
+import { COOKIE_RETENTION_DAYS } from "@/lib/constants";
 
 // SAH-122: cookie consent for non-essential analytics. We persist the
 // choice in a real cookie (not localStorage) so the server-side root
@@ -11,7 +12,7 @@ import { Button } from "./Button";
 // necessary cookies (Supabase auth, facility-switcher) don't pass
 // through here — only `_vercel_analytics` is gated.
 const COOKIE_NAME = "saha_cookie_consent";
-const COOKIE_MAX_AGE = 60 * 60 * 24 * 365; // 12 months
+const COOKIE_MAX_AGE = COOKIE_RETENTION_DAYS * 24 * 60 * 60;
 
 function readConsent(): "accepted" | "rejected" | null {
     if (typeof document === "undefined") return null;

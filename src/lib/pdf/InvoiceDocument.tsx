@@ -13,6 +13,7 @@
  */
 
 import { Document, Page, Text, View, StyleSheet } from "@react-pdf/renderer";
+import { BRAND_NAME } from "@/lib/constants";
 import React from "react";
 
 export interface InvoicePdfData {
@@ -167,7 +168,7 @@ export function InvoiceDocument(props: InvoicePdfData): React.ReactElement {
                         </Text>
                     </View>
                     <View style={{ alignItems: "flex-end" }}>
-                        <Text style={styles.brandName}>Saha</Text>
+                        <Text style={styles.brandName}>{BRAND_NAME}</Text>
                         <Text style={{ fontSize: 9, color: "#6b7280" }}>saha.ae</Text>
                     </View>
                 </View>
@@ -230,7 +231,7 @@ export function InvoiceDocument(props: InvoicePdfData): React.ReactElement {
 
                 <View style={styles.footer} fixed>
                     <Text>
-                        Payment processed via Stripe. Saha takes a 10% platform fee; remainder is settled to the facility&apos;s connected account.
+                        Payment processed via Stripe. {BRAND_NAME} takes a 10% platform fee; remainder is settled to the facility&apos;s connected account.
                     </Text>
                     <Text style={{ marginTop: 2 }}>
                         For invoice queries, contact the facility{facility.phone ? ` at ${facility.phone}` : ""}.

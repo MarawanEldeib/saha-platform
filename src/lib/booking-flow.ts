@@ -18,6 +18,7 @@
  */
 
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { getActiveRegion } from "@/lib/regions";
 import type Stripe from "stripe";
 import type { Database } from "@/types/database";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -117,7 +118,7 @@ export async function bookCourtCore(params: BookCourtParams): Promise<BookCourtR
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const facilityData = (court as any).facilities;
     const stripeAccountId = facilityData?.stripe_account_id as string | null;
-    const currency = (facilityData?.currency as string) ?? "AED";
+    const currency = (facilityData?.currency as string) ?? getActiveRegion().currency;
 
     if (!stripeAccountId) {
         return { ok: false, error: "This facility is not yet ready to receive payments." };

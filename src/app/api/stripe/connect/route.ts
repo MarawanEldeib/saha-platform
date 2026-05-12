@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getStripe } from "@/lib/stripe";
 import { getActiveFacility } from "@/lib/facility-context";
 import { getLocale } from "next-intl/server";
+import { getActiveRegion } from "@/lib/regions";
 
 export async function POST() {
     const supabase = await createClient();
@@ -42,7 +43,7 @@ export async function POST() {
         if (!accountId) {
             const account = await getStripe().accounts.create({
                 type: "express",
-                country: "AE",
+                country: getActiveRegion().stripeCountry,
                 business_profile: { name: facility.name },
                 default_currency: currency,
                 capabilities: REQUIRED_CAPABILITIES,

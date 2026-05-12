@@ -20,21 +20,26 @@
 
 import { apiJson, apiPreflight, apiError } from "@/lib/api-response";
 import { rateLimit } from "@/lib/rate-limit";
+import { BRAND_NAME } from "@/lib/constants";
+
+// SAH-163: app URL sourced from env so preview deploys don't advertise
+// the production host in their OpenAPI doc.
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://sahasports.vercel.app";
 
 const spec = {
     openapi: "3.1.0",
     info: {
-        title: "Saha Public API",
+        title: `${BRAND_NAME} Public API`,
         version: "0.2.0",
         description:
             "Discover racket-sport facilities, list open slots, and book courts in the UAE. " +
             "Read endpoints are public (no auth). Write endpoints require a Supabase JWT " +
             "in the Authorization header (Bearer token) — same token issued by Supabase " +
             "Auth on sign-in.",
-        contact: { name: "Saha", url: "https://sahasports.vercel.app" },
+        contact: { name: BRAND_NAME, url: APP_URL },
     },
     servers: [
-        { url: "https://sahasports.vercel.app", description: "Production" },
+        { url: APP_URL, description: "Production" },
     ],
     paths: {
         "/api/v1/facilities": {

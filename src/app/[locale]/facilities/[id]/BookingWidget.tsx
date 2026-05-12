@@ -14,6 +14,7 @@ import type { PrayerWindow } from "@/lib/prayer-times";
 import { findOverlappingWindow } from "@/lib/prayer-times";
 import { SessionTypeBadge } from "@/components/booking/SessionTypeBadge";
 import { setResumeBooking, clearResumeBooking } from "@/lib/cookies/preferences-client";
+import { RECURRING_WEEKS } from "@/lib/constants";
 
 type Court = {
     id: string;
@@ -239,11 +240,11 @@ export function BookingWidget({ facilityId, courts, isLoggedIn, locale, currency
                     onChange={(e) => setWeeks(Number(e.target.value))}
                     className="w-full text-sm border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
                 >
-                    <option value={1}>{t("repeat_once")}</option>
-                    <option value={2}>{t("repeat_n_weeks", { n: 2 })}</option>
-                    <option value={4}>{t("repeat_n_weeks", { n: 4 })}</option>
-                    <option value={8}>{t("repeat_n_weeks", { n: 8 })}</option>
-                    <option value={12}>{t("repeat_n_weeks", { n: 12 })}</option>
+                    {RECURRING_WEEKS.map((n) =>
+                        n === 1
+                            ? <option key={n} value={1}>{t("repeat_once")}</option>
+                            : <option key={n} value={n}>{t("repeat_n_weeks", { n })}</option>
+                    )}
                 </select>
             </div>
 

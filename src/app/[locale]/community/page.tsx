@@ -15,6 +15,7 @@ import { Badge } from "@/components/ui/Badge";
 import { format } from "date-fns";
 import type { Sport } from "@/types/database";
 import { useRouter } from "next/navigation";
+import { MAX_MESSAGE_LENGTH } from "@/lib/constants";
 
 interface Post {
     id: string;
@@ -585,7 +586,7 @@ export default function CommunityPage() {
                             onChange={(e) => setMessageDraft(e.target.value)}
                             placeholder={t("message_placeholder")}
                             rows={4}
-                            maxLength={2000}
+                            maxLength={MAX_MESSAGE_LENGTH}
                             className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-emerald-500 resize-none"
                             autoFocus
                         />
