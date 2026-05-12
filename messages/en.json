@@ -130,6 +130,13 @@
         "level_beginner": "Beginner",
         "level_intermediate": "Intermediate",
         "level_advanced": "Advanced",
+        "level_competitive": "Competitive",
+        "time_morning": "Morning",
+        "time_afternoon": "Afternoon",
+        "time_evening": "Evening",
+        "preferred_times_label": "When works for you? (optional)",
+        "filter_city": "Filter by city",
+        "filter_all_cities": "All cities",
         "submit": "Post",
         "login_prompt": "Sign in to post",
         "no_posts": "No posts yet. Be the first!",
@@ -862,6 +869,12 @@
         "contact": "Contact",
         "copyright": "© {year} Saha. All rights reserved.",
         "business_login": "Business account login"
+    },
+    "player_profile": {
+        "back_to_community": "Back to Community",
+        "joined_on": "Joined {date}",
+        "active_posts_title": "Open partner requests",
+        "no_active_posts": "No open requests right now."
     },
     "community_guidelines": {
         "title": "Community Guidelines",

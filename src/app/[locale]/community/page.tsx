@@ -23,14 +23,26 @@ interface Post {
     post_date: string;
     skill_level: string;
     location_text: string | null;
+    preferred_times: string[] | null;
     sports: { name: string } | null;
     profiles: { display_name: string | null; avatar_url: string | null };
 }
 
-const skillBadgeVariant: Record<string, "info" | "warning" | "danger"> = {
+// SAH-152: UAE cities filter list. Free-text `location_text` is still
+// accepted from the form so cross-emirate venues + neighbourhoods like
+// "Dubai Marina" still work — the filter just does case-insensitive
+// substring match.
+const UAE_CITIES = ["Dubai", "Abu Dhabi", "Sharjah", "Ajman", "Ras Al Khaimah", "Fujairah", "Umm Al Quwain"] as const;
+
+const TIME_SLOTS = ["morning", "afternoon", "evening"] as const;
+type TimeSlot = typeof TIME_SLOTS[number];
+
+const skillBadgeVariant: Record<string, "info" | "warning" | "danger" | "default"> = {
     beginner: "info",
     intermediate: "warning",
     advanced: "danger",
+    // `default` (neutral) keeps competitive readable without implying a colour rank.
+    competitive: "default",
 };
 
 // SAH-152: small avatar with graceful fallback to initial when the player
@@ -71,8 +83,11 @@ export default function CommunityPage() {
     const [serverError, setServerError] = React.useState<string | null>(null);
     // SAH-152: client-side filters + my-posts view.
     const [filterSport, setFilterSport] = React.useState<number | "all">("all");
-    const [filterSkill, setFilterSkill] = React.useState<"all" | "beginner" | "intermediate" | "advanced">("all");
+    const [filterSkill, setFilterSkill] = React.useState<"all" | "beginner" | "intermediate" | "advanced" | "competitive">("all");
+    const [filterCity, setFilterCity] = React.useState<string>("all");
     const [showMineOnly, setShowMineOnly] = React.useState(false);
+    // SAH-152 round 3: preferred-times multi-select in the form
+    const [preferredTimes, setPreferredTimes] = React.useState<TimeSlot[]>([]);
     const [authState, setAuthState] = React.useState<
         | { status: "loading" }
         | { status: "anonymous" }
@@ -185,9 +200,12 @@ export default function CommunityPage() {
             post_date: data.post_date,
             message: data.message,
             location_text: data.location_text ?? null,
-        });
+            preferred_times: preferredTimes.length > 0 ? preferredTimes : null,
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        } as never);
         if (error) { setServerError(error.message); return; }
         reset();
+        setPreferredTimes([]);
         setShowForm(false);
         // Refresh posts — same pattern as initial load (separate profiles fetch).
         const { data: postsData } = await supabase
@@ -248,6 +266,10 @@ export default function CommunityPage() {
             if (sport && p.sports.name !== sport.name) return false;
         }
         if (filterSkill !== "all" && p.skill_level !== filterSkill) return false;
+        if (filterCity !== "all") {
+            const loc = (p.location_text ?? "").toLowerCase();
+            if (!loc.includes(filterCity.toLowerCase())) return false;
+        }
         return true;
     });
 
@@ -327,11 +349,61 @@ export default function CommunityPage() {
                                     <option value="beginner">{t("level_beginner")}</option>
                                     <option value="intermediate">{t("level_intermediate")}</option>
                                     <option value="advanced">{t("level_advanced")}</option>
+                                    <option value="competitive">{t("level_competitive")}</option>
                                 </select>
                             </div>
                         </div>
                         <Input label={t("date_label")} type="date" error={errors.post_date?.message} {...register("post_date")} />
-                        <Input label={t("location_label")} type="text" placeholder={t("location_placeholder")} {...register("location_text")} />
+
+                        {/* SAH-152 round 3: city picker (free-text still accepted via the placeholder) */}
+                        <div className="space-y-1.5">
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                                {t("location_label")}
+                            </label>
+                            <div className="flex flex-wrap gap-2">
+                                {UAE_CITIES.map((city) => (
+                                    <button
+                                        type="button"
+                                        key={city}
+                                        onClick={() => setValue("location_text", city, { shouldValidate: true })}
+                                        className="text-xs px-3 py-1.5 rounded-full border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-300 hover:border-emerald-400 dark:hover:border-emerald-700 transition-colors"
+                                    >
+                                        {city}
+                                    </button>
+                                ))}
+                            </div>
+                            <Input type="text" placeholder={t("location_placeholder")} {...register("location_text")} />
+                        </div>
+
+                        {/* SAH-152 round 3: preferred times multi-select chips */}
+                        <div className="space-y-1.5">
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                                {t("preferred_times_label")}
+                            </label>
+                            <div className="flex flex-wrap gap-2">
+                                {TIME_SLOTS.map((slot) => {
+                                    const active = preferredTimes.includes(slot);
+                                    return (
+                                        <button
+                                            type="button"
+                                            key={slot}
+                                            aria-pressed={active}
+                                            onClick={() => setPreferredTimes((prev) =>
+                                                active ? prev.filter((s) => s !== slot) : [...prev, slot],
+                                            )}
+                                            className={`text-xs px-3 py-1.5 rounded-full border font-medium transition-colors ${
+                                                active
+                                                    ? "bg-emerald-600 text-white border-emerald-600"
+                                                    : "bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-700"
+                                            }`}
+                                        >
+                                            {t(`time_${slot}` as "time_morning" | "time_afternoon" | "time_evening")}
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        </div>
+
                         <Textarea label={t("message_label")} placeholder={t("message_placeholder")} error={errors.message?.message} {...register("message")} />
                         {serverError && <p className="text-sm text-red-500" role="alert">{serverError}</p>}
                         <Button type="submit" variant="primary" loading={isSubmitting}>{t("submit")}</Button>
@@ -361,6 +433,16 @@ export default function CommunityPage() {
                         <option value="beginner">{t("level_beginner")}</option>
                         <option value="intermediate">{t("level_intermediate")}</option>
                         <option value="advanced">{t("level_advanced")}</option>
+                        <option value="competitive">{t("level_competitive")}</option>
+                    </select>
+                    <select
+                        value={filterCity}
+                        onChange={(e) => setFilterCity(e.target.value)}
+                        aria-label={t("filter_city")}
+                        className="text-xs rounded-full border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 py-1.5"
+                    >
+                        <option value="all">{t("filter_all_cities")}</option>
+                        {UAE_CITIES.map((c) => <option key={c} value={c}>{c}</option>)}
                     </select>
                     {canPost && (
                         <button
@@ -395,17 +477,24 @@ export default function CommunityPage() {
                         return (
                             <div key={post.id} className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 overflow-hidden">
                                 <div className="p-5 space-y-3">
-                                    {/* Avatar + name + chips */}
+                                    {/* Avatar + name + chips. Avatar+name link to the player's public profile (SAH-152 round 3). */}
                                     <div className="flex items-start gap-3">
-                                        <Avatar url={post.profiles?.avatar_url} name={displayName} />
+                                        <Link href={`/${locale}/players/${post.user_id}`} className="shrink-0">
+                                            <Avatar url={post.profiles?.avatar_url} name={displayName} />
+                                        </Link>
                                         <div className="flex-1 min-w-0">
-                                            <p className="font-medium text-gray-900 dark:text-white truncate">{displayName}</p>
+                                            <Link
+                                                href={`/${locale}/players/${post.user_id}`}
+                                                className="font-medium text-gray-900 dark:text-white truncate hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors block"
+                                            >
+                                                {displayName}
+                                            </Link>
                                             <div className="flex flex-wrap items-center gap-1.5 mt-1">
                                                 {post.sports && (
                                                     <Badge variant="outline">{sportName(post.sports.name)}</Badge>
                                                 )}
                                                 <Badge variant={skillBadgeVariant[post.skill_level] ?? "default"}>
-                                                    {t(`level_${post.skill_level}` as "level_beginner" | "level_intermediate" | "level_advanced")}
+                                                    {t(`level_${post.skill_level}` as "level_beginner" | "level_intermediate" | "level_advanced" | "level_competitive")}
                                                 </Badge>
                                             </div>
                                         </div>
@@ -426,6 +515,14 @@ export default function CommunityPage() {
                                                 {post.location_text}
                                             </span>
                                         )}
+                                        {post.preferred_times?.map((slot) => (
+                                            <span
+                                                key={slot}
+                                                className="inline-flex items-center px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-300 font-medium"
+                                            >
+                                                {t(`time_${slot}` as "time_morning" | "time_afternoon" | "time_evening")}
+                                            </span>
+                                        ))}
                                     </div>
                                 </div>
 
