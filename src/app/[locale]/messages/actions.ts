@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { sanitizeTextInput } from "@/lib/utils";
 import { rateLimit } from "@/lib/rate-limit";
 import { sendPushToUser } from "@/lib/web-push";
+import { tr } from "@/lib/i18n-errors";
 
 /**
  * SAH-96: send a message to another player. Wraps upsert_conversation()
@@ -20,12 +21,12 @@ export async function sendMessageAction(
 ): Promise<{ ok: true; conversationId: string } | { ok: false; error: string }> {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return { ok: false, error: "Not authenticated" };
-    if (recipientId === user.id) return { ok: false, error: "Cannot message yourself" };
+    if (!user) return { ok: false, error: await tr("common.not_authenticated") };
+    if (recipientId === user.id) return { ok: false, error: await tr("messages.cannot_self") };
 
     const trimmed = sanitizeTextInput(body ?? "");
-    if (trimmed.length < 1) return { ok: false, error: "Message cannot be empty" };
-    if (trimmed.length > 2000) return { ok: false, error: "Message too long (max 2000 chars)" };
+    if (trimmed.length < 1) return { ok: false, error: await tr("messages.empty") };
+    if (trimmed.length > 2000) return { ok: false, error: await tr("messages.too_long") };
 
     // 30 messages / hour / sender. Aggressive but spam pressure on
     // matchmaking is real — tune later from real traffic.

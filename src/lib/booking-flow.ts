@@ -25,6 +25,29 @@ import { capWalletCredit, computeCheckoutAmounts } from "@/lib/booking-pricing";
 import { getStripe } from "@/lib/stripe";
 import { getPlatformFeePercent } from "@/lib/platform-settings";
 import { captureRouteError } from "@/lib/sentry-helpers";
+import { getTranslations } from "next-intl/server";
+
+// SAH-158: Stripe Checkout description text shown on the hosted page —
+// localized to the booker's current request locale.
+async function checkoutDescription(params: {
+    date: string;
+    start: string;
+    end: string;
+    credit: number;
+    currency: string;
+}): Promise<string> {
+    const t = await getTranslations("booking_checkout");
+    if (params.credit > 0) {
+        return t("description_with_credit", {
+            date: params.date,
+            start: params.start,
+            end: params.end,
+            credit: params.credit.toFixed(2),
+            currency: params.currency,
+        });
+    }
+    return t("description", { date: params.date, start: params.start, end: params.end });
+}
 
 export interface BookCourtParams {
     /** Authed Supabase client (RLS will enforce access). */
@@ -207,9 +230,15 @@ export async function bookCourtCore(params: BookCourtParams): Promise<BookCourtR
                 unit_amount: chargeAmount,
                 product_data: {
                     name: facilityData?.name ? `${facilityData.name} — ${court.name}` : court.name,
-                    description: appliedCredit > 0
-                        ? `${slot.date} · ${slot.start_time}–${slot.end_time} (${appliedCredit.toFixed(2)} ${currency} wallet credit applied)`
-                        : `${slot.date} · ${slot.start_time}–${slot.end_time}`,
+                    // SAH-158: localized for the booker's session — the
+                    // description renders on Stripe-hosted checkout.
+                    description: await checkoutDescription({
+                        date: slot.date,
+                        start: slot.start_time,
+                        end: slot.end_time,
+                        credit: appliedCredit,
+                        currency,
+                    }),
                 },
             },
         }],

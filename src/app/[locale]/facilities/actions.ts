@@ -5,6 +5,7 @@ import { getLocale } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import { rateLimit } from "@/lib/rate-limit";
 import { reviewSchema } from "@/lib/validations";
+import { tr } from "@/lib/i18n-errors";
 
 // SAH-76: review submission moved off direct client→supabase to a server
 // action so we can rate-limit (5/h/user) before the insert. The RLS
@@ -20,7 +21,7 @@ export async function submitReviewAction(
     const locale = await getLocale();
 
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return { error: "Not authenticated", code: "unauthenticated" };
+    if (!user) return { error: await tr("common.not_authenticated"), code: "unauthenticated" };
 
     const parsed = reviewSchema.safeParse({
         rating: input.rating,
@@ -45,8 +46,8 @@ export async function submitReviewAction(
     });
 
     if (error) {
-        if (error.code === "23505") return { error: "You have already reviewed this facility.", code: "duplicate" };
-        if (error.code === "42501") return { error: "You can leave a review after your first completed booking here.", code: "no_booking" };
+        if (error.code === "23505") return { error: await tr("review.already_reviewed"), code: "duplicate" };
+        if (error.code === "42501") return { error: await tr("review.needs_completed_booking"), code: "no_booking" };
         return { error: error.message, code: error.code };
     }
 

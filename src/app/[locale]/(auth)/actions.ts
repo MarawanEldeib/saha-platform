@@ -13,6 +13,7 @@ import {
 } from "@/lib/validations";
 import { rateLimit } from "@/lib/rate-limit";
 import { sendPasswordResetEmail } from "@/lib/emails/password-reset-email";
+import { tr } from "@/lib/i18n-errors";
 
 // ---------------------------------------------------------------------------
 // Login
@@ -39,7 +40,7 @@ export async function loginAction(formData: FormData) {
     const { error } = await supabase.auth.signInWithPassword(parsed.data);
 
     if (error) {
-        return { error: "Invalid email or password." };
+        return { error: await tr("auth.invalid_credentials") };
     }
 
     const locale = formData.get("locale") as string ?? "en";
@@ -84,7 +85,7 @@ export async function registerAction(formData: FormData) {
 
     if (error) {
         if (error.code === "user_already_exists") {
-            return { error: "This email is already in use." };
+            return { error: await tr("auth.email_in_use") };
         }
         return { error: error.message };
     }
