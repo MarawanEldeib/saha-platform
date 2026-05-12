@@ -17,6 +17,7 @@ import { apiError, apiJson, apiPreflight } from "@/lib/api-response";
 import { getApiUser } from "@/lib/api-auth";
 import { rateLimit } from "@/lib/rate-limit";
 import { bookCourtCore } from "@/lib/booking-flow";
+import { captureRouteError } from "@/lib/sentry-helpers";
 
 const Body = z.object({
     availability_id: z.string().uuid(),
@@ -99,8 +100,13 @@ export async function POST(req: NextRequest) {
             }
         } catch (err) {
             // Don't fail-closed on Redis errors — better to attempt the
-            // booking than to lock out a real retry.
-            console.warn("[api/bookings] idempotency cache read failed", err);
+            // booking than to lock out a real retry. But surface to Sentry
+            // (level=error) so a sustained outage actually pages us.
+            captureRouteError(err, {
+                route: "v1/bookings",
+                level: "error",
+                extra: { phase: "idempotency_cache_read", user_id: user.id },
+            });
         }
     }
 
@@ -134,7 +140,11 @@ export async function POST(req: NextRequest) {
         try {
             await redis.set(cacheKey, responseData, { ex: 24 * 60 * 60 });
         } catch (err) {
-            console.warn("[api/bookings] idempotency cache write failed", err);
+            captureRouteError(err, {
+                route: "v1/bookings",
+                level: "error",
+                extra: { phase: "idempotency_cache_write", user_id: user.id },
+            });
         }
     }
 

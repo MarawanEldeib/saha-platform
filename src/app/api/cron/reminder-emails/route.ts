@@ -3,6 +3,9 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { sendWhatsApp } from "@/lib/twilio";
 import { Resend } from "resend";
 import { format } from "date-fns";
+import { captureRouteError } from "@/lib/sentry-helpers";
+
+const ROUTE = "cron/reminder-emails";
 
 export async function GET(req: NextRequest) {
     const resend = new Resend(process.env.RESEND_API_KEY);
@@ -92,7 +95,13 @@ export async function GET(req: NextRequest) {
                         </a>
                     </div>
                 `,
-            }).catch((err) => { console.error("reminder email failed", err); failed++; });
+            }).catch((err) => {
+                captureRouteError(err, {
+                    route: ROUTE,
+                    extra: { booking_id: booking.id, channel: "email", player_email: playerEmail },
+                });
+                failed++;
+            });
         }
 
         // SAH-79: only send WhatsApp to verified phones — otherwise we
@@ -106,7 +115,13 @@ export async function GET(req: NextRequest) {
                 `⏰ ${booking.start_time.slice(0, 5)} – ${booking.end_time.slice(0, 5)}\n` +
                 `📍 ${facility?.address}, ${facility?.city}\n\n` +
                 `View QR code: ${bookingUrl}`
-            ).catch((err) => { console.error("reminder whatsapp failed", err); failed++; });
+            ).catch((err) => {
+                captureRouteError(err, {
+                    route: ROUTE,
+                    extra: { booking_id: booking.id, channel: "whatsapp" },
+                });
+                failed++;
+            });
         }
 
         await supabase
@@ -117,5 +132,7 @@ export async function GET(req: NextRequest) {
         sent++;
     }
 
-    return NextResponse.json({ sent, failed });
+    // SAH-157: non-200 when every send failed so Vercel cron monitor escalates.
+    const status = sent === 0 && failed > 0 ? 500 : 200;
+    return NextResponse.json({ sent, failed }, { status });
 }

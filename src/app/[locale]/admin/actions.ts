@@ -5,6 +5,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import type { Database } from "@/types/database";
 import { logAuditEvent } from "@/lib/audit";
+import { captureRouteMessage } from "@/lib/sentry-helpers";
 import { sanitizeTextInput } from "@/lib/utils";
 import { sanitizeEventTags } from "@/lib/event-tags";
 import { geocodeAddress } from "@/lib/geocoding";
@@ -49,7 +50,13 @@ const SETTING_VALIDATORS: Record<string, (raw: unknown) => unknown | null> = {
 async function assertAdmin() {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error("Unauthorized");
+    if (!user) {
+        captureRouteMessage("admin guard rejected: unauthenticated", {
+            route: "admin/assertAdmin",
+            level: "warning",
+        });
+        throw new Error("Unauthorized");
+    }
 
     const { data: profile } = await supabase
         .from("profiles")
@@ -59,6 +66,14 @@ async function assertAdmin() {
 
     const role = (profile as { role: string } | null)?.role;
     if (role !== "admin") {
+        // SAH-157: surface non-admin reaching an admin action — could be
+        // misconfig or an actual privilege-escalation attempt.
+        captureRouteMessage("admin guard rejected: not admin role", {
+            route: "admin/assertAdmin",
+            user_id: user.id,
+            level: "warning",
+            extra: { role: role ?? "none" },
+        });
         throw new Error("Forbidden");
     }
 
@@ -69,6 +84,12 @@ async function assertAdmin() {
     // via a direct POST from outside the page flow. Belt-and-braces.
     const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
     if (aal && aal.currentLevel !== "aal2") {
+        captureRouteMessage("admin guard rejected: aal2 required", {
+            route: "admin/assertAdmin",
+            user_id: user.id,
+            level: "warning",
+            extra: { current_level: aal.currentLevel },
+        });
         throw new Error("Two-factor authentication required. Sign in again at /admin/2fa.");
     }
 

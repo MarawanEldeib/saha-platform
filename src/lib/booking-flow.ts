@@ -24,6 +24,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { capWalletCredit, computeCheckoutAmounts } from "@/lib/booking-pricing";
 import { getStripe } from "@/lib/stripe";
 import { getPlatformFeePercent } from "@/lib/platform-settings";
+import { captureRouteError } from "@/lib/sentry-helpers";
 
 export interface BookCourtParams {
     /** Authed Supabase client (RLS will enforce access). */
@@ -185,7 +186,11 @@ export async function bookCourtCore(params: BookCourtParams): Promise<BookCourtR
                 });
                 appliedCredit = typeof spent === "number" ? spent : Number(spent ?? 0);
             } catch (err) {
-                console.error("[booking-flow] spend_wallet_credit failed", err);
+                captureRouteError(err, {
+                    route: "booking-flow",
+                    user_id: userId,
+                    extra: { booking_id: booking.id, requested, phase: "spend_wallet_credit" },
+                });
             }
         }
     }
@@ -225,7 +230,12 @@ export async function bookCourtCore(params: BookCourtParams): Promise<BookCourtR
     let session: Stripe.Checkout.Session;
     try {
         session = await getStripe().checkout.sessions.create(sessionParams);
-    } catch {
+    } catch (sessionErr) {
+        captureRouteError(sessionErr, {
+            route: "booking-flow",
+            user_id: userId,
+            extra: { booking_id: booking.id, applied_credit: appliedCredit, phase: "stripe_session_create" },
+        });
         // Stripe rejected — release the slot, mark the booking cancelled,
         // and refund any wallet credit we already spent.
         await supabase.from("bookings").update({ status: "cancelled" } as never).eq("id", booking.id);
@@ -239,8 +249,13 @@ export async function bookCourtCore(params: BookCourtParams): Promise<BookCourtR
                     p_amount: appliedCredit,
                     p_booking_id: booking.id,
                 });
-            } catch (err) {
-                console.error("[booking-flow] credit refund after Stripe failure failed", err);
+            } catch (refundErr) {
+                captureRouteError(refundErr, {
+                    route: "booking-flow",
+                    user_id: userId,
+                    level: "error",
+                    extra: { booking_id: booking.id, applied_credit: appliedCredit, phase: "credit_refund_after_stripe_failure" },
+                });
             }
         }
         return { ok: false, error: "Could not start payment. Please try again." };

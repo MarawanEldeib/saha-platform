@@ -3,6 +3,9 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { sendWhatsApp } from "@/lib/twilio";
 import { Resend } from "resend";
 import { format } from "date-fns";
+import { captureRouteError } from "@/lib/sentry-helpers";
+
+const ROUTE = "cron/review-prompts";
 
 /**
  * SAH-94: Post-game review prompt. Sends a WhatsApp + email to the player
@@ -40,6 +43,7 @@ export async function GET(req: NextRequest) {
 
     let sent = 0;
     let skipped = 0;
+    let failed = 0;
 
     for (const booking of (bookings ?? []) as Array<{
         id: string;
@@ -88,7 +92,13 @@ export async function GET(req: NextRequest) {
                         </a>
                     </div>
                 `,
-            }).catch((err) => { console.error("review-prompt email failed", err); });
+            }).catch((err) => {
+                captureRouteError(err, {
+                    route: ROUTE,
+                    extra: { booking_id: booking.id, channel: "email" },
+                });
+                failed++;
+            });
         }
 
         if (booking.profiles?.phone) {
@@ -96,7 +106,13 @@ export async function GET(req: NextRequest) {
                 booking.profiles.phone,
                 `🎾 How was ${courtName} at ${facilityName}?\n\n` +
                 `A quick rating helps other players. Takes 10s:\n${reviewUrl}`
-            ).catch((err) => { console.error("review-prompt whatsapp failed", err); });
+            ).catch((err) => {
+                captureRouteError(err, {
+                    route: ROUTE,
+                    extra: { booking_id: booking.id, channel: "whatsapp" },
+                });
+                failed++;
+            });
         }
 
         await supabase
@@ -107,5 +123,6 @@ export async function GET(req: NextRequest) {
         sent++;
     }
 
-    return NextResponse.json({ sent, skipped });
+    const status = sent === 0 && failed > 0 ? 500 : 200;
+    return NextResponse.json({ sent, skipped, failed }, { status });
 }
