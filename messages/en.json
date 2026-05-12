@@ -52,6 +52,15 @@
             "title": "Own a Racket Sports Facility?",
             "subtitle": "List your courts for free. Reach thousands of players searching for courts across Dubai and the UAE.",
             "button": "List Your Facility"
+        },
+        "personalized": {
+            "resume_title": "Continue your booking",
+            "resume_body": "{facility} · {players} player(s) — payment not finished",
+            "welcome_back_title": "Welcome back",
+            "welcome_back_body": "Pick up where you left off — {sport} in {city}",
+            "any_sport": "racket sports",
+            "any_city": "the UAE",
+            "recent_title": "Recently viewed"
         }
     },
     "map": {
@@ -80,7 +89,9 @@
         "ai_day_thu": "Thu",
         "ai_day_fri": "Fri",
         "ai_day_sat": "Sat",
-        "ai_day_sun": "Sun"
+        "ai_day_sun": "Sun",
+        "onboarding_tooltip": "Tap a facility on the map or in the list to see courts and book a slot.",
+        "onboarding_dismiss": "Dismiss tip"
     },
     "facility": {
         "hours": "Opening Hours",

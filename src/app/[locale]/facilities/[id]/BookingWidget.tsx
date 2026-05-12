@@ -13,6 +13,7 @@ import { formatPrice } from "@/lib/utils";
 import type { PrayerWindow } from "@/lib/prayer-times";
 import { findOverlappingWindow } from "@/lib/prayer-times";
 import { SessionTypeBadge } from "@/components/booking/SessionTypeBadge";
+import { setResumeBooking, clearResumeBooking } from "@/lib/cookies/preferences-client";
 
 type Court = {
     id: string;
@@ -96,9 +97,26 @@ export function BookingWidget({ facilityId, courts, isLoggedIn, locale, currency
         setLoadingSlots(false);
     }
 
+    // SAH-122: while a slot is selected but checkout hasn't started,
+    // persist enough state to surface a "Continue your booking" banner
+    // on the next visit. Cleared on actual checkout (see handleBook).
+    useEffect(() => {
+        if (selectedSlot) {
+            setResumeBooking({
+                availability_id: selectedSlot.id,
+                num_players: 1,
+                facility_id: facilityId,
+            });
+        }
+    }, [selectedSlot, facilityId]);
+
     function handleBook() {
         if (!selectedSlot || !courtId) return;
         setError(null);
+        // SAH-122: clear the resume-booking cookie once checkout actually
+        // starts. If Stripe redirects back without payment, the cookie is
+        // re-set by the slot-select effect below.
+        clearResumeBooking();
         startTransition(async () => {
             // Wallet credit only applies to single-booking flow for now —
             // recurring series spend logic is a follow-up.

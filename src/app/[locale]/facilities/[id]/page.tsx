@@ -11,6 +11,7 @@ import { DAY_KEYS, formatTime, getStorageUrl } from "@/lib/utils";
 import Image from "next/image";
 import type { Metadata } from "next";
 import { BookingWidget } from "./BookingWidget";
+import { TrackRecentVisit } from "@/components/facility/TrackRecentVisit";
 
 export async function generateMetadata({
     params,
@@ -169,6 +170,7 @@ export default async function FacilityDetailPage({
 
     return (
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-10">
+            <TrackRecentVisit facilityId={id} />
             <script
                 type="application/ld+json"
                 // Server-rendered, value comes from our DB — XSS-safe.

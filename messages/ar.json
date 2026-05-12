@@ -52,6 +52,15 @@
             "title": "هل تملك منشأة لرياضات المضرب؟",
             "subtitle": "أدرج ملاعبك مجاناً. وصل إلى آلاف اللاعبين الباحثين عن ملاعب في دبي والإمارات.",
             "button": "أدرج منشأتك"
+        },
+        "personalized": {
+            "resume_title": "أكمل حجزك",
+            "resume_body": "{facility} · {players} لاعب — لم يكتمل الدفع",
+            "welcome_back_title": "مرحبًا بعودتك",
+            "welcome_back_body": "تابع من حيث توقفت — {sport} في {city}",
+            "any_sport": "رياضات المضرب",
+            "any_city": "الإمارات",
+            "recent_title": "شُوهد مؤخرًا"
         }
     },
     "map": {
@@ -80,7 +89,9 @@
         "ai_day_thu": "الخميس",
         "ai_day_fri": "الجمعة",
         "ai_day_sat": "السبت",
-        "ai_day_sun": "الأحد"
+        "ai_day_sun": "الأحد",
+        "onboarding_tooltip": "اضغط على منشأة على الخريطة أو في القائمة لعرض الملاعب وحجز موعد.",
+        "onboarding_dismiss": "إخفاء التلميح"
     },
     "facility": {
         "hours": "ساعات العمل",
