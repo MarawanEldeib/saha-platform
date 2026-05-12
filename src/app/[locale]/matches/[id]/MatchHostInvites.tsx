@@ -13,11 +13,13 @@ import { useTranslations } from "next-intl";
 import { UserPlus } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { InvitePlayersSheet } from "./InvitePlayersSheet";
+import { SkillChip } from "@/components/matches/SkillChip";
 
 interface ContactOption {
     user_id: string;
     display_name: string | null;
     avatar_url: string | null;
+    skill_rating?: number | null;
 }
 
 interface GroupOption {
@@ -32,6 +34,7 @@ interface InviteRow {
     status: "pending" | "accepted" | "declined" | "expired" | "cancelled";
     display_name: string | null;
     avatar_url: string | null;
+    skill_rating?: number | null;
 }
 
 interface Props {
@@ -123,6 +126,7 @@ function InviteGroup({
                         <span className="text-xs text-gray-700 dark:text-gray-300 pr-1">
                             {i.display_name ?? "—"}
                         </span>
+                        <SkillChip rating={i.skill_rating} />
                     </li>
                 ))}
             </ul>

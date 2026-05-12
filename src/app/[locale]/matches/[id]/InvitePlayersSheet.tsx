@@ -16,11 +16,13 @@ import { useTranslations } from "next-intl";
 import { X, Plus, Check, Users as UsersIcon } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { inviteToMatchAction } from "../actions";
+import { SkillChip } from "@/components/matches/SkillChip";
 
 interface ContactOption {
     user_id: string;
     display_name: string | null;
     avatar_url: string | null;
+    skill_rating?: number | null;
 }
 
 interface GroupOption {
@@ -181,6 +183,7 @@ export function InvitePlayersSheet({ matchId, contacts, groups, open, onClose }:
                                                     <span className="flex-1 text-sm text-left text-gray-900 dark:text-white">
                                                         {c.display_name ?? t("anonymous")}
                                                     </span>
+                                                    <SkillChip rating={c.skill_rating} />
                                                     <span className={`inline-flex items-center justify-center h-7 w-7 rounded-full border-2 ${
                                                         selected
                                                             ? "border-emerald-500 bg-emerald-500 text-white"

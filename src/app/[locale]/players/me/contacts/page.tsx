@@ -14,7 +14,11 @@ export const metadata = { title: "My Contacts — Saha" };
 
 interface ContactRow {
     contact_user_id: string;
-    profiles: { display_name: string | null; avatar_url: string | null } | null;
+    profiles: {
+        display_name: string | null;
+        avatar_url: string | null;
+        skill_rating: number | string | null;
+    } | null;
 }
 
 interface GroupRow {
@@ -25,6 +29,7 @@ interface GroupRow {
         user_id: string;
         display_name: string | null;
         avatar_url: string | null;
+        skill_rating: number | null;
     }>;
 }
 
@@ -42,7 +47,7 @@ export default async function ContactsPage() {
         .from("player_contacts")
         .select(`
             contact_user_id,
-            profiles!player_contacts_contact_user_id_fkey(display_name, avatar_url)
+            profiles!player_contacts_contact_user_id_fkey(display_name, avatar_url, skill_rating)
         `)
         .eq("owner_id", user.id)
         .order("created_at", { ascending: false });
@@ -64,6 +69,7 @@ export default async function ContactsPage() {
         user_id: string;
         display_name: string | null;
         avatar_url: string | null;
+        skill_rating: number | null;
     }>>();
 
     if (groupIds.length > 0) {
@@ -72,20 +78,21 @@ export default async function ContactsPage() {
             .from("player_group_members")
             .select(`
                 group_id, member_user_id,
-                profiles!player_group_members_member_user_id_fkey(display_name, avatar_url)
+                profiles!player_group_members_member_user_id_fkey(display_name, avatar_url, skill_rating)
             `)
             .in("group_id", groupIds);
 
         for (const m of (members ?? []) as Array<{
             group_id: string;
             member_user_id: string;
-            profiles: { display_name: string | null; avatar_url: string | null } | null;
+            profiles: { display_name: string | null; avatar_url: string | null; skill_rating: number | string | null } | null;
         }>) {
             if (!memberLookup.has(m.group_id)) memberLookup.set(m.group_id, []);
             memberLookup.get(m.group_id)!.push({
                 user_id: m.member_user_id,
                 display_name: m.profiles?.display_name ?? null,
                 avatar_url: m.profiles?.avatar_url ?? null,
+                skill_rating: m.profiles?.skill_rating != null ? Number(m.profiles.skill_rating) : null,
             });
         }
     }
@@ -99,6 +106,7 @@ export default async function ContactsPage() {
         user_id: c.contact_user_id,
         display_name: c.profiles?.display_name ?? null,
         avatar_url: c.profiles?.avatar_url ?? null,
+        skill_rating: c.profiles?.skill_rating != null ? Number(c.profiles.skill_rating) : null,
     }));
 
     return (

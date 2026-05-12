@@ -1286,10 +1286,13 @@ export async function updateProfileAction(formData: FormData) {
 
     const rawPhone = (formData.get("phone") as string)?.trim();
     const rawTrn = (formData.get("trn") as string)?.trim();
+    const rawSkill = (formData.get("skill_rating") as string)?.trim();
+    const skillNum = rawSkill ? Number(rawSkill) : "";
     const raw = {
         display_name: (formData.get("display_name") as string)?.trim(),
         phone: rawPhone || "",
         trn: rawTrn || "",
+        skill_rating: skillNum === "" || Number.isNaN(skillNum) ? "" : skillNum,
     };
     const parsed = profileUpdateSchema.safeParse(raw);
     if (!parsed.success) return { error: parsed.error.issues[0].message };
@@ -1316,6 +1319,8 @@ export async function updateProfileAction(formData: FormData) {
     const update: Record<string, unknown> = {
         display_name: parsed.data.display_name,
         trn: parsed.data.trn ? parsed.data.trn : null,
+        // SAH-152 Phase 8: skill rating — null when blank, clamped value otherwise.
+        skill_rating: typeof parsed.data.skill_rating === "number" ? parsed.data.skill_rating : null,
     };
     if (phoneChanged) {
         // Clearing the phone — drop verified state too.

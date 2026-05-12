@@ -18,6 +18,7 @@ import { useTranslations } from "next-intl";
 import { Plus, Search, X, Trash2, Users as UsersIcon, Edit2 } from "lucide-react";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
+import { SkillChip } from "@/components/matches/SkillChip";
 import {
     addContactAction,
     removeContactAction,
@@ -32,6 +33,7 @@ interface Contact {
     user_id: string;
     display_name: string | null;
     avatar_url: string | null;
+    skill_rating?: number | null;
 }
 
 interface Group {
@@ -99,6 +101,7 @@ export function ContactsClient({ initialContacts, initialGroups }: Props) {
             user_id: hit.id,
             display_name: hit.display_name,
             avatar_url: hit.avatar_url,
+            skill_rating: hit.skill_rating ?? null,
         };
         setContacts((prev) => [optimistic, ...prev]);
         setSearchHits((prev) => prev.filter((h) => h.id !== hit.id));
@@ -235,6 +238,7 @@ export function ContactsClient({ initialContacts, initialGroups }: Props) {
                                     <span className="flex-1 text-sm font-medium text-gray-900 dark:text-white">
                                         {hit.display_name ?? t("anonymous")}
                                     </span>
+                                    <SkillChip rating={hit.skill_rating} />
                                     <button
                                         onClick={() => handleAdd(hit)}
                                         className="inline-flex items-center justify-center h-8 w-8 rounded-full border-2 border-dashed border-emerald-500 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/30"
@@ -264,6 +268,7 @@ export function ContactsClient({ initialContacts, initialGroups }: Props) {
                                     <span className="flex-1 text-sm font-medium text-gray-900 dark:text-white">
                                         {c.display_name ?? t("anonymous")}
                                     </span>
+                                    <SkillChip rating={c.skill_rating} />
                                     <button
                                         onClick={() => handleRemove(c)}
                                         className="text-gray-400 hover:text-red-500 p-1.5 rounded"

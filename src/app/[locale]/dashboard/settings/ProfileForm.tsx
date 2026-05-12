@@ -23,6 +23,8 @@ interface Props {
     initialPhoneVerified?: boolean;
     /** SAH-90: optional 15-digit UAE TRN to print on tax invoices. */
     initialTrn?: string;
+    /** SAH-152 Phase 8: optional self-rated skill (1.0–7.0). */
+    initialSkillRating?: number | null;
 }
 
 async function cropToSquareJpeg(file: File): Promise<Blob> {
@@ -56,7 +58,7 @@ async function cropToSquareJpeg(file: File): Promise<Blob> {
     });
 }
 
-export function ProfileForm({ initialName, initialPhone, initialAvatar, initialPhoneVerified = false, initialTrn = "" }: Props) {
+export function ProfileForm({ initialName, initialPhone, initialAvatar, initialPhoneVerified = false, initialTrn = "", initialSkillRating = null }: Props) {
     const t = useTranslations("account");
     const router = useRouter();
 
@@ -73,6 +75,10 @@ export function ProfileForm({ initialName, initialPhone, initialAvatar, initialP
     const [phone, setPhone] = React.useState(initialPhone);
     // SAH-90: optional player TRN.
     const [trn, setTrn] = React.useState(initialTrn);
+    // SAH-152 Phase 8: skill rating self-rating.
+    const [skillRating, setSkillRating] = React.useState<string>(
+        initialSkillRating != null ? String(initialSkillRating.toFixed(2)) : "",
+    );
     const [verifyStage, setVerifyStage] = React.useState<"idle" | "code-sent">("idle");
     const [otpCode, setOtpCode] = React.useState("");
     const [verifyLoading, setVerifyLoading] = React.useState(false);
@@ -193,6 +199,7 @@ export function ProfileForm({ initialName, initialPhone, initialAvatar, initialP
         fd.set("display_name", displayName);
         fd.set("phone", phoneCleared ? "" : initialPhone);
         fd.set("trn", trn.trim());
+        fd.set("skill_rating", skillRating.trim());
         const result = await updateProfileAction(fd);
         setLoading(false);
         if (result?.error) { setError(result.error); return; }
@@ -353,6 +360,28 @@ export function ProfileForm({ initialName, initialPhone, initialAvatar, initialP
                             </button>
                         </div>
                     )}
+                </div>
+
+                {/* SAH-152 Phase 8: skill rating self-rating */}
+                <div className="space-y-1">
+                    <label htmlFor="skill-rating-input" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                        Skill rating (optional)
+                    </label>
+                    <input
+                        id="skill-rating-input"
+                        name="skill_rating"
+                        type="number"
+                        min={1}
+                        max={7}
+                        step={0.1}
+                        value={skillRating}
+                        onChange={(e) => setSkillRating(e.target.value)}
+                        placeholder="e.g. 3.5"
+                        className="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    />
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                        1.0–7.0 padel-ladder scale. Shown to players when inviting you to a match.
+                    </p>
                 </div>
 
                 {/* SAH-90: optional player TRN for tax-invoice corporate expenses */}
