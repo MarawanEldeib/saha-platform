@@ -189,6 +189,12 @@ export const profileUpdateSchema = z.object({
     // SAH-90: optional player TRN — 15 digits per UAE FTA spec. Used to
     // print the player's TRN on the tax invoice for corporate expenses.
     trn: z.string().regex(/^\d{15}$/, "TRN must be 15 digits").optional().or(z.literal("")),
+    // SAH-152 Phase 8: optional self-rated skill (1.0–7.0 padel ladder).
+    skill_rating: z.union([
+        z.number().min(1).max(7),
+        z.literal(""),
+        z.null(),
+    ]).optional(),
 });
 export type ProfileUpdateInput = z.infer<typeof profileUpdateSchema>;
 

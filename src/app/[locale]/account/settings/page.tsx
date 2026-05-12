@@ -17,7 +17,7 @@ export default async function AccountSettingsPage() {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data: profile } = await (supabase as any)
         .from("profiles")
-        .select("display_name, phone, phone_verified, avatar_url, trn")
+        .select("display_name, phone, phone_verified, avatar_url, trn, skill_rating")
         .eq("id", user.id)
         .single();
 
@@ -36,6 +36,7 @@ export default async function AccountSettingsPage() {
                     initialAvatar={profile?.avatar_url || null}
                     initialPhoneVerified={!!profile?.phone_verified}
                     initialTrn={profile?.trn || ""}
+                    initialSkillRating={profile?.skill_rating != null ? Number(profile.skill_rating) : null}
                 />
             </div>
         </div>

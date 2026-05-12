@@ -79,6 +79,7 @@ export interface PlayerSearchHit {
     id: string;
     display_name: string | null;
     avatar_url: string | null;
+    skill_rating: number | null;
 }
 
 export async function searchPlayersAction(query: string): Promise<Result<PlayerSearchHit[]>> {
@@ -92,7 +93,7 @@ export async function searchPlayersAction(query: string): Promise<Result<PlayerS
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data, error } = await (supabase as any)
         .from("public_profiles")
-        .select("id, display_name, avatar_url, role")
+        .select("id, display_name, avatar_url, role, skill_rating")
         .ilike("display_name", `%${q}%`)
         .eq("role", "user")
         .neq("id", user.id)

@@ -5,6 +5,7 @@ import { getLocale, getTranslations } from "next-intl/server";
 import { format } from "date-fns";
 import { Calendar, MapPin, ArrowLeft, User as UserIcon } from "lucide-react";
 import { Badge } from "@/components/ui/Badge";
+import { SkillChip } from "@/components/matches/SkillChip";
 import type { Metadata } from "next";
 
 // SAH-152 round 3: public profile browsing. Players who see a matchmaking
@@ -19,6 +20,7 @@ interface ProfileRow {
     display_name: string | null;
     avatar_url: string | null;
     created_at: string;
+    skill_rating: number | string | null;
 }
 
 interface PostRow {
@@ -54,7 +56,7 @@ export default async function PlayerProfilePage({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data: profile } = await (supabase as any)
         .from("public_profiles")
-        .select("id, display_name, avatar_url, created_at")
+        .select("id, display_name, avatar_url, created_at, skill_rating")
         .eq("id", id)
         .single();
 
@@ -104,7 +106,10 @@ export default async function PlayerProfilePage({
                     </div>
                 )}
                 <div>
-                    <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{displayName}</h1>
+                    <div className="flex items-center gap-2 flex-wrap">
+                        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{displayName}</h1>
+                        <SkillChip rating={p.skill_rating} size="sm" />
+                    </div>
                     <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
                         {t("joined_on", { date: format(new Date(p.created_at), "MMM yyyy") })}
                     </p>

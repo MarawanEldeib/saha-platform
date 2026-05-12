@@ -20,6 +20,7 @@ import { MatchHostInvites } from "./MatchHostInvites";
 import { MatchInviteResponse } from "./MatchInviteResponse";
 import { MatchJoinRequests } from "./MatchJoinRequests";
 import { MatchChat } from "./MatchChat";
+import { SkillChip } from "@/components/matches/SkillChip";
 
 export const metadata = { title: "Match — Saha" };
 
@@ -47,7 +48,11 @@ interface ParticipantRow {
     user_id: string;
     role: "host" | "player";
     joined_at: string;
-    profiles: { display_name: string | null; avatar_url: string | null } | null;
+    profiles: {
+        display_name: string | null;
+        avatar_url: string | null;
+        skill_rating: number | string | null;
+    } | null;
 }
 
 const SPORT_EMOJI: Record<string, string> = {
@@ -99,7 +104,7 @@ export default async function MatchDetailPage({ params }: PageProps) {
         .from("match_participants")
         .select(`
             user_id, role, joined_at,
-            profiles!match_participants_user_id_fkey(display_name, avatar_url)
+            profiles!match_participants_user_id_fkey(display_name, avatar_url, skill_rating)
         `)
         .eq("match_id", id)
         .order("joined_at", { ascending: true });
@@ -116,7 +121,12 @@ export default async function MatchDetailPage({ params }: PageProps) {
 
     // Host-only: load contacts + groups + the invite roll-up.
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let hostContacts: Array<{ user_id: string; display_name: string | null; avatar_url: string | null }> = [];
+    let hostContacts: Array<{
+        user_id: string;
+        display_name: string | null;
+        avatar_url: string | null;
+        skill_rating: number | null;
+    }> = [];
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let hostGroups: Array<{ id: string; name: string; member_count: number }> = [];
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -124,6 +134,7 @@ export default async function MatchDetailPage({ params }: PageProps) {
         id: string; invitee_user_id: string;
         status: "pending" | "accepted" | "declined" | "expired" | "cancelled";
         display_name: string | null; avatar_url: string | null;
+        skill_rating: number | null;
     }> = [];
 
     if (isHost && viewerId) {
@@ -132,17 +143,18 @@ export default async function MatchDetailPage({ params }: PageProps) {
             .from("player_contacts")
             .select(`
                 contact_user_id,
-                profiles!player_contacts_contact_user_id_fkey(display_name, avatar_url)
+                profiles!player_contacts_contact_user_id_fkey(display_name, avatar_url, skill_rating)
             `)
             .eq("owner_id", viewerId);
 
         hostContacts = ((contactsData ?? []) as Array<{
             contact_user_id: string;
-            profiles: { display_name: string | null; avatar_url: string | null } | null;
+            profiles: { display_name: string | null; avatar_url: string | null; skill_rating: number | string | null } | null;
         }>).map((c) => ({
             user_id: c.contact_user_id,
             display_name: c.profiles?.display_name ?? null,
             avatar_url: c.profiles?.avatar_url ?? null,
+            skill_rating: c.profiles?.skill_rating != null ? Number(c.profiles.skill_rating) : null,
         }));
 
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -170,7 +182,7 @@ export default async function MatchDetailPage({ params }: PageProps) {
             .from("match_invites")
             .select(`
                 id, invitee_user_id, status,
-                profiles!match_invites_invitee_user_id_fkey(display_name, avatar_url)
+                profiles!match_invites_invitee_user_id_fkey(display_name, avatar_url, skill_rating)
             `)
             .eq("match_id", id)
             .order("sent_at", { ascending: false });
@@ -178,13 +190,14 @@ export default async function MatchDetailPage({ params }: PageProps) {
         hostInvites = ((invitesData ?? []) as Array<{
             id: string; invitee_user_id: string;
             status: "pending" | "accepted" | "declined" | "expired" | "cancelled";
-            profiles: { display_name: string | null; avatar_url: string | null } | null;
+            profiles: { display_name: string | null; avatar_url: string | null; skill_rating: number | string | null } | null;
         }>).map((i) => ({
             id: i.id,
             invitee_user_id: i.invitee_user_id,
             status: i.status,
             display_name: i.profiles?.display_name ?? null,
             avatar_url: i.profiles?.avatar_url ?? null,
+            skill_rating: i.profiles?.skill_rating != null ? Number(i.profiles.skill_rating) : null,
         }));
     }
 
@@ -447,15 +460,16 @@ export default async function MatchDetailPage({ params }: PageProps) {
                                         url={p.profiles?.avatar_url ?? null}
                                         name={p.profiles?.display_name ?? "Player"}
                                     />
-                                    <div className="flex-1 min-w-0">
+                                    <div className="flex-1 min-w-0 flex items-center gap-2 flex-wrap">
                                         <Link
                                             href={`/${locale}/players/${p.user_id}`}
                                             className="text-sm font-medium text-gray-900 dark:text-white hover:text-emerald-600"
                                         >
                                             {p.profiles?.display_name ?? t("anonymous_player")}
                                         </Link>
+                                        <SkillChip rating={p.profiles?.skill_rating} />
                                         {isThisHost && (
-                                            <span className="ml-2 text-[10px] uppercase font-semibold text-emerald-600 dark:text-emerald-400">
+                                            <span className="text-[10px] uppercase font-semibold text-emerald-600 dark:text-emerald-400">
                                                 {t("host_chip")}
                                             </span>
                                         )}
