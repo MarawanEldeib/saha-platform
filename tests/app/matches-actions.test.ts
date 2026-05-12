@@ -17,6 +17,7 @@ const insertParticipantMock = vi.fn();
 const deleteParticipantMock = vi.fn();
 const updateMatchMock = vi.fn();
 const participantCountMock = vi.fn();
+const insertJoinRequestMock = vi.fn();
 
 vi.mock("@/lib/supabase/server", () => ({
     createClient: async () => ({
@@ -60,6 +61,9 @@ vi.mock("@/lib/supabase/server", () => ({
                     }),
                 };
             }
+            if (table === "match_join_requests") {
+                return { insert: insertJoinRequestMock };
+            }
             return {};
         },
     }),
@@ -87,6 +91,7 @@ beforeEach(() => {
     updateMatchMock.mockReset();
     participantCountMock.mockReset();
     rateLimitMock.mockReset();
+    insertJoinRequestMock.mockReset();
 });
 
 const FUTURE_ISO = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
@@ -175,7 +180,7 @@ describe("joinMatchAction", () => {
         expect(r).toEqual({ ok: false, error: "matches.invite_only" });
     });
 
-    it("rejects when match gate is 'request'", async () => {
+    it("files a join request when gate is 'request' (Phase 4)", async () => {
         getUserMock.mockResolvedValueOnce({ data: { user: { id: "u1" } } });
         matchSingleMock.mockResolvedValueOnce({
             data: {
@@ -183,9 +188,25 @@ describe("joinMatchAction", () => {
                 capacity: 4, user_id: "u-host", scheduled_for: FUTURE_ISO,
             },
         });
+        insertJoinRequestMock.mockResolvedValueOnce({ error: null });
         const { joinMatchAction } = await import("@/app/[locale]/matches/actions");
         const r = await joinMatchAction("m-1");
-        expect(r).toEqual({ ok: false, error: "matches.request_only" });
+        expect(r).toEqual({ ok: true });
+        expect(insertJoinRequestMock).toHaveBeenCalled();
+    });
+
+    it("translates duplicate join-request as already_pending", async () => {
+        getUserMock.mockResolvedValueOnce({ data: { user: { id: "u1" } } });
+        matchSingleMock.mockResolvedValueOnce({
+            data: {
+                id: "m-1", status: "open", gate: "request",
+                capacity: 4, user_id: "u-host", scheduled_for: FUTURE_ISO,
+            },
+        });
+        insertJoinRequestMock.mockResolvedValueOnce({ error: { code: "23505", message: "dup" } });
+        const { joinMatchAction } = await import("@/app/[locale]/matches/actions");
+        const r = await joinMatchAction("m-1");
+        expect(r).toEqual({ ok: false, error: "requests.already_pending" });
     });
 
     it("rejects the host trying to join their own match", async () => {

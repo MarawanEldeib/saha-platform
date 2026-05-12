@@ -208,6 +208,11 @@
         "join_match": "Join match",
         "leave_match": "Leave match",
         "cancel_match": "Cancel match",
+        "request_to_join": "Request to join",
+        "request_pending_blurb": "Your request is pending — the host will respond.",
+        "requests_heading": "Join requests ({count})",
+        "accept_request": "Accept",
+        "decline_request": "Decline",
         "sign_in_to_join": "Sign in to join",
         "working": "Working…",
         "full": "Match is full",
@@ -227,6 +232,13 @@
         "accept_invite": "Accept invite",
         "decline_invite": "Decline",
         "phase_note": "Request-to-join + per-match chat ship in Phase 4."
+    },
+    "match_chat": {
+        "heading": "Match chat",
+        "empty": "No messages yet. Say hi 👋",
+        "placeholder": "Message your team…",
+        "send": "Send",
+        "anonymous": "Player"
     },
     "invite_sheet": {
         "title": "Select who can join",
@@ -1208,6 +1220,16 @@
             "no_recipients": "Pick at least one player or group.",
             "not_found": "Invite not found.",
             "already_responded": "You've already responded to this invite."
+        },
+        "requests": {
+            "already_pending": "You already have a pending request for this match.",
+            "not_found": "Request not found.",
+            "already_responded": "This request has already been responded to."
+        },
+        "chat": {
+            "empty": "Type a message before sending.",
+            "too_long": "Message is too long (max 2000 characters).",
+            "not_participant": "You must be a participant to chat in this match."
         },
         "events": {
             "name_too_short": "Event name must be at least 3 characters.",

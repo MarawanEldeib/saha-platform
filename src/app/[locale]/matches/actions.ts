@@ -145,7 +145,21 @@ export async function joinMatchAction(matchId: string): Promise<ActionResult> {
         return { ok: false, error: await tr("matches.invite_only") };
     }
     if (match.gate === "request") {
-        return { ok: false, error: await tr("matches.request_only") };
+        // SAH-152 Phase 4: file a join request for the host to approve.
+        // RLS limits INSERT to requester_user_id = auth.uid().
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { error: reqErr } = await (supabase as any)
+            .from("match_join_requests")
+            .insert({ match_id: matchId, requester_user_id: user.id, status: "pending" });
+        if (reqErr) {
+            if (reqErr.code === "23505") {
+                return { ok: false, error: await tr("requests.already_pending") };
+            }
+            captureRouteError(reqErr, { route: ROUTE, user_id: user.id, extra: { matchId } });
+            return { ok: false, error: await tr("common.unexpected_error") };
+        }
+        revalidatePath(`/matches/${matchId}`);
+        return { ok: true };
     }
 
     // Capacity check — count current participants vs. cap.
@@ -209,6 +223,112 @@ export async function leaveMatchAction(matchId: string): Promise<ActionResult> {
         return { ok: false, error: await tr("common.unexpected_error") };
     }
     revalidatePath("/matches");
+    revalidatePath(`/matches/${matchId}`);
+    return { ok: true };
+}
+
+// ---------------------------------------------------------------------------
+// respondToJoinRequestAction — host approves or declines a join request.
+// On approve: also seats the requester in match_participants (capacity-aware).
+// ---------------------------------------------------------------------------
+export async function respondToJoinRequestAction(
+    requestId: string,
+    decision: "accepted" | "declined",
+): Promise<ActionResult> {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { ok: false, error: await tr("common.not_authenticated") };
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: request } = await (supabase as any)
+        .from("match_join_requests")
+        .select("id, match_id, requester_user_id, status")
+        .eq("id", requestId)
+        .single();
+    if (!request) return { ok: false, error: await tr("requests.not_found") };
+    if (request.status !== "pending") {
+        return { ok: false, error: await tr("requests.already_responded") };
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: match } = await (supabase as any)
+        .from("matchmaking_posts")
+        .select("user_id, capacity, status")
+        .eq("id", request.match_id)
+        .single();
+    if (!match || match.user_id !== user.id) {
+        return { ok: false, error: await tr("common.forbidden") };
+    }
+    if (match.status !== "open") {
+        return { ok: false, error: await tr("matches.not_open") };
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error: updErr } = await (supabase as any)
+        .from("match_join_requests")
+        .update({ status: decision, responded_at: new Date().toISOString() })
+        .eq("id", requestId);
+    if (updErr) {
+        captureRouteError(updErr, { route: ROUTE, user_id: user.id, extra: { requestId } });
+        return { ok: false, error: await tr("common.unexpected_error") };
+    }
+
+    if (decision === "accepted") {
+        // Capacity gate then seat the requester. We accept the race: if
+        // capacity slipped between check and insert, RLS still permits the
+        // row and the host can kick later.
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { count } = await (supabase as any)
+            .from("match_participants")
+            .select("*", { count: "exact", head: true })
+            .eq("match_id", request.match_id);
+        if ((count ?? 0) < (match.capacity as number)) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            await (supabase as any)
+                .from("match_participants")
+                .insert({
+                    match_id: request.match_id,
+                    user_id: request.requester_user_id,
+                    role: "player",
+                });
+        }
+    }
+
+    revalidatePath(`/matches/${request.match_id}`);
+    return { ok: true };
+}
+
+// ---------------------------------------------------------------------------
+// sendMatchMessageAction — match-scoped chat. Participants only (RLS).
+// ---------------------------------------------------------------------------
+export async function sendMatchMessageAction(
+    matchId: string,
+    body: string,
+): Promise<ActionResult> {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { ok: false, error: await tr("common.not_authenticated") };
+
+    const trimmed = (body ?? "").trim();
+    if (trimmed.length < 1) return { ok: false, error: await tr("chat.empty") };
+    if (trimmed.length > 2000) return { ok: false, error: await tr("chat.too_long") };
+
+    const rl = await rateLimit("messages_send");
+    if (!rl.success) return { ok: false, error: await tr("common.rate_limited") };
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error } = await (supabase as any)
+        .from("match_messages")
+        .insert({ match_id: matchId, sender_id: user.id, body: trimmed });
+
+    if (error) {
+        // RLS rejection means the caller isn't a participant.
+        if (error.code === "42501" || error.message?.includes("policy")) {
+            return { ok: false, error: await tr("chat.not_participant") };
+        }
+        captureRouteError(error, { route: ROUTE, user_id: user.id, extra: { matchId } });
+        return { ok: false, error: await tr("common.unexpected_error") };
+    }
     revalidatePath(`/matches/${matchId}`);
     return { ok: true };
 }

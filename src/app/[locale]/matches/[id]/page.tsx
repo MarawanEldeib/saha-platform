@@ -17,6 +17,8 @@ import { createClient } from "@/lib/supabase/server";
 import { JoinLeaveControls } from "./JoinLeaveControls";
 import { MatchHostInvites } from "./MatchHostInvites";
 import { MatchInviteResponse } from "./MatchInviteResponse";
+import { MatchJoinRequests } from "./MatchJoinRequests";
+import { MatchChat } from "./MatchChat";
 
 export const metadata = { title: "Match — Saha" };
 
@@ -198,6 +200,80 @@ export default async function MatchDetailPage({ params }: PageProps) {
         viewerPendingInviteId = (myInvite as { id: string } | null)?.id ?? null;
     }
 
+    // Phase 4: do I have a pending join request to this match? (request gate)
+    let viewerHasPendingRequest = false;
+    if (viewerId && !isHost && !isParticipant && match.gate === "request") {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { data: myReq } = await (supabase as any)
+            .from("match_join_requests")
+            .select("status")
+            .eq("match_id", id)
+            .eq("requester_user_id", viewerId)
+            .eq("status", "pending")
+            .maybeSingle();
+        viewerHasPendingRequest = Boolean(myReq);
+    }
+
+    // Phase 4: host's pending join-request queue (request gate only).
+    let hostJoinRequests: Array<{
+        id: string;
+        requester_user_id: string;
+        display_name: string | null;
+        avatar_url: string | null;
+        created_at: string;
+    }> = [];
+    if (isHost && viewerId && match.gate === "request" && match.status === "open") {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { data: reqs } = await (supabase as any)
+            .from("match_join_requests")
+            .select(`
+                id, requester_user_id, created_at,
+                profiles!match_join_requests_requester_user_id_fkey(display_name, avatar_url)
+            `)
+            .eq("match_id", id)
+            .eq("status", "pending")
+            .order("created_at", { ascending: true });
+        hostJoinRequests = ((reqs ?? []) as Array<{
+            id: string; requester_user_id: string; created_at: string;
+            profiles: { display_name: string | null; avatar_url: string | null } | null;
+        }>).map((r) => ({
+            id: r.id,
+            requester_user_id: r.requester_user_id,
+            display_name: r.profiles?.display_name ?? null,
+            avatar_url: r.profiles?.avatar_url ?? null,
+            created_at: r.created_at,
+        }));
+    }
+
+    // Phase 4: chat thread for participants.
+    let chatMessages: Array<{
+        id: string; sender_id: string; body: string; created_at: string;
+        sender_display_name: string | null; sender_avatar_url: string | null;
+    }> = [];
+    if (isParticipant && viewerId) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { data: msgs } = await (supabase as any)
+            .from("match_messages")
+            .select(`
+                id, sender_id, body, created_at,
+                profiles!match_messages_sender_id_fkey(display_name, avatar_url)
+            `)
+            .eq("match_id", id)
+            .order("created_at", { ascending: true })
+            .limit(200);
+        chatMessages = ((msgs ?? []) as Array<{
+            id: string; sender_id: string; body: string; created_at: string;
+            profiles: { display_name: string | null; avatar_url: string | null } | null;
+        }>).map((m) => ({
+            id: m.id,
+            sender_id: m.sender_id,
+            body: m.body,
+            created_at: m.created_at,
+            sender_display_name: m.profiles?.display_name ?? null,
+            sender_avatar_url: m.profiles?.avatar_url ?? null,
+        }));
+    }
+
     const scheduledAt = new Date(match.scheduled_for);
     const dateLocale = locale === "ar" ? arLocale : undefined;
     const sportEmoji = SPORT_EMOJI[match.sports?.name ?? ""] ?? "🏟️";
@@ -299,6 +375,7 @@ export default async function MatchDetailPage({ params }: PageProps) {
                     isAuthenticated={Boolean(viewerId)}
                     locale={locale}
                     isFull={joinedCount >= match.capacity}
+                    viewerHasPendingRequest={viewerHasPendingRequest}
                 />
             </div>
 
@@ -314,6 +391,24 @@ export default async function MatchDetailPage({ params }: PageProps) {
                     contacts={hostContacts}
                     groups={hostGroups}
                     invites={hostInvites}
+                />
+            )}
+
+            {/* Host join-request queue (request gate) */}
+            {isHost && match.gate === "request" && hostJoinRequests.length > 0 && (
+                <MatchJoinRequests
+                    matchId={match.id}
+                    requests={hostJoinRequests}
+                    locale={locale}
+                />
+            )}
+
+            {/* Per-match chat (participants only) */}
+            {isParticipant && viewerId && (
+                <MatchChat
+                    matchId={match.id}
+                    viewerId={viewerId}
+                    initialMessages={chatMessages}
                 />
             )}
 
