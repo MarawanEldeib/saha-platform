@@ -10,6 +10,10 @@ import { useTranslations } from "next-intl";
 
 const ACCEPTED_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
 const DEFAULT_MAX_IMAGES = 10;
+// SAH-160: server-side route enforces magic-byte + size limits. Keep this
+// constant in sync with MAX_IMAGE_BYTES in lib/image-validation.ts so we
+// can warn the user instantly before sending oversized payloads.
+const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
 
 type UploadStatus = "uploading" | "uploaded" | "error";
 
@@ -30,12 +34,6 @@ interface ImageUploaderProps {
     facilityId: string;
     initialImages?: FacilityImage[];
     maxImages?: number;
-}
-
-function sanitizeFileName(name: string): string {
-    const trimmed = name.trim();
-    if (!trimmed) return "image";
-    return trimmed.toLowerCase().replace(/[^a-z0-9.-]+/g, "-");
 }
 
 function getRandomId(): string {
@@ -100,21 +98,24 @@ export function ImageUploader({ facilityId, initialImages = [], maxImages = DEFA
         return index === -1 ? itemsRef.current.length : index;
     }, []);
 
+    // SAH-160: goes through /api/facility-images/upload so the server can
+    // verify ownership, file size, and magic bytes before anything hits
+    // Supabase Storage. XHR is retained for upload-progress events.
     const uploadWithProgress = React.useCallback(
-        async (file: File, path: string, token: string, onProgress: (progress: number) => void) => {
-            const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-            const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-            if (!supabaseUrl || !anonKey) {
-                throw new Error("Supabase configuration is missing.");
-            }
+        async (
+            file: File,
+            facilityIdValue: string,
+            displayOrder: number,
+            onProgress: (progress: number) => void,
+        ): Promise<{ id: string; storage_path: string }> => {
+            return await new Promise((resolve, reject) => {
+                const form = new FormData();
+                form.append("file", file);
+                form.append("facility_id", facilityIdValue);
+                form.append("display_order", String(displayOrder));
 
-            await new Promise<void>((resolve, reject) => {
                 const xhr = new XMLHttpRequest();
-                xhr.open("POST", `${supabaseUrl}/storage/v1/object/facility-images/${path}`);
-                xhr.setRequestHeader("Authorization", `Bearer ${token}`);
-                xhr.setRequestHeader("apikey", anonKey);
-                xhr.setRequestHeader("x-upsert", "true");
-                xhr.setRequestHeader("Content-Type", file.type || "application/octet-stream");
+                xhr.open("POST", "/api/facility-images/upload");
 
                 xhr.upload.onprogress = (event) => {
                     if (event.lengthComputable) {
@@ -125,14 +126,24 @@ export function ImageUploader({ facilityId, initialImages = [], maxImages = DEFA
 
                 xhr.onload = () => {
                     if (xhr.status >= 200 && xhr.status < 300) {
-                        resolve();
+                        try {
+                            const parsed = JSON.parse(xhr.responseText) as { id: string; storage_path: string };
+                            resolve(parsed);
+                        } catch {
+                            reject(new Error("Upload returned an invalid response"));
+                        }
                     } else {
-                        reject(new Error(`Upload failed (${xhr.status})`));
+                        let message = `Upload failed (${xhr.status})`;
+                        try {
+                            const parsed = JSON.parse(xhr.responseText) as { error?: string };
+                            if (parsed.error) message = parsed.error;
+                        } catch { /* swallow — fall back to generic message */ }
+                        reject(new Error(message));
                     }
                 };
 
                 xhr.onerror = () => reject(new Error("Upload failed"));
-                xhr.send(file);
+                xhr.send(form);
             });
         },
         []
@@ -167,40 +178,21 @@ export function ImageUploader({ facilityId, initialImages = [], maxImages = DEFA
             if (!item.file) return;
 
             try {
-                const { data } = await supabase.auth.getSession();
-                const token = data.session?.access_token;
-                if (!token) throw new Error("Please sign in to upload images.");
-
-                const safeName = sanitizeFileName(item.file.name);
-                const path = `${facilityId}/${Date.now()}-${getRandomId()}-${safeName}`;
-
-                await uploadWithProgress(item.file, path, token, (progress) => {
-                    updateItem(item.key, { progress, status: "uploading" });
-                });
-
                 const displayOrder = getItemIndex(item.key);
-                const { data: insertData, error: insertError } = await supabase
-                    .from("facility_images")
-                    .insert({
-                        facility_id: facilityId,
-                        storage_path: path,
-                        display_order: displayOrder,
-                    })
-                    .select("id")
-                    .single();
+                const { id, storage_path } = await uploadWithProgress(
+                    item.file,
+                    facilityId,
+                    displayOrder,
+                    (progress) => updateItem(item.key, { progress, status: "uploading" }),
+                );
 
-                if (insertError) {
-                    await supabase.storage.from("facility-images").remove([path]);
-                    throw new Error(insertError.message);
-                }
-
-                const publicUrl = getStorageUrl("facility-images", path);
+                const publicUrl = getStorageUrl("facility-images", storage_path);
                 if (item.isLocal) {
                     URL.revokeObjectURL(item.previewUrl);
                 }
                 updateItem(item.key, {
-                    id: insertData?.id,
-                    storagePath: path,
+                    id,
+                    storagePath: storage_path,
                     publicUrl,
                     previewUrl: publicUrl,
                     isLocal: false,
@@ -214,7 +206,7 @@ export function ImageUploader({ facilityId, initialImages = [], maxImages = DEFA
                 updateItem(item.key, { status: "error", error: message, progress: 0 });
             }
         },
-        [facilityId, getItemIndex, supabase, updateItem, uploadWithProgress]
+        [facilityId, getItemIndex, updateItem, uploadWithProgress]
     );
 
     const addFiles = React.useCallback(
@@ -227,15 +219,21 @@ export function ImageUploader({ facilityId, initialImages = [], maxImages = DEFA
                 return;
             }
 
-            const accepted = files.filter((file) => ACCEPTED_TYPES.has(file.type));
-            const rejected = files.filter((file) => !ACCEPTED_TYPES.has(file.type));
+            const typedOk = files.filter((file) => ACCEPTED_TYPES.has(file.type));
+            const typedBad = files.filter((file) => !ACCEPTED_TYPES.has(file.type));
+            // SAH-160: matches the server-side cap so we don't ship huge
+            // payloads only to be rejected at the route. Server is still
+            // the authority.
+            const sizedOk = typedOk.filter((file) => file.size <= MAX_IMAGE_BYTES);
+            const sizedBad = typedOk.filter((file) => file.size > MAX_IMAGE_BYTES);
 
-            if (rejected.length > 0) {
-                setError(t("invalid_type_error"));
+            if (typedBad.length > 0) setError(t("invalid_type_error"));
+            if (sizedBad.length > 0) {
+                setError(t("file_too_large_error", { max_mb: Math.floor(MAX_IMAGE_BYTES / 1024 / 1024) }));
             }
 
-            const nextFiles = accepted.slice(0, availableSlots);
-            if (accepted.length > availableSlots) {
+            const nextFiles = sizedOk.slice(0, availableSlots);
+            if (sizedOk.length > availableSlots) {
                 setError(t("max_images_error", { max: maxImages }));
             }
             if (nextFiles.length === 0) return;
@@ -254,7 +252,7 @@ export function ImageUploader({ facilityId, initialImages = [], maxImages = DEFA
                 void uploadItem(nextItem);
             });
         },
-        [maxImages, uploadItem]
+        [maxImages, uploadItem, t]
     );
 
     const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
