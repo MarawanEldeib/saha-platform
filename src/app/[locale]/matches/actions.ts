@@ -214,6 +214,146 @@ export async function leaveMatchAction(matchId: string): Promise<ActionResult> {
 }
 
 // ---------------------------------------------------------------------------
+// inviteToMatchAction — host invites players (by user id) and/or groups.
+// Bulk insert with ON CONFLICT DO NOTHING-ish semantics: existing invites
+// are silently skipped so re-inviting after a decline doesn't error.
+// ---------------------------------------------------------------------------
+export async function inviteToMatchAction(
+    matchId: string,
+    userIds: string[],
+    groupIds: string[] = [],
+): Promise<ActionResult<{ invited: number }>> {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { ok: false, error: await tr("common.not_authenticated") };
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: match } = await (supabase as any)
+        .from("matchmaking_posts")
+        .select("user_id, status, scheduled_for")
+        .eq("id", matchId)
+        .single();
+    if (!match) return { ok: false, error: await tr("matches.not_found") };
+    if (match.user_id !== user.id) return { ok: false, error: await tr("common.forbidden") };
+    if (match.status !== "open") return { ok: false, error: await tr("matches.not_open") };
+
+    // Expand group ids → member ids and merge with direct user_ids.
+    const expanded = new Set<string>();
+    for (const id of userIds ?? []) {
+        if (id && id !== user.id) expanded.add(id);
+    }
+    if (groupIds && groupIds.length > 0) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { data: members } = await (supabase as any)
+            .from("player_group_members")
+            .select("member_user_id, group_id, player_groups!inner(owner_id)")
+            .in("group_id", groupIds)
+            .eq("player_groups.owner_id", user.id);
+        for (const row of (members ?? []) as Array<{ member_user_id: string }>) {
+            if (row.member_user_id !== user.id) expanded.add(row.member_user_id);
+        }
+    }
+
+    if (expanded.size === 0) return { ok: false, error: await tr("invites.no_recipients") };
+
+    const rows = Array.from(expanded).map((uid) => ({
+        match_id: matchId,
+        invitee_user_id: uid,
+        inviter_id: user.id,
+        status: "pending" as const,
+    }));
+
+    // Bulk insert. Existing duplicates (UNIQUE on match_id + invitee_user_id)
+    // get rejected — we catch + retry per-row only if the bulk failed.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const bulk = await (supabase as any).from("match_invites").insert(rows);
+    if (!bulk.error) {
+        revalidatePath(`/matches/${matchId}`);
+        return { ok: true, data: { invited: rows.length } };
+    }
+    if (bulk.error.code !== "23505") {
+        captureRouteError(bulk.error, { route: ROUTE, user_id: user.id, extra: { matchId } });
+        return { ok: false, error: await tr("common.unexpected_error") };
+    }
+
+    // Duplicate-key in the bulk path — fall back to per-row inserts so the
+    // non-duplicate invites still go through.
+    let inserted = 0;
+    for (const row of rows) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const single = await (supabase as any).from("match_invites").insert(row);
+        if (!single.error) inserted++;
+    }
+    revalidatePath(`/matches/${matchId}`);
+    return { ok: true, data: { invited: inserted } };
+}
+
+// ---------------------------------------------------------------------------
+// respondToMatchInviteAction — invitee accepts or declines.
+// On accept: also seat the invitee in match_participants (if capacity allows).
+// ---------------------------------------------------------------------------
+export async function respondToMatchInviteAction(
+    inviteId: string,
+    decision: "accepted" | "declined",
+): Promise<ActionResult> {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { ok: false, error: await tr("common.not_authenticated") };
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: invite } = await (supabase as any)
+        .from("match_invites")
+        .select("id, match_id, invitee_user_id, status")
+        .eq("id", inviteId)
+        .single();
+    if (!invite) return { ok: false, error: await tr("invites.not_found") };
+    if (invite.invitee_user_id !== user.id) return { ok: false, error: await tr("common.forbidden") };
+    if (invite.status !== "pending") return { ok: false, error: await tr("invites.already_responded") };
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error: updErr } = await (supabase as any)
+        .from("match_invites")
+        .update({ status: decision, responded_at: new Date().toISOString() })
+        .eq("id", inviteId);
+    if (updErr) {
+        captureRouteError(updErr, { route: ROUTE, user_id: user.id, extra: { inviteId } });
+        return { ok: false, error: await tr("common.unexpected_error") };
+    }
+
+    if (decision === "accepted") {
+        // Capacity check then insert participant. Race-safe: if someone
+        // else grabbed the last seat between this check and the insert,
+        // RLS still permits the insert and the host can kick later.
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { data: match } = await (supabase as any)
+            .from("matchmaking_posts")
+            .select("capacity, status")
+            .eq("id", invite.match_id)
+            .single();
+        if (match && match.status === "open") {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const { count } = await (supabase as any)
+                .from("match_participants")
+                .select("*", { count: "exact", head: true })
+                .eq("match_id", invite.match_id);
+            if ((count ?? 0) < (match.capacity as number)) {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                await (supabase as any)
+                    .from("match_participants")
+                    .insert({
+                        match_id: invite.match_id,
+                        user_id: user.id,
+                        role: "player",
+                    });
+            }
+        }
+    }
+
+    revalidatePath(`/matches/${invite.match_id}`);
+    return { ok: true };
+}
+
+// ---------------------------------------------------------------------------
 // cancelMatchAction — host marks the match cancelled. Not destructive —
 // the row stays for history and the SELECT policy (`is_active OR own`)
 // already hides cancelled+inactive posts from non-owners.

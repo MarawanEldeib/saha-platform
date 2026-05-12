@@ -216,7 +216,62 @@
         "participants_heading": "اللاعبون ({count})",
         "no_participants": "لم ينضم أحد بعد.",
         "host_chip": "المضيّف",
-        "phase_note": "المرحلة الثانية: انضمام مفتوح يعمل. الدعوات وطلبات الانضمام والدردشة في المراحل القادمة."
+        "invites_heading": "الدعوات",
+        "invite_button": "ادعُ لاعبين",
+        "no_invites_yet": "لم تُرسَل دعوات بعد.",
+        "invite_pending": "قيد الانتظار ({count})",
+        "invite_accepted": "مقبولة ({count})",
+        "invite_declined": "مرفوضة ({count})",
+        "invite_heading": "أنت مدعوّ",
+        "invite_subtitle": "دعاك المضيّف لهذه المباراة. اقبل لتنضم لتشكيلة اللاعبين.",
+        "accept_invite": "اقبل الدعوة",
+        "decline_invite": "ارفض",
+        "phase_note": "طلبات الانضمام والدردشة في المرحلة الرابعة."
+    },
+    "invite_sheet": {
+        "title": "اختر من يمكنه الانضمام",
+        "close": "إغلاق",
+        "tab_players": "اللاعبون",
+        "tab_groups": "المجموعات",
+        "search_placeholder": "ابحث في جهات اتصالك…",
+        "suggested": "اللاعبون المقترحون",
+        "your_groups": "مجموعاتك",
+        "no_contacts": "أضف لاعبين إلى جهات اتصالك أولاً من صفحة جهات الاتصال.",
+        "no_groups": "لا توجد مجموعات. أنشئ مجموعة من صفحة جهات الاتصال.",
+        "anonymous": "لاعب",
+        "members_count": "{count, plural, zero {بدون أعضاء} one {عضو واحد} two {عضوان} few {# أعضاء} many {# عضوًا} other {# عضو}}",
+        "done_with_count": "{count, plural, =0 {تم} one {ادعُ لاعبًا} two {ادعُ لاعبَين} few {ادعُ # لاعبين} many {ادعُ # لاعبًا} other {ادعُ # لاعب}}",
+        "sending": "جارٍ الإرسال…",
+        "cancel": "إلغاء"
+    },
+    "contacts": {
+        "title": "جهات الاتصال والمجموعات",
+        "subtitle": "احفظ اللاعبين الذين تلعب معهم بانتظام، ونظّمهم في مجموعات للدعوة السريعة.",
+        "tab_contacts": "جهات الاتصال ({count})",
+        "tab_groups": "المجموعات ({count})",
+        "search_placeholder": "ابحث عن لاعبين بالاسم…",
+        "searching": "جارٍ البحث…",
+        "your_contacts": "جهات اتصالك",
+        "no_contacts": "لا توجد جهات اتصال. ابحث أعلاه لإضافة لاعبين تلعب معهم.",
+        "no_groups": "لا توجد مجموعات. أنشئ مجموعة لدعوة فريقك الدائم بضغطة واحدة.",
+        "no_contacts_for_group": "أضف جهات اتصال أولاً قبل إنشاء مجموعة.",
+        "add": "إضافة",
+        "remove": "إزالة",
+        "edit": "تعديل",
+        "delete": "حذف",
+        "anonymous": "لاعب",
+        "new_group": "مجموعة جديدة",
+        "edit_group": "تعديل المجموعة",
+        "group_name_label": "اسم المجموعة",
+        "group_name_placeholder": "مثال: زملاء البادل",
+        "members_label": "الأعضاء ({count})",
+        "members_count": "{count, plural, zero {بدون أعضاء} one {عضو واحد} two {عضوان} few {# أعضاء} many {# عضوًا} other {# عضو}}",
+        "save": "حفظ",
+        "create": "إنشاء",
+        "saving": "جارٍ الحفظ…",
+        "cancel": "إلغاء",
+        "confirm_remove": "إزالة {name} من جهات اتصالك؟",
+        "confirm_delete_group": "حذف المجموعة \"{name}\"؟ سيبقى الأعضاء في جهات اتصالك."
     },
     "community": {
         "title": "مطابقة اللاعبين",
@@ -1140,6 +1195,19 @@
             "full": "اكتمل عدد لاعبي هذه المباراة.",
             "already_joined": "لقد انضممت لهذه المباراة من قبل.",
             "host_cannot_leave": "لا يمكن للمضيّف المغادرة — قم بإلغاء المباراة بدلًا من ذلك."
+        },
+        "contacts": {
+            "cannot_add_self": "لا يمكن إضافة نفسك كجهة اتصال.",
+            "already_added": "هذا اللاعب موجود بالفعل في جهات اتصالك.",
+            "not_found": "اللاعب غير موجود."
+        },
+        "groups": {
+            "invalid_name": "اسم المجموعة يجب أن يكون بين 1 و60 حرفًا."
+        },
+        "invites": {
+            "no_recipients": "اختر لاعبًا أو مجموعة واحدة على الأقل.",
+            "not_found": "الدعوة غير موجودة.",
+            "already_responded": "لقد ردّيت على هذه الدعوة من قبل."
         },
         "events": {
             "name_too_short": "يجب أن يتكوّن اسم الفعالية من 3 أحرف على الأقل.",
