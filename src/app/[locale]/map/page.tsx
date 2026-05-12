@@ -8,6 +8,7 @@ import { Search, Loader2, ChevronRight, ChevronUp, MapPin, Sparkles, X } from "l
 import Link from "next/link";
 import type { Sport } from "@/types/database";
 import { parseSearchQueryAction } from "@/app/[locale]/dashboard/actions";
+import { setLastSearch, isOnboardingMapSeen, markOnboardingMapSeen } from "@/lib/cookies/preferences-client";
 
 const MapContainer = dynamic(
     () => import("@/components/map/MapboxMap"),
@@ -62,6 +63,30 @@ export default function MapPage() {
     const [dayOfWeekFilter, setDayOfWeekFilter] = React.useState<number | null>(null);
     const [timeWindow, setTimeWindow] = React.useState<{ start: string; end: string } | null>(null);
     const [aiLabel, setAiLabel] = React.useState<string | null>(null);
+
+    // SAH-122: first-visit onboarding tooltip on /map.
+    const [showOnboarding, setShowOnboarding] = React.useState(false);
+    React.useEffect(() => {
+        if (!isOnboardingMapSeen()) setShowOnboarding(true);
+    }, []);
+    const dismissOnboarding = () => {
+        markOnboardingMapSeen();
+        setShowOnboarding(false);
+    };
+
+    // SAH-122: persist last-search to a cookie (consent-gated) whenever the
+    // user changes sport or types a city/name. Debounced via useEffect so a
+    // partial city ("Du") isn't saved before they finish typing.
+    React.useEffect(() => {
+        const id = setTimeout(() => {
+            if (selectedSport === null && !searchQuery.trim()) return;
+            setLastSearch({
+                sport_id: selectedSport,
+                city: searchQuery.trim() || null,
+            });
+        }, 800);
+        return () => clearTimeout(id);
+    }, [selectedSport, searchQuery]);
 
     // Fetch sports for filter
     React.useEffect(() => {
@@ -361,6 +386,21 @@ export default function MapPage() {
 
     return (
         <div className="flex flex-col h-[calc(100vh-4rem)]">
+            {/* SAH-122: first-visit onboarding tooltip. Dismissed forever after one tap. */}
+            {showOnboarding && (
+                <div className="flex items-center gap-2 px-4 py-2.5 bg-emerald-50 dark:bg-emerald-900/30 border-b border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300 text-sm shrink-0">
+                    <Sparkles className="h-4 w-4 shrink-0" />
+                    <span className="flex-1">{t("onboarding_tooltip")}</span>
+                    <button
+                        type="button"
+                        onClick={dismissOnboarding}
+                        aria-label={t("onboarding_dismiss")}
+                        className="rounded-md p-1 hover:bg-emerald-100 dark:hover:bg-emerald-800/50"
+                    >
+                        <X className="h-4 w-4" />
+                    </button>
+                </div>
+            )}
             {isOutsideUAE && (
                 <div className="flex items-center gap-2 px-4 py-2.5 bg-amber-50 dark:bg-amber-900/30 border-b border-amber-200 dark:border-amber-700 text-amber-800 dark:text-amber-300 text-sm shrink-0">
                     <MapPin className="h-4 w-4 shrink-0" />

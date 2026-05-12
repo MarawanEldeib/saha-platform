@@ -5,6 +5,7 @@ import { routing } from "@/i18n/routing";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { CookieBanner } from "@/components/ui/CookieBanner";
+import { ABBucketEnsurer } from "@/components/ABBucketEnsurer";
 import { createClient } from "@/lib/supabase/server";
 import type { Metadata } from "next";
 
@@ -63,6 +64,7 @@ export default async function LocaleLayout({
             <main className="min-h-[calc(100vh-4rem)]">{children}</main>
             <Footer isLoggedIn={!!user} role={profile?.role ?? null} />
             <CookieBanner />
+            <ABBucketEnsurer />
         </NextIntlClientProvider>
     );
 }
