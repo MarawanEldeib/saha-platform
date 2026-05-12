@@ -1093,6 +1093,11 @@ export async function getAvailableSlotsAction(courtId: string, date: string): Pr
 // previous version trusted client-supplied start/end times and silently
 // fell back to platform-account charges when the connected Stripe account
 // wasn't ready (SAH-67, SAH-68).
+//
+// SAH-149 (Shariah compliance): do NOT add late-payment fees, compounding
+// penalties, or interest-bearing balances here without revisiting the public
+// /shariah statement. The current shape — a flat service fee plus a binary
+// cancellation rule — is what the page commits us to.
 // ---------------------------------------------------------------------------
 export async function createBookingAndCheckoutAction(
     availabilityId: string,
