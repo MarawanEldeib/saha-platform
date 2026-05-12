@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import * as Sentry from "@sentry/nextjs";
 import { createClient } from "@/lib/supabase/server";
 import { getActiveFacility } from "@/lib/facility-context";
 
@@ -17,6 +18,13 @@ export async function POST() {
         .update({ stripe_account_id: null } as never)
         .eq("id", active.id);
 
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    if (error) {
+        // SAH-155: don't surface DB error strings.
+        Sentry.captureException(error, {
+            tags: { route: "stripe/disconnect" },
+            extra: { facility_id: active.id },
+        });
+        return NextResponse.json({ error: "Could not disconnect Stripe" }, { status: 500 });
+    }
     return NextResponse.json({ success: true });
 }
