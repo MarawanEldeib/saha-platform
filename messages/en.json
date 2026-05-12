@@ -845,6 +845,7 @@
         "terms_of_service": "Terms of Service",
         "community_guidelines": "Community Guidelines",
         "shariah": "Shariah Compliance",
+        "help": "Help Center",
         "impressum": "Impressum",
         "contact": "Contact",
         "copyright": "© {year} Saha. All rights reserved.",
@@ -854,6 +855,136 @@
         "title": "Community Guidelines",
         "intro": "Saha is a UAE-first racket sports community. These guidelines keep it respectful, family-friendly, and focused on play.",
         "see_also": "See also:"
+    },
+    "help": {
+        "title": "Help Center",
+        "subtitle": "Answers to the most common questions. Can't find what you need? Email us — we read every message.",
+        "search_placeholder": "Search questions...",
+        "no_results": "No results. Try a different search or scroll the categories below.",
+        "contact_title": "Still stuck?",
+        "contact_body": "We typically reply within one business day.",
+        "contact_email": "Email support",
+        "contact_whatsapp": "Message on WhatsApp",
+        "category_booking": "Booking",
+        "category_payment": "Payment",
+        "category_account": "Account",
+        "category_facilities": "For Facility Owners",
+        "category_cancellations": "Cancellations & Refunds",
+        "category_privacy": "Privacy & Cookies",
+        "faq": {
+            "booking": {
+                "how_to_book": {
+                    "q": "How do I book a court?",
+                    "a": "Open the map, tap a facility, pick a court and an available time slot, then complete payment on Stripe Checkout. You'll see a confirmation page with a QR code right after."
+                },
+                "without_account": {
+                    "q": "Can I book without an account?",
+                    "a": "No. You need a free Saha account so we can send you the confirmation, the QR code at the venue, and a reminder before your game."
+                },
+                "facility_cancels": {
+                    "q": "What if the facility cancels my booking?",
+                    "a": "You receive a full refund automatically to the card you paid with. We email and WhatsApp you the moment it happens."
+                },
+                "move_booking": {
+                    "q": "Can I move my booking to a different time?",
+                    "a": "Yes — once, if both the old and new slots are free and you're more than 24 hours before the original start time. Open the booking and tap Move."
+                },
+                "recurring": {
+                    "q": "How do recurring bookings work?",
+                    "a": "Pick a slot and the number of weeks (1, 2, 4, 8, or 12). We charge a single combined amount upfront and lock every week at once. You can cancel a single occurrence or the whole series later."
+                }
+            },
+            "payment": {
+                "methods": {
+                    "q": "Which payment methods do you accept?",
+                    "a": "Visa, Mastercard, Apple Pay, and Google Pay — all via Stripe. Local wallet support (Careem Pay, stcpay, etc.) is on our roadmap."
+                },
+                "when_charged": {
+                    "q": "When am I charged?",
+                    "a": "Immediately at booking. We hold the slot for you and pay the facility after your game."
+                },
+                "refund_timing": {
+                    "q": "How long do refunds take?",
+                    "a": "Once approved, your bank typically posts the refund within 5–10 business days. The Saha side is instant — the wait is on the card network."
+                },
+                "platform_fee": {
+                    "q": "Is there a service fee?",
+                    "a": "We add a 10% service fee on top of the court price. This pays for the platform, payment processing, and support. It's a service charge, not interest — see our Shariah Compliance page."
+                },
+                "card_storage": {
+                    "q": "Do you store my card details?",
+                    "a": "No. Card details are handled entirely by Stripe — we never see or store them on our servers."
+                }
+            },
+            "account": {
+                "change_phone": {
+                    "q": "How do I change my phone number?",
+                    "a": "Go to Account → Settings, enter the new number, and confirm the WhatsApp code we send. The old number stops receiving notifications immediately."
+                },
+                "delete_account": {
+                    "q": "Can I delete my account?",
+                    "a": "Yes. Email hello@saha.ae from your registered address. We delete your profile, bookings history, and personal data within 30 days as required by UAE PDPL."
+                },
+                "phone_verification": {
+                    "q": "Why do I need to verify my phone via WhatsApp?",
+                    "a": "Booking confirmations and reminders go to your phone via WhatsApp. Verification stops someone else from using your number and receiving your bookings."
+                },
+                "qr_code": {
+                    "q": "What's the QR code on my booking for?",
+                    "a": "Show it at the facility reception so the staff can check you in. It's tied to your booking and works without internet."
+                }
+            },
+            "facilities": {
+                "how_to_list": {
+                    "q": "How do I list my facility on Saha?",
+                    "a": "Create a business account, fill in your facility details (name, address, sports, hours, photos), add at least one court, and connect Stripe to receive payouts. We review and approve within 1–2 business days."
+                },
+                "stripe_connect": {
+                    "q": "Why do I need a Stripe account?",
+                    "a": "Stripe handles the payment from the player to you, less our 10% service fee. We never hold your money — it goes directly to your Stripe balance and then to your bank."
+                },
+                "payouts": {
+                    "q": "When do I receive payouts?",
+                    "a": "Stripe pays you on its standard schedule (usually 2–7 days for UAE accounts). You can change the schedule from your Stripe dashboard."
+                },
+                "disable_court": {
+                    "q": "Can I temporarily disable a court?",
+                    "a": "Yes. Open Dashboard → Courts and toggle the court inactive. Existing bookings stay valid; new bookings are blocked until you re-enable it."
+                }
+            },
+            "cancellations": {
+                "window": {
+                    "q": "What's the cancellation window?",
+                    "a": "Cancel at least 24 hours before your slot for a full refund. Within the last 24 hours, the booking is non-refundable — the slot is released for other players but we don't refund the amount."
+                },
+                "no_show": {
+                    "q": "What counts as a no-show?",
+                    "a": "If you don't check in at the facility on the booking day, the booking is marked no-show the next day. Repeated no-shows affect your reliability score, which facilities can see."
+                },
+                "recurring_partial": {
+                    "q": "Can I cancel one week of a recurring booking?",
+                    "a": "Yes. Open the booking and tap Cancel — only that week is cancelled, the rest of the series stays. Or use Cancel Series to cancel every remaining week at once (refund is pro-rata for weeks more than 24 hours away)."
+                },
+                "facility_cancel_refund": {
+                    "q": "What if the facility cancels?",
+                    "a": "Full automatic refund to your original payment method. No action needed from you."
+                }
+            },
+            "privacy": {
+                "data_use": {
+                    "q": "How do you use my data?",
+                    "a": "We use your details to manage your bookings, notify you about them, and improve the platform. We don't sell your data. Full details are in our Privacy Policy."
+                },
+                "cookies": {
+                    "q": "What cookies does Saha use?",
+                    "a": "Strictly necessary cookies (auth session, facility switcher) — always set. Functional cookies (welcome-back, recently-viewed, abandoned booking) — only after you accept on the cookie banner. See our Cookie Strategy doc."
+                },
+                "data_export": {
+                    "q": "Can I export my data?",
+                    "a": "Yes. Email hello@saha.ae and we'll send a JSON export of your profile and booking history within 30 days as required by UAE PDPL."
+                }
+            }
+        }
     },
     "booking_checkout": {
         "description": "{date} · {start}–{end}",
