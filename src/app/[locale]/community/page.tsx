@@ -296,6 +296,26 @@ export default function CommunityPage() {
 
     return (
         <div className="max-w-3xl mx-auto px-4 sm:px-6 py-12">
+            {/* SAH-152 Phase 5: soft-deprecation banner. /community keeps working
+                so anyone with a bookmark can still post; the new home is /matches. */}
+            <div className="mb-6 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-2xl p-4 flex items-start gap-3">
+                <Info className="h-5 w-5 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
+                <div className="flex-1 text-sm">
+                    <p className="font-semibold text-emerald-900 dark:text-emerald-200">
+                        {t("deprecation_title")}
+                    </p>
+                    <p className="text-emerald-800 dark:text-emerald-300 mt-1">
+                        {t("deprecation_body")}
+                    </p>
+                    <Link
+                        href={`/${locale}/matches`}
+                        className="inline-flex items-center mt-2 text-sm font-semibold text-emerald-700 dark:text-emerald-400 hover:underline"
+                    >
+                        {t("deprecation_cta")} →
+                    </Link>
+                </div>
+            </div>
+
             <div className="flex items-center justify-between mb-8 gap-4 flex-wrap">
                 <div>
                     <h1 className="text-3xl font-bold text-gray-900 dark:text-white">{t("title")}</h1>
