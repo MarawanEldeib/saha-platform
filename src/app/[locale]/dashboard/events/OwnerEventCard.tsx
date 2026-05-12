@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { useTranslations } from "next-intl";
-import { updateEventAction, deleteEventAction } from "../actions";
+import { updateEventAction, deleteEventAction } from "../actions/events";
 
 interface Props {
     event: {

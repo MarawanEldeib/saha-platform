@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { submitEventAction } from "../actions";
+import { submitEventAction } from "../actions/events";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { CheckCircle } from "lucide-react";

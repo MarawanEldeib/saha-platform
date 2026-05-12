@@ -45,57 +45,9 @@ const SETTING_VALIDATORS: Record<string, (raw: unknown) => unknown | null> = {
     feature_messaging: (v) => (typeof v === "boolean" ? v : null),
 };
 
-// ---------------------------------------------------------------------------
-// Guard: only admin may call these actions
-// ---------------------------------------------------------------------------
-async function assertAdmin() {
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-        captureRouteMessage("admin guard rejected: unauthenticated", {
-            route: "admin/assertAdmin",
-            level: "warning",
-        });
-        throw new Error("Unauthorized");
-    }
-
-    const { data: profile } = await supabase
-        .from("profiles")
-        .select("role")
-        .eq("id", user.id)
-        .single();
-
-    const role = (profile as { role: string } | null)?.role;
-    if (role !== "admin") {
-        // SAH-157: surface non-admin reaching an admin action — could be
-        // misconfig or an actual privilege-escalation attempt.
-        captureRouteMessage("admin guard rejected: not admin role", {
-            route: "admin/assertAdmin",
-            user_id: user.id,
-            level: "warning",
-            extra: { role: role ?? "none" },
-        });
-        throw new Error("Forbidden");
-    }
-
-    // SAH-80: require aal2 (TOTP MFA satisfied) for every mutating admin
-    // action. Middleware already redirects /admin/* page loads to
-    // /admin/2fa when the session is at aal1, but server actions can be
-    // invoked from a stale tab whose session has aged back to aal1, or
-    // via a direct POST from outside the page flow. Belt-and-braces.
-    const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
-    if (aal && aal.currentLevel !== "aal2") {
-        captureRouteMessage("admin guard rejected: aal2 required", {
-            route: "admin/assertAdmin",
-            user_id: user.id,
-            level: "warning",
-            extra: { current_level: aal.currentLevel },
-        });
-        throw new Error("Two-factor authentication required. Sign in again at /admin/2fa.");
-    }
-
-    return { supabase, adminClient: createAdminClient(), userId: user.id, role };
-}
+// SAH-156: assertAdmin extracted to lib/admin-guard.ts so it can be
+// reused by future admin route handlers + tested in isolation.
+import { assertAdmin } from "@/lib/admin-guard";
 
 // ---------------------------------------------------------------------------
 // Facilities – approve / reject
