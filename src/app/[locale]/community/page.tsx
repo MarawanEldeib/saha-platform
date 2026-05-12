@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/Input";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { matchmakingSchema, type MatchmakingInput } from "@/lib/validations";
-import { Calendar, MessageSquare, Plus, X, Info, Trash2 } from "lucide-react";
+import { Calendar, MessageSquare, Plus, X, Info, Trash2, MapPin, UserPlus, User as UserIcon } from "lucide-react";
 import { Badge } from "@/components/ui/Badge";
 import { format } from "date-fns";
 import type { Sport } from "@/types/database";
@@ -24,7 +24,7 @@ interface Post {
     skill_level: string;
     location_text: string | null;
     sports: { name: string } | null;
-    profiles: { display_name: string | null };
+    profiles: { display_name: string | null; avatar_url: string | null };
 }
 
 const skillBadgeVariant: Record<string, "info" | "warning" | "danger"> = {
@@ -32,6 +32,27 @@ const skillBadgeVariant: Record<string, "info" | "warning" | "danger"> = {
     intermediate: "warning",
     advanced: "danger",
 };
+
+// SAH-152: small avatar with graceful fallback to initial when the player
+// hasn't uploaded one yet.
+function Avatar({ url, name }: { url: string | null; name: string }) {
+    const initial = (name?.trim()[0] ?? "?").toUpperCase();
+    if (url) {
+        return (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+                src={url}
+                alt=""
+                className="h-10 w-10 rounded-full object-cover bg-gray-100 dark:bg-gray-800 shrink-0"
+            />
+        );
+    }
+    return (
+        <div className="h-10 w-10 rounded-full flex items-center justify-center bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 text-sm font-semibold shrink-0">
+            {initial === "?" ? <UserIcon className="h-5 w-5" /> : initial}
+        </div>
+    );
+}
 
 export default function CommunityPage() {
     const t = useTranslations("community");
@@ -99,15 +120,17 @@ export default function CommunityPage() {
                 );
                 const { data: profilesData } = await supabase
                     .from("public_profiles")
-                    .select("id, display_name")
+                    .select("id, display_name, avatar_url")
                     .in("id", userIds);
-                const map = new Map<string, string | null>(
-                    (profilesData as { id: string; display_name: string | null }[] | null ?? [])
-                        .map((p) => [p.id, p.display_name]),
+                type PubProfile = { id: string; display_name: string | null; avatar_url: string | null };
+                const map = new Map<string, { display_name: string | null; avatar_url: string | null }>(
+                    (profilesData as PubProfile[] | null ?? []).map(
+                        (p) => [p.id, { display_name: p.display_name, avatar_url: p.avatar_url }],
+                    ),
                 );
                 const merged = (postsData as unknown as Omit<Post, "profiles">[]).map((p) => ({
                     ...p,
-                    profiles: { display_name: map.get(p.user_id) ?? null },
+                    profiles: map.get(p.user_id) ?? { display_name: null, avatar_url: null },
                 }));
                 setPosts(merged);
             } else {
@@ -178,15 +201,17 @@ export default function CommunityPage() {
             );
             const { data: profilesData } = await supabase
                 .from("public_profiles")
-                .select("id, display_name")
+                .select("id, display_name, avatar_url")
                 .in("id", userIds);
-            const map = new Map<string, string | null>(
-                (profilesData as { id: string; display_name: string | null }[] | null ?? [])
-                    .map((p) => [p.id, p.display_name]),
+            type PubProfile = { id: string; display_name: string | null; avatar_url: string | null };
+            const map = new Map<string, { display_name: string | null; avatar_url: string | null }>(
+                (profilesData as PubProfile[] | null ?? []).map(
+                    (p) => [p.id, { display_name: p.display_name, avatar_url: p.avatar_url }],
+                ),
             );
             const merged = (postsData as unknown as Omit<Post, "profiles">[]).map((p) => ({
                 ...p,
-                profiles: { display_name: map.get(p.user_id) ?? null },
+                profiles: map.get(p.user_id) ?? { display_name: null, avatar_url: null },
             }));
             setPosts(merged);
         } else {
@@ -364,50 +389,85 @@ export default function CommunityPage() {
                 </p>
             ) : (
                 <div className="space-y-4">
-                    {visiblePosts.map((post) => (
-                        <div key={post.id} className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-5 space-y-3">
-                            <div className="flex items-start justify-between gap-3">
-                                <p className="font-medium text-gray-900 dark:text-white">
-                                    {post.profiles?.display_name ?? t("anonymous")}
-                                </p>
-                                <div className="flex items-center gap-2 shrink-0">
-                                    {post.sports && (
-                                        <Badge variant="outline">{sportName(post.sports.name)}</Badge>
-                                    )}
-                                    <Badge variant={skillBadgeVariant[post.skill_level] ?? "default"}>
-                                        {t(`level_${post.skill_level}` as "level_beginner" | "level_intermediate" | "level_advanced")}
-                                    </Badge>
+                    {visiblePosts.map((post) => {
+                        const isOwn = myUserId === post.user_id;
+                        const displayName = post.profiles?.display_name ?? t("anonymous");
+                        return (
+                            <div key={post.id} className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 overflow-hidden">
+                                <div className="p-5 space-y-3">
+                                    {/* Avatar + name + chips */}
+                                    <div className="flex items-start gap-3">
+                                        <Avatar url={post.profiles?.avatar_url} name={displayName} />
+                                        <div className="flex-1 min-w-0">
+                                            <p className="font-medium text-gray-900 dark:text-white truncate">{displayName}</p>
+                                            <div className="flex flex-wrap items-center gap-1.5 mt-1">
+                                                {post.sports && (
+                                                    <Badge variant="outline">{sportName(post.sports.name)}</Badge>
+                                                )}
+                                                <Badge variant={skillBadgeVariant[post.skill_level] ?? "default"}>
+                                                    {t(`level_${post.skill_level}` as "level_beginner" | "level_intermediate" | "level_advanced")}
+                                                </Badge>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Message */}
+                                    <p className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap">{post.message}</p>
+
+                                    {/* Meta */}
+                                    <div className="flex flex-wrap items-center gap-3 text-xs text-gray-500 dark:text-gray-400">
+                                        <span className="inline-flex items-center gap-1">
+                                            <Calendar className="h-3.5 w-3.5" />
+                                            {format(new Date(post.post_date), "PP")}
+                                        </span>
+                                        {post.location_text && (
+                                            <span className="inline-flex items-center gap-1">
+                                                <MapPin className="h-3.5 w-3.5" />
+                                                {post.location_text}
+                                            </span>
+                                        )}
+                                    </div>
                                 </div>
-                            </div>
-                            <p className="text-sm text-gray-700 dark:text-gray-300">{post.message}</p>
-                            <div className="flex flex-wrap items-center gap-3 text-xs text-gray-500 dark:text-gray-400">
-                                <span className="flex items-center gap-1"><Calendar className="h-3.5 w-3.5" /> {format(new Date(post.post_date), "PP")}</span>
-                                {post.location_text && <span className="flex items-center gap-1"><MessageSquare className="h-3.5 w-3.5" /> {post.location_text}</span>}
-                                {canPost && myUserId && post.user_id !== myUserId && (
+
+                                {/* Prominent CTA strip — Join for others, Close for own posts */}
+                                {canPost && myUserId && !isOwn && (
                                     <button
                                         type="button"
-                                        onClick={() => { setMessagingPost(post); setMessageDraft(""); setMessageError(null); }}
-                                        className="ms-auto inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-300 text-xs font-semibold hover:bg-emerald-100 dark:hover:bg-emerald-900/30 transition-colors"
+                                        onClick={() => {
+                                            setMessagingPost(post);
+                                            // Pre-fill a greeting so the lowest-effort path is one tap + Send.
+                                            setMessageDraft(t("join_prefill", { name: displayName }));
+                                            setMessageError(null);
+                                        }}
+                                        className="w-full flex items-center justify-center gap-2 px-5 py-3 bg-emerald-600 text-white text-sm font-semibold hover:bg-emerald-700 transition-colors"
                                     >
-                                        <MessageSquare className="h-3.5 w-3.5" />
-                                        {t("message_player")}
+                                        <UserPlus className="h-4 w-4" />
+                                        {t("join_player", { name: displayName })}
                                     </button>
                                 )}
-                                {myUserId && post.user_id === myUserId && (
+                                {isOwn && (
                                     <button
                                         type="button"
                                         onClick={() => {
                                             if (confirm(t("close_confirm"))) void closePost(post.id);
                                         }}
-                                        className="ms-auto inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 text-xs font-semibold hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+                                        className="w-full flex items-center justify-center gap-2 px-5 py-3 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 text-sm font-semibold hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
                                     >
-                                        <Trash2 className="h-3.5 w-3.5" />
+                                        <Trash2 className="h-4 w-4" />
                                         {t("close_post")}
                                     </button>
                                 )}
+                                {authState.status === "anonymous" && (
+                                    <Link
+                                        href={`/${locale}/login?next=/${locale}/community`}
+                                        className="block w-full text-center px-5 py-3 bg-emerald-600 text-white text-sm font-semibold hover:bg-emerald-700 transition-colors"
+                                    >
+                                        {t("sign_in_to_join")}
+                                    </Link>
+                                )}
                             </div>
-                        </div>
-                    ))}
+                        );
+                    })}
                 </div>
             )}
 
