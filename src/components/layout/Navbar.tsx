@@ -28,7 +28,7 @@ export function Navbar({ profile }: NavbarProps) {
 
     const navLinks = [
         { href: `/${locale}/map`, label: t("map") },
-        { href: `/${locale}/community`, label: t("community") },
+        { href: `/${locale}/matches`, label: t("matches") },
         { href: `/${locale}/events`, label: t("events") },
     ];
 

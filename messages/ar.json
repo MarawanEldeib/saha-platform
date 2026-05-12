@@ -3,6 +3,7 @@
         "home": "الرئيسية",
         "map": "اعثر على الملاعب",
         "community": "المجتمع",
+        "matches": "المباريات",
         "events": "الفعاليات",
         "login": "تسجيل الدخول",
         "register": "إنشاء حساب",
@@ -118,6 +119,32 @@
         "status_pending": "بانتظار الموافقة",
         "status_suspended": "معلقة",
         "closed": "مغلق"
+    },
+    "matches": {
+        "title": "خلاصة المباريات",
+        "subtitle": "اعثر على مباراتك القادمة. أجواء حماسية وملاعب قريبة منك.",
+        "post_a_game": "انشر مباراة",
+        "join_game": "انضم للمباراة",
+        "join_disabled_tooltip": "ميزة الانضمام في الإصدار القادم",
+        "empty": "لا توجد مباريات متاحة الآن — كن أول من ينشر واحدة.",
+        "sport_unspecified": "رياضة غير محددة",
+        "format_casual": "ودية",
+        "phase_note": "المرحلة الأولى: عرض فقط. النشر لا يزال عبر صفحة المجتمع؛ الانضمام يأتي في المرحلة الثانية.",
+        "skill": {
+            "beginner": "مبتدئ",
+            "intermediate": "متوسط",
+            "advanced": "متقدم",
+            "competitive": "تنافسي"
+        },
+        "fill": {
+            "filling_fast": "المقاعد تمتلئ بسرعة",
+            "looking_for_players": "البحث عن لاعبين",
+            "need_opponent": "نحتاج خصمًا"
+        },
+        "relative": {
+            "today": "اليوم",
+            "tomorrow": "غدًا"
+        }
     },
     "community": {
         "title": "مطابقة اللاعبين",
