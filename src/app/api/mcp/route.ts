@@ -31,6 +31,7 @@
 
 import { createMcpHandler } from "mcp-handler";
 import { z } from "zod";
+import { rateLimit } from "@/lib/rate-limit";
 
 // Self-reference the deployment we're running on. NEXT_PUBLIC_APP_URL is
 // set per-environment; falls through to production when absent so the
@@ -101,4 +102,24 @@ const handler = createMcpHandler(
     }
 );
 
-export { handler as GET, handler as POST, handler as DELETE };
+// SAH-76: wrap the MCP handler so every tool call passes through the
+// public_api rate limit. mcp-handler builds its own Response object; we
+// just gate the dispatch with a 429 when the caller is over budget.
+async function rateLimited(...args: Parameters<typeof handler>): Promise<Response> {
+    const rl = await rateLimit("public_api");
+    if (!rl.success) {
+        return new Response(
+            JSON.stringify({ error: "Too many requests", retryAfter: rl.retryAfter }),
+            {
+                status: 429,
+                headers: {
+                    "Content-Type": "application/json",
+                    "Retry-After": String(rl.retryAfter),
+                },
+            },
+        );
+    }
+    return handler(...args);
+}
+
+export { rateLimited as GET, rateLimited as POST, rateLimited as DELETE };
