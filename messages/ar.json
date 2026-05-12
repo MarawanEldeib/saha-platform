@@ -762,6 +762,7 @@
     "image_uploader": {
         "max_images_error": "يمكنك رفع حتى {max} صور.",
         "invalid_type_error": "يُقبل فقط JPEG وPNG وWebP.",
+        "file_too_large_error": "يجب ألا يتجاوز حجم الصورة {max_mb} ميجابايت.",
         "drag_drop": "اسحب وأفلت الصور هنا",
         "or_browse": "أو انقر للتصفح",
         "format_hint": "JPEG، PNG، WebP. حتى {max} صور.",

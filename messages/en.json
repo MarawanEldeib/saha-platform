@@ -762,6 +762,7 @@
     "image_uploader": {
         "max_images_error": "You can upload up to {max} images.",
         "invalid_type_error": "Only JPEG, PNG, and WebP images are supported.",
+        "file_too_large_error": "Image must be {max_mb} MB or smaller.",
         "drag_drop": "Drag and drop images here",
         "or_browse": "or click to browse",
         "format_hint": "JPEG, PNG, WebP. Up to {max} images.",
