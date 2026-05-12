@@ -15,6 +15,8 @@ import { ar as arLocale } from "date-fns/locale";
 import { MapPin, Clock, Users, ChevronLeft } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { JoinLeaveControls } from "./JoinLeaveControls";
+import { MatchHostInvites } from "./MatchHostInvites";
+import { MatchInviteResponse } from "./MatchInviteResponse";
 
 export const metadata = { title: "Match — Saha" };
 
@@ -107,6 +109,94 @@ export default async function MatchDetailPage({ params }: PageProps) {
     const isParticipant = viewerId
         ? participants.some((p) => p.user_id === viewerId)
         : false;
+
+    // Host-only: load contacts + groups + the invite roll-up.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let hostContacts: Array<{ user_id: string; display_name: string | null; avatar_url: string | null }> = [];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let hostGroups: Array<{ id: string; name: string; member_count: number }> = [];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let hostInvites: Array<{
+        id: string; invitee_user_id: string;
+        status: "pending" | "accepted" | "declined" | "expired" | "cancelled";
+        display_name: string | null; avatar_url: string | null;
+    }> = [];
+
+    if (isHost && viewerId) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { data: contactsData } = await (supabase as any)
+            .from("player_contacts")
+            .select(`
+                contact_user_id,
+                profiles!player_contacts_contact_user_id_fkey(display_name, avatar_url)
+            `)
+            .eq("owner_id", viewerId);
+
+        hostContacts = ((contactsData ?? []) as Array<{
+            contact_user_id: string;
+            profiles: { display_name: string | null; avatar_url: string | null } | null;
+        }>).map((c) => ({
+            user_id: c.contact_user_id,
+            display_name: c.profiles?.display_name ?? null,
+            avatar_url: c.profiles?.avatar_url ?? null,
+        }));
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { data: groupsRaw } = await (supabase as any)
+            .from("player_groups")
+            .select("id, name")
+            .eq("owner_id", viewerId)
+            .order("created_at", { ascending: false });
+        const grs = (groupsRaw ?? []) as Array<{ id: string; name: string }>;
+        if (grs.length > 0) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const { data: memberCounts } = await (supabase as any)
+                .from("player_group_members")
+                .select("group_id")
+                .in("group_id", grs.map((g) => g.id));
+            const counts = new Map<string, number>();
+            for (const m of (memberCounts ?? []) as Array<{ group_id: string }>) {
+                counts.set(m.group_id, (counts.get(m.group_id) ?? 0) + 1);
+            }
+            hostGroups = grs.map((g) => ({ id: g.id, name: g.name, member_count: counts.get(g.id) ?? 0 }));
+        }
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { data: invitesData } = await (supabase as any)
+            .from("match_invites")
+            .select(`
+                id, invitee_user_id, status,
+                profiles!match_invites_invitee_user_id_fkey(display_name, avatar_url)
+            `)
+            .eq("match_id", id)
+            .order("sent_at", { ascending: false });
+
+        hostInvites = ((invitesData ?? []) as Array<{
+            id: string; invitee_user_id: string;
+            status: "pending" | "accepted" | "declined" | "expired" | "cancelled";
+            profiles: { display_name: string | null; avatar_url: string | null } | null;
+        }>).map((i) => ({
+            id: i.id,
+            invitee_user_id: i.invitee_user_id,
+            status: i.status,
+            display_name: i.profiles?.display_name ?? null,
+            avatar_url: i.profiles?.avatar_url ?? null,
+        }));
+    }
+
+    // Invited-viewer flow: do I have a pending invite to this match?
+    let viewerPendingInviteId: string | null = null;
+    if (viewerId && !isHost && !isParticipant) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { data: myInvite } = await (supabase as any)
+            .from("match_invites")
+            .select("id, status")
+            .eq("match_id", id)
+            .eq("invitee_user_id", viewerId)
+            .eq("status", "pending")
+            .maybeSingle();
+        viewerPendingInviteId = (myInvite as { id: string } | null)?.id ?? null;
+    }
 
     const scheduledAt = new Date(match.scheduled_for);
     const dateLocale = locale === "ar" ? arLocale : undefined;
@@ -211,6 +301,21 @@ export default async function MatchDetailPage({ params }: PageProps) {
                     isFull={joinedCount >= match.capacity}
                 />
             </div>
+
+            {/* Invited viewer: accept / decline */}
+            {viewerPendingInviteId && (
+                <MatchInviteResponse inviteId={viewerPendingInviteId} matchId={match.id} />
+            )}
+
+            {/* Host invite panel */}
+            {isHost && match.status === "open" && (
+                <MatchHostInvites
+                    matchId={match.id}
+                    contacts={hostContacts}
+                    groups={hostGroups}
+                    invites={hostInvites}
+                />
+            )}
 
             {/* Participants */}
             <div className="rounded-2xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 p-6">

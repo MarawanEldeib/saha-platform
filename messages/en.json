@@ -216,7 +216,62 @@
         "participants_heading": "Players ({count})",
         "no_participants": "No one has joined yet.",
         "host_chip": "Host",
-        "phase_note": "Phase 2: open-gate join works. Invites, request-to-join, and per-match chat ship in Phase 3 / 4."
+        "invites_heading": "Invites",
+        "invite_button": "Invite players",
+        "no_invites_yet": "No invites sent yet.",
+        "invite_pending": "Pending ({count})",
+        "invite_accepted": "Accepted ({count})",
+        "invite_declined": "Declined ({count})",
+        "invite_heading": "You're invited",
+        "invite_subtitle": "The host has invited you to this match. Accept to join the lineup.",
+        "accept_invite": "Accept invite",
+        "decline_invite": "Decline",
+        "phase_note": "Request-to-join + per-match chat ship in Phase 4."
+    },
+    "invite_sheet": {
+        "title": "Select who can join",
+        "close": "Close",
+        "tab_players": "Players",
+        "tab_groups": "Groups",
+        "search_placeholder": "Search your contacts…",
+        "suggested": "Suggested players",
+        "your_groups": "Your groups",
+        "no_contacts": "Add players to your contacts first from the contacts page.",
+        "no_groups": "No groups yet. Create one from your contacts page.",
+        "anonymous": "Player",
+        "members_count": "{count, plural, one {# member} other {# members}}",
+        "done_with_count": "{count, plural, =0 {Done} one {Invite # player} other {Invite # players}}",
+        "sending": "Sending…",
+        "cancel": "Cancel"
+    },
+    "contacts": {
+        "title": "Contacts & Groups",
+        "subtitle": "Save players you play with often, and organise them into groups for one-tap invites.",
+        "tab_contacts": "Contacts ({count})",
+        "tab_groups": "Groups ({count})",
+        "search_placeholder": "Search players by name…",
+        "searching": "Searching…",
+        "your_contacts": "Your contacts",
+        "no_contacts": "No contacts yet. Search above to add players you play with.",
+        "no_groups": "No groups yet. Create one to bulk-invite a regular crew.",
+        "no_contacts_for_group": "Add contacts first before creating a group.",
+        "add": "Add",
+        "remove": "Remove",
+        "edit": "Edit",
+        "delete": "Delete",
+        "anonymous": "Player",
+        "new_group": "New group",
+        "edit_group": "Edit group",
+        "group_name_label": "Group name",
+        "group_name_placeholder": "e.g. Padel Buddies",
+        "members_label": "Members ({count})",
+        "members_count": "{count, plural, one {# member} other {# members}}",
+        "save": "Save",
+        "create": "Create",
+        "saving": "Saving…",
+        "cancel": "Cancel",
+        "confirm_remove": "Remove {name} from your contacts?",
+        "confirm_delete_group": "Delete group \"{name}\"? Members stay in your contacts."
     },
     "community": {
         "title": "Player Matchmaking",
@@ -1140,6 +1195,19 @@
             "full": "This match is already full.",
             "already_joined": "You've already joined this match.",
             "host_cannot_leave": "Hosts can't leave — cancel the match instead."
+        },
+        "contacts": {
+            "cannot_add_self": "You can't add yourself as a contact.",
+            "already_added": "This player is already in your contacts.",
+            "not_found": "Player not found."
+        },
+        "groups": {
+            "invalid_name": "Group name must be 1–60 characters."
+        },
+        "invites": {
+            "no_recipients": "Pick at least one player or group.",
+            "not_found": "Invite not found.",
+            "already_responded": "You've already responded to this invite."
         },
         "events": {
             "name_too_short": "Event name must be at least 3 characters.",
