@@ -21,6 +21,7 @@ import { Button } from "@/components/ui/Button";
 import { createMatchAction } from "../actions";
 
 const FORMAT_QUICK_PICKS = ["1v1", "2v2", "5v5", "7v7", "casual"] as const;
+const DURATION_QUICK_PICKS = [60, 90, 120, 180] as const;
 
 interface NewMatchFormProps {
     sports: Array<{ id: number; name: string }>;
@@ -58,6 +59,7 @@ export function NewMatchForm({ sports }: NewMatchFormProps) {
             skill_level: "intermediate",
             format: "casual",
             capacity: 4,
+            duration_minutes: 60,
             gate: "open",
             description: "",
         },
@@ -65,6 +67,7 @@ export function NewMatchForm({ sports }: NewMatchFormProps) {
 
     const watchedFormat = watch("format");
     const watchedGate = watch("gate");
+    const watchedDuration = watch("duration_minutes");
 
     async function onSubmit(values: MatchCreateInput) {
         setServerError(null);
@@ -200,6 +203,29 @@ export function NewMatchForm({ sports }: NewMatchFormProps) {
                     {...register("capacity", { valueAsNumber: true })}
                 />
                 {errors.capacity && <p className="text-xs text-red-500 mt-1">{errors.capacity.message}</p>}
+            </div>
+
+            {/* Duration */}
+            <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    {t("duration_label")}
+                </label>
+                <div className="flex flex-wrap gap-2">
+                    {DURATION_QUICK_PICKS.map((mins) => (
+                        <button
+                            type="button"
+                            key={mins}
+                            onClick={() => setValue("duration_minutes", mins)}
+                            className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
+                                watchedDuration === mins
+                                    ? "border-emerald-600 bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300"
+                                    : "border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:border-emerald-300"
+                            }`}
+                        >
+                            {t("duration_minutes", { count: mins })}
+                        </button>
+                    ))}
+                </div>
             </div>
 
             {/* Gate */}

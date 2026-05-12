@@ -84,6 +84,7 @@ export async function createMatchAction(
             scheduled_for: new Date(scheduledMs).toISOString(),
             format: data.format,
             capacity: data.capacity,
+            duration_minutes: data.duration_minutes,
             status: "open",
             gate: data.gate,
             location_text: data.location_text || null,

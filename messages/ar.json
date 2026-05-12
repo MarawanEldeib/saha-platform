@@ -125,6 +125,7 @@
         "subtitle": "اعثر على مباراتك القادمة. أجواء حماسية وملاعب قريبة منك.",
         "post_a_game": "انشر مباراة",
         "join_game": "انضم للمباراة",
+        "live": "مباشر",
         "empty": "لا توجد مباريات متاحة الآن — كن أول من ينشر واحدة.",
         "sport_unspecified": "رياضة غير محددة",
         "format_casual": "ودية",
@@ -157,6 +158,8 @@
         "skill_label": "مستوى المهارة",
         "format_label": "التنسيق",
         "capacity_label": "السعة (1–50)",
+        "duration_label": "المدة",
+        "duration_minutes": "{count, plural, zero {بدون دقائق} one {دقيقة واحدة} two {دقيقتان} few {# دقائق} many {# دقيقة} other {# دقيقة}}",
         "gate_label": "من يمكنه الانضمام",
         "gate": {
             "open": {

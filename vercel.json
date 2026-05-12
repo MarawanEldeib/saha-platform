@@ -7,6 +7,10 @@
         {
             "path": "/api/cron/mark-no-shows",
             "schedule": "0 23 * * *"
+        },
+        {
+            "path": "/api/cron/auto-complete-matches",
+            "schedule": "0 * * * *"
         }
     ]
 }

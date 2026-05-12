@@ -14,6 +14,7 @@ import { format } from "date-fns";
 import { ar as arLocale } from "date-fns/locale";
 import { MapPin, Clock, Users, ChevronLeft } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
+import { computeDisplayStatus } from "@/lib/match-status";
 import { JoinLeaveControls } from "./JoinLeaveControls";
 import { MatchHostInvites } from "./MatchHostInvites";
 import { MatchInviteResponse } from "./MatchInviteResponse";
@@ -34,6 +35,7 @@ interface MatchDetail {
     gate: "open" | "request" | "invite_only";
     format: string;
     capacity: number;
+    duration_minutes: number;
     skill_level: string;
     location_text: string | null;
     user_id: string;
@@ -82,7 +84,7 @@ export default async function MatchDetailPage({ params }: PageProps) {
     const matchResult = await supabase
         .from("matchmaking_posts")
         .select(`
-            id, title, scheduled_for, status, gate, format, capacity,
+            id, title, scheduled_for, status, gate, format, capacity, duration_minutes,
             skill_level, location_text, user_id,
             sports(name),
             profiles!matchmaking_posts_user_id_fkey(display_name, avatar_url)
@@ -310,15 +312,30 @@ export default async function MatchDetailPage({ params }: PageProps) {
                             </span>
                         </p>
                     </div>
-                    {match.status !== "open" && (
-                        <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${
-                            match.status === "cancelled" ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300" :
-                            match.status === "completed" ? "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300" :
-                            "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300"
-                        }`}>
-                            {t(`status.${match.status}`)}
-                        </span>
-                    )}
+                    {(() => {
+                        const display = computeDisplayStatus({
+                            scheduledForIso: match.scheduled_for,
+                            durationMinutes: match.duration_minutes ?? 60,
+                            status: match.status,
+                        });
+                        if (display === "upcoming") return null;
+                        if (display === "live") {
+                            return (
+                                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300">
+                                    <span className="h-1.5 w-1.5 rounded-full bg-red-500 animate-pulse" />
+                                    {tCommon("live")}
+                                </span>
+                            );
+                        }
+                        const cls =
+                            display === "cancelled" ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300" :
+                            "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300";
+                        return (
+                            <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${cls}`}>
+                                {t(`status.${display === "ended" ? "completed" : display}`)}
+                            </span>
+                        );
+                    })()}
                 </div>
 
                 <dl className="grid grid-cols-2 gap-4 text-sm mb-4">

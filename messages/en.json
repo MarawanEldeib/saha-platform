@@ -125,6 +125,7 @@
         "subtitle": "Find your next game. High intensity, local courts.",
         "post_a_game": "Post a Game",
         "join_game": "Join Game",
+        "live": "Live",
         "empty": "No open games right now — be the first to post one.",
         "sport_unspecified": "Sport TBD",
         "format_casual": "Casual",
@@ -157,6 +158,8 @@
         "skill_label": "Skill level",
         "format_label": "Format",
         "capacity_label": "Capacity (1–50)",
+        "duration_label": "Duration",
+        "duration_minutes": "{count, plural, one {# minute} other {# minutes}}",
         "gate_label": "Who can join",
         "gate": {
             "open": {
