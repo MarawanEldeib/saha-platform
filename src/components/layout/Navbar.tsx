@@ -163,9 +163,9 @@ export function Navbar({ profile }: NavbarProps) {
                         )}
                     </div>
 
-                    {/* Mobile hamburger */}
+                    {/* Mobile hamburger — p-2.5 keeps the 40×40 minimum tap target (SAH-33). */}
                     <button
-                        className="md:hidden p-2 rounded-lg text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800"
+                        className="md:hidden p-2.5 rounded-lg text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800"
                         onClick={() => setMenuOpen(!menuOpen)}
                         aria-label="Toggle menu"
                         aria-expanded={menuOpen}
