@@ -327,6 +327,7 @@ export interface Database {
                     capacity: number;
                     status: "open" | "live" | "completed" | "cancelled";
                     gate: "open" | "request" | "invite_only";
+                    duration_minutes: number;
                 };
                 Insert: {
                     id?: string;
@@ -345,6 +346,7 @@ export interface Database {
                     capacity?: number;
                     status?: "open" | "live" | "completed" | "cancelled";
                     gate?: "open" | "request" | "invite_only";
+                    duration_minutes?: number;
                 };
                 Update: {
                     skill_level?: SkillLevel;
@@ -360,6 +362,7 @@ export interface Database {
                     capacity?: number;
                     status?: "open" | "live" | "completed" | "cancelled";
                     gate?: "open" | "request" | "invite_only";
+                    duration_minutes?: number;
                 };
                 Relationships: [
                     {

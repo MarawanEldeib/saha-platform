@@ -17,6 +17,7 @@ import { createClient } from "@/lib/supabase/server";
 import { format, isToday, isTomorrow, isThisWeek } from "date-fns";
 import { ar as arLocale } from "date-fns/locale";
 import { MapPin, Clock, Users, Plus } from "lucide-react";
+import { computeDisplayStatus } from "@/lib/match-status";
 
 export const metadata = { title: "Matches — Saha" };
 
@@ -24,10 +25,11 @@ interface MatchRow {
     id: string;
     title: string;
     scheduled_for: string;
-    status: string;
+    status: "open" | "live" | "completed" | "cancelled";
     gate: string;
     format: string;
     capacity: number;
+    duration_minutes: number;
     skill_level: string;
     location_text: string | null;
     sports: { name: string } | null;
@@ -103,22 +105,33 @@ export default async function MatchesPage() {
     const locale = await getLocale();
     const supabase = await createClient();
 
-    const nowIso = new Date().toISOString();
+    const now = new Date();
+    // Max duration_minutes is 480 (8 h) — anything older than that hasn't
+    // ended yet only in pathological cases; the auto-complete cron sweeps
+    // them anyway. Fetch a wider window then trim to live/upcoming in JS.
+    const earliestStartIso = new Date(now.getTime() - 8 * 60 * 60 * 1000).toISOString();
 
-    // Open matches scheduled for the future, soonest first.
     const matchesResult = await supabase
         .from("matchmaking_posts")
         .select(`
-            id, title, scheduled_for, status, gate, format, capacity,
+            id, title, scheduled_for, status, gate, format, capacity, duration_minutes,
             skill_level, location_text,
             sports(name)
         `)
         .eq("status", "open")
-        .gte("scheduled_for", nowIso)
+        .gte("scheduled_for", earliestStartIso)
         .order("scheduled_for", { ascending: true })
         .limit(60);
 
-    const matches = (matchesResult.data ?? []) as unknown as MatchRow[];
+    const matches = ((matchesResult.data ?? []) as unknown as MatchRow[]).filter((m) => {
+        const display = computeDisplayStatus({
+            scheduledForIso: m.scheduled_for,
+            durationMinutes: m.duration_minutes ?? 60,
+            status: m.status,
+            now,
+        });
+        return display === "upcoming" || display === "live";
+    });
 
     // Pull participants for every match in one query, then group client-side.
     const matchIds = matches.map((m) => m.id);
@@ -189,6 +202,14 @@ export default async function MatchesPage() {
                         const visibleAvatars = participants.slice(0, 3);
                         const overflow = Math.max(0, joined - visibleAvatars.length);
 
+                        const displayStatus = computeDisplayStatus({
+                            scheduledForIso: m.scheduled_for,
+                            durationMinutes: m.duration_minutes ?? 60,
+                            status: m.status,
+                            now,
+                        });
+                        const isLive = displayStatus === "live";
+
                         return (
                             <article
                                 key={m.id}
@@ -212,6 +233,12 @@ export default async function MatchesPage() {
                                                 </p>
                                             </div>
                                         </div>
+                                        {isLive && (
+                                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wide bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300">
+                                                <span className="h-1.5 w-1.5 rounded-full bg-red-500 animate-pulse" />
+                                                {t("live")}
+                                            </span>
+                                        )}
                                     </div>
                                 </Link>
 

@@ -107,6 +107,7 @@ function baseInput(overrides: Record<string, unknown> = {}) {
         skill_level: "intermediate" as const,
         format: "casual",
         capacity: 4,
+        duration_minutes: 60,
         gate: "open" as const,
         description: "",
         ...overrides,

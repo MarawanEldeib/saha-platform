@@ -169,6 +169,7 @@ export const matchCreateSchema = z.object({
     skill_level: z.enum(["beginner", "intermediate", "advanced", "competitive"]),
     format: z.string().min(1).max(20),
     capacity: z.number().int().min(1).max(50),
+    duration_minutes: z.number().int().min(15).max(480),
     gate: z.enum(["open", "request", "invite_only"]),
     description: z.string().max(500).optional().or(z.literal("")),
 });
