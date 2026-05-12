@@ -24,10 +24,13 @@ interface Props {
     isAuthenticated: boolean;
     locale: string;
     isFull: boolean;
+    /** SAH-152 Phase 4: viewer has a pending join request to this match. */
+    viewerHasPendingRequest?: boolean;
 }
 
 export function JoinLeaveControls({
     matchId, matchStatus, matchGate, isHost, isParticipant, isAuthenticated, locale, isFull,
+    viewerHasPendingRequest = false,
 }: Props) {
     const t = useTranslations("match_detail");
     const router = useRouter();
@@ -109,9 +112,30 @@ export function JoinLeaveControls({
         );
     }
 
+    if (matchGate === "request") {
+        if (viewerHasPendingRequest) {
+            return (
+                <p className="text-sm text-orange-700 dark:text-orange-400 font-medium">
+                    {t("request_pending_blurb")}
+                </p>
+            );
+        }
+        return (
+            <div className="flex items-center gap-3">
+                <Button
+                    onClick={() => run(() => joinMatchAction(matchId))}
+                    disabled={busy || isFull}
+                >
+                    {busy ? t("working") : isFull ? t("full") : t("request_to_join")}
+                </Button>
+                {error && <p className="text-sm text-red-500" role="alert">{error}</p>}
+            </div>
+        );
+    }
+
     return (
         <p className="text-sm text-gray-500 dark:text-gray-400">
-            {matchGate === "request" ? t("gate.request_blurb") : t("gate.invite_only_blurb")}
+            {t("gate.invite_only_blurb")}
         </p>
     );
 }
