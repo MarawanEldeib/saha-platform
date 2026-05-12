@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/Input";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { matchmakingSchema, type MatchmakingInput } from "@/lib/validations";
-import { Calendar, MessageSquare, Plus, X, Info } from "lucide-react";
+import { Calendar, MessageSquare, Plus, X, Info, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/Badge";
 import { format } from "date-fns";
 import type { Sport } from "@/types/database";
@@ -48,6 +48,10 @@ export default function CommunityPage() {
     const [loading, setLoading] = React.useState(true);
     const [showForm, setShowForm] = React.useState(false);
     const [serverError, setServerError] = React.useState<string | null>(null);
+    // SAH-152: client-side filters + my-posts view.
+    const [filterSport, setFilterSport] = React.useState<number | "all">("all");
+    const [filterSkill, setFilterSkill] = React.useState<"all" | "beginner" | "intermediate" | "advanced">("all");
+    const [showMineOnly, setShowMineOnly] = React.useState(false);
     const [authState, setAuthState] = React.useState<
         | { status: "loading" }
         | { status: "anonymous" }
@@ -74,10 +78,13 @@ export default function CommunityPage() {
         const fetchData = async () => {
             const supabase = createClient();
             const [{ data: postsData }, { data: sportsData }, { data: { user } }] = await Promise.all([
+                // SAH-152: auto-expire — clients only see posts < 14 days old.
+                // Owners can still mark them inactive earlier via the Close action.
                 supabase
                     .from("matchmaking_posts")
                     .select("*, sports(name)")
                     .eq("is_active", true)
+                    .gte("created_at", new Date(Date.now() - 14 * 24 * 3600 * 1000).toISOString())
                     .order("created_at", { ascending: false }),
                 supabase.from("sports").select("*").in("name", ["Padel", "Pickleball", "Squash", "Tennis", "Badminton"]).order("name"),
                 supabase.auth.getUser(),
@@ -135,6 +142,19 @@ export default function CommunityPage() {
             router.push(`/${locale}/login`);
             return;
         }
+        // SAH-152: max 1 active post per player — keeps the board fresh and
+        // prevents one user from dominating the feed.
+        const { data: existing } = await supabase
+            .from("matchmaking_posts")
+            .select("id")
+            .eq("user_id", user.id)
+            .eq("is_active", true)
+            .gte("created_at", new Date(Date.now() - 14 * 24 * 3600 * 1000).toISOString())
+            .limit(1);
+        if (existing && existing.length > 0) {
+            setServerError(t("only_one_active"));
+            return;
+        }
         const { error } = await supabase.from("matchmaking_posts").insert({
             user_id: user.id,
             sport_id: data.sport_id,
@@ -176,6 +196,35 @@ export default function CommunityPage() {
 
     const canPost = authState.status === "player";
     const myUserId = authState.status === "player" ? authState.userId : null;
+
+    // SAH-152: close own post — flips is_active to false. RLS allows owners
+    // to update their own row, so no admin client needed.
+    async function closePost(postId: string) {
+        if (!myUserId) return;
+        const supabase = createClient();
+        const { error } = await supabase
+            .from("matchmaking_posts")
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            .update({ is_active: false } as any)
+            .eq("id", postId)
+            .eq("user_id", myUserId);
+        if (!error) {
+            setPosts((prev) => prev.filter((p) => p.id !== postId));
+        }
+    }
+
+    // SAH-152: client-side filter applied to the loaded posts. Server still
+    // narrows by is_active + 14-day window; this narrows further by user
+    // selection without a round-trip.
+    const visiblePosts = posts.filter((p) => {
+        if (showMineOnly && p.user_id !== myUserId) return false;
+        if (filterSport !== "all" && p.sports != null) {
+            const sport = sports.find((s) => s.id === filterSport);
+            if (sport && p.sports.name !== sport.name) return false;
+        }
+        if (filterSkill !== "all" && p.skill_level !== filterSkill) return false;
+        return true;
+    });
 
     async function sendQuickMessage() {
         if (!messagingPost || !myUserId) return;
@@ -265,15 +314,57 @@ export default function CommunityPage() {
                 </div>
             )}
 
+            {/* SAH-152: filter chips + my-posts toggle */}
+            {!loading && posts.length > 0 && (
+                <div className="flex flex-wrap items-center gap-2 mb-6">
+                    <select
+                        value={filterSport === "all" ? "" : String(filterSport)}
+                        onChange={(e) => setFilterSport(e.target.value ? Number(e.target.value) : "all")}
+                        aria-label={t("filter_sport")}
+                        className="text-xs rounded-full border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 py-1.5"
+                    >
+                        <option value="">{t("filter_all_sports")}</option>
+                        {sports.map((s) => <option key={s.id} value={s.id}>{sportName(s.name)}</option>)}
+                    </select>
+                    <select
+                        value={filterSkill}
+                        onChange={(e) => setFilterSkill(e.target.value as typeof filterSkill)}
+                        aria-label={t("filter_skill")}
+                        className="text-xs rounded-full border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 py-1.5"
+                    >
+                        <option value="all">{t("filter_all_levels")}</option>
+                        <option value="beginner">{t("level_beginner")}</option>
+                        <option value="intermediate">{t("level_intermediate")}</option>
+                        <option value="advanced">{t("level_advanced")}</option>
+                    </select>
+                    {canPost && (
+                        <button
+                            type="button"
+                            onClick={() => setShowMineOnly((v) => !v)}
+                            aria-pressed={showMineOnly}
+                            className={`text-xs px-3 py-1.5 rounded-full border font-medium transition-colors ${
+                                showMineOnly
+                                    ? "bg-emerald-600 text-white border-emerald-600"
+                                    : "bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-700"
+                            }`}
+                        >
+                            {t("filter_my_posts")}
+                        </button>
+                    )}
+                </div>
+            )}
+
             {loading ? (
                 <div className="flex justify-center py-12">
                     <div className="h-8 w-8 animate-spin rounded-full border-4 border-emerald-500 border-t-transparent" />
                 </div>
-            ) : posts.length === 0 ? (
-                <p className="text-center text-gray-500 dark:text-gray-400 py-12">{t("no_posts")}</p>
+            ) : visiblePosts.length === 0 ? (
+                <p className="text-center text-gray-500 dark:text-gray-400 py-12">
+                    {posts.length === 0 ? t("no_posts") : t("no_posts_filtered")}
+                </p>
             ) : (
                 <div className="space-y-4">
-                    {posts.map((post) => (
+                    {visiblePosts.map((post) => (
                         <div key={post.id} className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-5 space-y-3">
                             <div className="flex items-start justify-between gap-3">
                                 <p className="font-medium text-gray-900 dark:text-white">
@@ -300,6 +391,18 @@ export default function CommunityPage() {
                                     >
                                         <MessageSquare className="h-3.5 w-3.5" />
                                         {t("message_player")}
+                                    </button>
+                                )}
+                                {myUserId && post.user_id === myUserId && (
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            if (confirm(t("close_confirm"))) void closePost(post.id);
+                                        }}
+                                        className="ms-auto inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 text-xs font-semibold hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+                                    >
+                                        <Trash2 className="h-3.5 w-3.5" />
+                                        {t("close_post")}
                                     </button>
                                 )}
                             </div>

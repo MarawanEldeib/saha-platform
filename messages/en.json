@@ -142,7 +142,16 @@
         "non_player_body": "Matchmaking is a player feature. Your account is signed in as a facility owner / admin. Sign out and create a separate player account to post or respond to matchmaking requests.",
         "message_player": "Message",
         "message_to": "Message {name}",
-        "send": "Send"
+        "send": "Send",
+        "filter_sport": "Filter by sport",
+        "filter_skill": "Filter by skill level",
+        "filter_all_sports": "All sports",
+        "filter_all_levels": "All levels",
+        "filter_my_posts": "My posts",
+        "close_post": "Close",
+        "close_confirm": "Close this post? It won't be visible to other players anymore.",
+        "no_posts_filtered": "No posts match the selected filters.",
+        "only_one_active": "You already have an active request. Close it before posting a new one."
     },
     "events": {
         "title": "Upcoming Events",
