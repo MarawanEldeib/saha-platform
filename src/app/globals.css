@@ -20,3 +20,10 @@
     @apply outline-none ring-2 ring-emerald-500 ring-offset-2;
   }
 }
+
+/* SAH-33: MapLibre ships 29×29 control buttons; bump them to 40×40 so the
+   mobile zoom/compass controls meet our minimum tap-target rule. */
+.maplibregl-ctrl-group > button {
+  width: 40px;
+  height: 40px;
+}
