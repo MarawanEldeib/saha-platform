@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { ADMIN_PAGE_SIZE } from "@/lib/constants";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { redirect } from "next/navigation";
 import { getLocale } from "next-intl/server";
@@ -18,7 +19,7 @@ const STATUS_STYLES: Record<string, string> = {
     no_show: "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400",
 };
 
-const PAGE_SIZE = 50;
+const PAGE_SIZE = ADMIN_PAGE_SIZE;
 
 type SearchParams = {
     status?: string;

@@ -10,6 +10,7 @@
  */
 
 import { createClient } from "@/lib/supabase/server";
+import { ADMIN_PAGE_SIZE } from "@/lib/constants";
 import { getLocale, getTranslations } from "next-intl/server";
 import { redirect } from "next/navigation";
 import Link from "next/link";
@@ -22,7 +23,7 @@ import type { Metadata } from "next";
 
 export const metadata: Metadata = { title: "Booking history – Saha" };
 
-const PAGE_SIZE = 50;
+const PAGE_SIZE = ADMIN_PAGE_SIZE;
 
 const STATUS_STYLES: Record<string, string> = {
     confirmed: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400",

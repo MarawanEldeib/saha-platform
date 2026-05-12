@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { ADMIN_PAGE_SIZE } from "@/lib/constants";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getLocale } from "next-intl/server";
 import { redirect } from "next/navigation";
@@ -18,7 +19,7 @@ interface FacilityRow {
 
 export const metadata = { title: "Facilities – Admin" };
 
-const PAGE_SIZE = 50;
+const PAGE_SIZE = ADMIN_PAGE_SIZE;
 
 export default async function AdminFacilitiesPage({
     searchParams,

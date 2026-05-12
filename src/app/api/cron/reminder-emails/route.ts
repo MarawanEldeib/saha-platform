@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { FROM_ADDRESS } from "@/lib/email-config";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { sendWhatsApp } from "@/lib/twilio";
 import { Resend } from "resend";
@@ -73,7 +74,7 @@ export async function GET(req: NextRequest) {
         // Send email reminder
         if (playerEmail) {
             await resend.emails.send({
-                from: "Saha <noreply@saha.ae>",
+                from: FROM_ADDRESS,
                 to: playerEmail,
                 subject: `${subjectPrefix} – ${court?.name}`,
                 html: `

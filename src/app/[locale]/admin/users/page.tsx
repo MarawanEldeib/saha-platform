@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { ADMIN_PAGE_SIZE } from "@/lib/constants";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { redirect } from "next/navigation";
 import { getLocale } from "next-intl/server";
@@ -10,7 +11,7 @@ import { UserActions } from "./UserActions";
 
 export const metadata: Metadata = { title: "Admin · Users — Saha" };
 
-const PAGE_SIZE = 50;
+const PAGE_SIZE = ADMIN_PAGE_SIZE;
 
 const ROLE_STYLES: Record<string, string> = {
     user: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400",
