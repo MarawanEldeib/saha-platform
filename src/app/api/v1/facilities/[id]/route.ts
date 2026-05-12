@@ -8,7 +8,7 @@
 
 import type { NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { apiError, apiJson, apiPreflight } from "@/lib/api-response";
+import { apiError, apiJson, apiPreflight, apiServerError } from "@/lib/api-response";
 import { rateLimit } from "@/lib/rate-limit";
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -55,7 +55,7 @@ export async function GET(_req: NextRequest, ctx: { params: Promise<{ id: string
         .eq("status", "active")
         .maybeSingle();
 
-    if (error) return apiError("Database error", 500, { detail: error.message });
+    if (error) return apiServerError(error, "v1/facilities/[id]", { facility_id: id });
     if (!data) return apiError("Facility not found", 404);
 
     const f = data as FacilityFull;

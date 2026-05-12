@@ -9,7 +9,7 @@
 import type { NextRequest } from "next/server";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
-import { apiError, apiJson, apiPreflight } from "@/lib/api-response";
+import { apiError, apiJson, apiPreflight, apiServerError } from "@/lib/api-response";
 import { rateLimit } from "@/lib/rate-limit";
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -83,7 +83,7 @@ export async function GET(req: NextRequest, ctx: { params: Promise<{ id: string 
         .eq("date", date)
         .eq("is_booked", false)
         .order("start_time");
-    if (error) return apiError("Database error", 500, { detail: error.message });
+    if (error) return apiServerError(error, "v1/facilities/[id]/availability");
 
     const shaped = ((slots ?? []) as AvailabilityRow[]).map((s) => {
         const c = courtMap.get(s.court_id);

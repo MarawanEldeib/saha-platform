@@ -8,6 +8,7 @@
  */
 
 import { NextResponse } from "next/server";
+import * as Sentry from "@sentry/nextjs";
 
 const CORS_HEADERS = {
     "Access-Control-Allow-Origin": "*",
@@ -28,4 +29,27 @@ export function apiError(message: string, status: number, extra?: Record<string,
 
 export function apiPreflight(): NextResponse {
     return new NextResponse(null, { status: 204, headers: CORS_HEADERS });
+}
+
+/**
+ * SAH-155: standard 5xx response that captures the underlying error to
+ * Sentry but returns a generic message to the client. Use this anywhere
+ * a try/catch or `if (error)` would otherwise risk leaking schema names,
+ * SDK internals, or RLS-violation reasons to an anonymous caller.
+ *
+ * @param err     The error to capture (any shape — Sentry will normalize).
+ * @param route   Route tag for filtering in Sentry (e.g. "v1/facilities").
+ * @param extra   Optional structured context to attach to the Sentry event.
+ *                Never returned to the client.
+ */
+export function apiServerError(
+    err: unknown,
+    route: string,
+    extra?: Record<string, unknown>,
+): NextResponse {
+    Sentry.captureException(err, {
+        tags: { route },
+        extra,
+    });
+    return apiError("An unexpected error occurred", 500);
 }

@@ -14,7 +14,7 @@
 import type { NextRequest } from "next/server";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
-import { apiError, apiJson, apiPreflight } from "@/lib/api-response";
+import { apiError, apiJson, apiPreflight, apiServerError } from "@/lib/api-response";
 import { rateLimit } from "@/lib/rate-limit";
 
 const Query = z.object({
@@ -98,7 +98,7 @@ export async function GET(req: NextRequest) {
         const { data, error } = await (supabase as any).rpc("facilities_within_radius", {
             lat, lng, radius_km, sport_filter: sportId, discount_only: false,
         });
-        if (error) return apiError("Database error", 500, { detail: error.message });
+        if (error) return apiServerError(error, "v1/facilities", { path: "geo", lat, lng, radius_km });
 
         // RPC returns minimal columns + distance_m. For each, fetch sports list.
         const ids = (data ?? []).map((r: { id: string }) => r.id);
@@ -133,7 +133,7 @@ export async function GET(req: NextRequest) {
     query = query.order("name").range(offset, offset + limit - 1);
 
     const { data, count, error } = await query;
-    if (error) return apiError("Database error", 500, { detail: error.message });
+    if (error) return apiServerError(error, "v1/facilities", { path: "filter", city, sport });
 
     return apiJson({
         data: (data ?? []).map((f: FacilityWithSports) => shape(f)),

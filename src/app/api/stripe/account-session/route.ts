@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import * as Sentry from "@sentry/nextjs";
 import { createClient } from "@/lib/supabase/server";
 import { getStripe } from "@/lib/stripe";
 import { getActiveFacility } from "@/lib/facility-context";
@@ -46,7 +47,11 @@ export async function POST() {
 
         return NextResponse.json({ clientSecret: accountSession.client_secret });
     } catch (err: unknown) {
-        const message = err instanceof Error ? err.message : "Stripe error";
-        return NextResponse.json({ error: message }, { status: 500 });
+        // SAH-155: don't surface Stripe SDK internals to the client.
+        Sentry.captureException(err, {
+            tags: { route: "stripe/account-session" },
+            extra: { facility_id: facility.id, account_id: accountId },
+        });
+        return NextResponse.json({ error: "Stripe is unavailable right now" }, { status: 500 });
     }
 }

@@ -9,7 +9,7 @@
  */
 
 import type { NextRequest } from "next/server";
-import { apiError, apiJson, apiPreflight } from "@/lib/api-response";
+import { apiError, apiJson, apiPreflight, apiServerError } from "@/lib/api-response";
 import { getApiUser } from "@/lib/api-auth";
 
 interface BookingRow {
@@ -51,7 +51,7 @@ export async function GET(req: NextRequest, ctx: { params: Promise<{ id: string 
         .eq("id", id)
         .maybeSingle();
 
-    if (error) return apiError("Database error", 500, { detail: error.message });
+    if (error) return apiServerError(error, "v1/bookings/[id]", { booking_id: id });
     if (!data) return apiError("Booking not found", 404);
 
     const b = data as BookingRow;
