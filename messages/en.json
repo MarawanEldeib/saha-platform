@@ -243,7 +243,11 @@
             "success_desc": "Our team will review your facility within 2 business days and get in touch with you.",
             "go_dashboard": "Go to Dashboard",
             "next": "Next",
-            "back": "Back"
+            "back": "Back",
+            "ai_heading": "Need help writing a description?",
+            "ai_hint": "Let AI draft a short description from your facility name, sports, and city. You can edit it later.",
+            "ai_generate": "Generate with AI",
+            "ai_generating": "Generating…"
         },
         "facility": {
             "title": "Manage Facility",

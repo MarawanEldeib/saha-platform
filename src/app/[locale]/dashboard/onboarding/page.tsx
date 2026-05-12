@@ -9,9 +9,9 @@ import { createClient } from "@/lib/supabase/client";
 import { Input, Textarea } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import { useRouter } from "next/navigation";
-import { CheckCircle, Building2 } from "lucide-react";
+import { CheckCircle, Building2, Sparkles, Loader2 } from "lucide-react";
 import type { Database } from "@/types/database";
-import { setActiveFacilityAction } from "../actions";
+import { setActiveFacilityAction, generateOnboardingDescriptionAction } from "../actions";
 
 type FacilitySportsInsert = Database["public"]["Tables"]["facility_sports"]["Insert"];
 
@@ -24,6 +24,38 @@ export default function OnboardingPage() {
     const [dbSports, setDbSports] = React.useState<{ id: number; name: string }[]>([]);
     const [serverError, setServerError] = React.useState<string | null>(null);
     const [facilityId, setFacilityId] = React.useState<string | null>(null);
+
+    // SAH-40: AI description generator on Step 2. Hidden when
+    // ANTHROPIC_API_KEY isn't configured (server returns notConfigured).
+    const [aiPending, setAiPending] = React.useState(false);
+    const [aiHidden, setAiHidden] = React.useState(false);
+    const [aiError, setAiError] = React.useState<string | null>(null);
+    const [aiDescription, setAiDescription] = React.useState<string | null>(null);
+
+    async function generateDescription() {
+        if (!facilityId || sportIds.length === 0) return;
+        setAiError(null);
+        setAiPending(true);
+        try {
+            const sportNames = sportIds
+                .map((id) => dbSports.find((s) => s.id === id)?.name)
+                .filter(Boolean) as string[];
+            const result = await generateOnboardingDescriptionAction(facilityId, sportNames);
+            if ("notConfigured" in result && result.notConfigured) {
+                setAiHidden(true);
+                return;
+            }
+            if ("error" in result && result.error) {
+                setAiError(result.error);
+                return;
+            }
+            if ("description" in result && result.description) {
+                setAiDescription(result.description);
+            }
+        } finally {
+            setAiPending(false);
+        }
+    }
 
     // Load sports when entering Step 2
     React.useEffect(() => {
@@ -195,6 +227,42 @@ export default function OnboardingPage() {
                             </button>
                         ))}
                     </div>
+                    {/* SAH-40: AI description generator — placed at Step 2
+                        because the prompt needs both city (Step 1) and sports
+                        (Step 2). Hidden when ANTHROPIC_API_KEY is missing. */}
+                    {!aiHidden && sportIds.length > 0 && facilityId && (
+                        <div className="mb-5 p-4 rounded-xl border border-emerald-200 dark:border-emerald-900/40 bg-emerald-50/60 dark:bg-emerald-900/10 space-y-3">
+                            <div className="flex items-start justify-between gap-3">
+                                <div>
+                                    <p className="text-sm font-semibold text-emerald-900 dark:text-emerald-200">
+                                        {t("ai_heading")}
+                                    </p>
+                                    <p className="text-xs text-emerald-800/80 dark:text-emerald-300/80 mt-0.5">
+                                        {t("ai_hint")}
+                                    </p>
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={generateDescription}
+                                    disabled={aiPending}
+                                    className="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-white dark:bg-gray-900 border border-emerald-300 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/30 disabled:opacity-60 transition-colors"
+                                >
+                                    {aiPending
+                                        ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                        : <Sparkles className="h-3.5 w-3.5" />}
+                                    {aiPending ? t("ai_generating") : t("ai_generate")}
+                                </button>
+                            </div>
+                            {aiDescription && (
+                                <div className="rounded-lg bg-white dark:bg-gray-900 border border-emerald-200 dark:border-emerald-900/40 px-3 py-2 text-sm text-gray-800 dark:text-gray-200">
+                                    {aiDescription}
+                                </div>
+                            )}
+                            {aiError && (
+                                <p className="text-xs text-red-500" role="alert">{aiError}</p>
+                            )}
+                        </div>
+                    )}
                     {serverError && (
                         <p className="text-sm text-red-500 mb-3" role="alert">{serverError}</p>
                     )}

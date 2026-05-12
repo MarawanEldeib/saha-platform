@@ -586,20 +586,85 @@ export async function generateFacilityDescriptionAction(input: {
 
     const sportsList = input.sports.join(", ");
     try {
-        const message = await client.messages.create({
-            model: HAIKU_MODEL,
-            max_tokens: 200,
-            messages: [{
-                role: "user",
-                content:
-                    `Write a 2-3 sentence description for a sports facility listing on Saha, a UAE court-booking platform. ` +
-                    `Plain prose, no marketing fluff, no emojis. Mention the sports and a hint of atmosphere. ` +
-                    `Facility: ${input.facilityName}\nSports: ${sportsList}\nCity: ${input.city}`,
-            }],
-        });
+        // 9s timeout — keeps us under Vercel's default function budget and
+        // ensures the client spinner can't hang. SAH-40 originally reported
+        // "loading forever" because the SDK call was unbounded.
+        const message = await client.messages.create(
+            {
+                model: HAIKU_MODEL,
+                max_tokens: 200,
+                messages: [{
+                    role: "user",
+                    content:
+                        `Write a 2-3 sentence description for a sports facility listing on Saha, a UAE court-booking platform. ` +
+                        `Plain prose, no marketing fluff, no emojis. Mention the sports and a hint of atmosphere. ` +
+                        `Facility: ${input.facilityName}\nSports: ${sportsList}\nCity: ${input.city}`,
+                }],
+            },
+            { timeout: 9_000 },
+        );
         return { description: textFromMessage(message) };
     } catch (err) {
         console.error("[ai] description generation failed", err);
+        return { error: "Could not generate a description right now." };
+    }
+}
+
+// ---------------------------------------------------------------------------
+// SAH-40 (onboarding placement): same generator, but takes a facilityId and
+// persists the result directly to facilities.description. Lets us surface
+// the button on Step 2 of onboarding where the form state is split across
+// steps. Owner-scoped via RLS on the update.
+// ---------------------------------------------------------------------------
+export async function generateOnboardingDescriptionAction(
+    facilityId: string,
+    sportNames: string[],
+): Promise<{ description: string } | { error: string } | { notConfigured: true }> {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { error: "Not authenticated" };
+
+    if (sportNames.length === 0) {
+        return { error: "Pick at least one sport first" };
+    }
+
+    const { data: facility } = await supabase
+        .from("facilities")
+        .select("name, city, owner_id")
+        .eq("id", facilityId)
+        .single();
+    if (!facility || facility.owner_id !== user.id) {
+        return { error: "Facility not found" };
+    }
+
+    const { getAnthropic, HAIKU_MODEL, textFromMessage } = await import("@/lib/anthropic");
+    const client = getAnthropic();
+    if (!client) return { notConfigured: true as const };
+
+    try {
+        const message = await client.messages.create(
+            {
+                model: HAIKU_MODEL,
+                max_tokens: 200,
+                messages: [{
+                    role: "user",
+                    content:
+                        `Write a 2-3 sentence description for a sports facility listing on Saha, a UAE court-booking platform. ` +
+                        `Plain prose, no marketing fluff, no emojis. Mention the sports and a hint of atmosphere. ` +
+                        `Facility: ${facility.name}\nSports: ${sportNames.join(", ")}\nCity: ${facility.city}`,
+                }],
+            },
+            { timeout: 9_000 },
+        );
+        const description = textFromMessage(message);
+        const { error: updateErr } = await supabase
+            .from("facilities")
+            .update({ description })
+            .eq("id", facilityId);
+        if (updateErr) return { error: "Could not save the description." };
+        return { description };
+    } catch (err) {
+        console.error("[ai] onboarding description failed", err);
         return { error: "Could not generate a description right now." };
     }
 }
@@ -619,18 +684,21 @@ export async function parseSearchQueryAction(query: string) {
     if (!client) return { notConfigured: true as const };
 
     try {
-        const message = await client.messages.create({
-            model: HAIKU_MODEL,
-            max_tokens: 200,
-            messages: [{
-                role: "user",
-                content:
-                    `Parse this UAE court-search query into a JSON object with keys ` +
-                    `{"sport": "Padel"|"Pickleball"|"Tennis"|"Squash"|"Badminton"|null, ` +
-                    `"city": string|null, "date": "YYYY-MM-DD"|null, "time_of_day": "morning"|"afternoon"|"evening"|null}. ` +
-                    `Return JSON only, no commentary. Query: ${query}`,
-            }],
-        });
+        const message = await client.messages.create(
+            {
+                model: HAIKU_MODEL,
+                max_tokens: 200,
+                messages: [{
+                    role: "user",
+                    content:
+                        `Parse this UAE court-search query into a JSON object with keys ` +
+                        `{"sport": "Padel"|"Pickleball"|"Tennis"|"Squash"|"Badminton"|null, ` +
+                        `"city": string|null, "date": "YYYY-MM-DD"|null, "time_of_day": "morning"|"afternoon"|"evening"|null}. ` +
+                        `Return JSON only, no commentary. Query: ${query}`,
+                }],
+            },
+            { timeout: 9_000 },
+        );
         const raw = textFromMessage(message);
         const json = raw.match(/\{[\s\S]*\}/)?.[0];
         if (!json) return { error: "Could not parse query" };
