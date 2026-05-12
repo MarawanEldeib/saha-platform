@@ -2,11 +2,16 @@
  * SAH-76: Upstash-backed rate limiting. Falls through cleanly when env
  * vars aren't set so non-prod environments aren't blocked. Each key uses a
  * sliding window — better burst behaviour than fixed-window for our load.
+ *
+ * Observability: every blocked request and every backend error is forwarded
+ * to Sentry (as `warning` / `error` respectively). Production ops can then
+ * filter on `policy` tags to spot abuse patterns.
  */
 
 import { Ratelimit } from "@upstash/ratelimit";
 import { Redis } from "@upstash/redis";
 import { headers } from "next/headers";
+import * as Sentry from "@sentry/nextjs";
 
 let cachedRedis: Redis | null | undefined;
 function getRedis(): Redis | null {
@@ -70,6 +75,24 @@ const POLICIES = {
 
 export type RatePolicy = keyof typeof POLICIES;
 
+function reportBlocked(policy: RatePolicy, retryAfter: number, keyKind: "ip" | "owner") {
+    Sentry.captureMessage(`rate-limit blocked: ${policy}`, {
+        level: "warning",
+        tags: { policy, key_kind: keyKind },
+        extra: { retryAfter },
+    });
+}
+
+function reportBackendError(policy: RatePolicy, err: unknown) {
+    // Backend (Upstash) hiccup — we still allow the request to keep the
+    // site working, but flag for ops so an outage doesn't go unnoticed.
+    console.warn("[rate-limit] backend error, allowing request", err);
+    Sentry.captureException(err, {
+        level: "error",
+        tags: { policy, kind: "rate_limit_backend_error" },
+    });
+}
+
 export async function rateLimit(policy: RatePolicy, suffix?: string): Promise<RateLimitResult> {
     const cfg = POLICIES[policy];
     const limiter = getLimiter(policy, cfg.points, cfg.windowSec);
@@ -80,11 +103,12 @@ export async function rateLimit(policy: RatePolicy, suffix?: string): Promise<Ra
     try {
         const { success, reset } = await limiter.limit(key);
         const retryAfter = success ? 0 : Math.max(0, Math.ceil((reset - Date.now()) / 1000));
+        if (!success) reportBlocked(policy, retryAfter, "ip");
         return { success, retryAfter };
     } catch (err) {
         // Don't fail-closed on Upstash errors — better to serve the request
         // than to lock out real users when the rate-limit backend hiccups.
-        console.warn("[rate-limit] backend error, allowing request", err);
+        reportBackendError(policy, err);
         return { success: true, retryAfter: 0 };
     }
 }
@@ -101,9 +125,10 @@ export async function rateLimitByOwnerKey(policy: RatePolicy, ownerKey: string):
     try {
         const { success, reset } = await limiter.limit(`${policy}:owner:${ownerKey}`);
         const retryAfter = success ? 0 : Math.max(0, Math.ceil((reset - Date.now()) / 1000));
+        if (!success) reportBlocked(policy, retryAfter, "owner");
         return { success, retryAfter };
     } catch (err) {
-        console.warn("[rate-limit] backend error, allowing request", err);
+        reportBackendError(policy, err);
         return { success: true, retryAfter: 0 };
     }
 }

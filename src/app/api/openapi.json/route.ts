@@ -18,7 +18,8 @@
  * is invalid in 3.1.
  */
 
-import { apiJson, apiPreflight } from "@/lib/api-response";
+import { apiJson, apiPreflight, apiError } from "@/lib/api-response";
+import { rateLimit } from "@/lib/rate-limit";
 
 const spec = {
     openapi: "3.1.0",
@@ -378,5 +379,9 @@ const spec = {
 export async function OPTIONS() { return apiPreflight(); }
 
 export async function GET() {
+    // SAH-76: this spec is hit by every Custom GPT discovery request — cap
+    // per-IP so a misbehaving agent can't loop on us.
+    const rl = await rateLimit("public_api");
+    if (!rl.success) return apiError("Too many requests", 429, { retryAfter: rl.retryAfter });
     return apiJson(spec);
 }

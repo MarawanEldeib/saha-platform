@@ -5,7 +5,7 @@ import { useTranslations } from "next-intl";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { reviewSchema, type ReviewInput } from "@/lib/validations";
-import { createClient } from "@/lib/supabase/client";
+import { submitReviewAction } from "@/app/[locale]/facilities/actions";
 import { StarRating } from "@/components/ui/StarRating";
 import { Textarea } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
@@ -36,30 +36,18 @@ export function ReviewForm({ facilityId, locale }: ReviewFormProps) {
 
     const onSubmit = async (data: ReviewInput) => {
         setServerError(null);
-        const supabase = createClient();
 
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) {
-            router.push(`/${locale}/login`);
-            return;
-        }
-
-        const { error } = await supabase.from("reviews").insert({
-            facility_id: facilityId,
-            user_id: user.id,
+        const result = await submitReviewAction(facilityId, {
             rating: data.rating,
             comment: data.comment ?? null,
         });
 
-        if (error) {
-            if (error.code === "23505") {
-                setServerError("You have already reviewed this facility.");
-            } else if (error.code === "42501") {
-                // RLS denial — user has no completed booking at this facility.
-                setServerError("You can leave a review after your first completed booking here.");
-            } else {
-                setServerError(error.message);
-            }
+        if (result.code === "unauthenticated") {
+            router.push(`/${locale}/login`);
+            return;
+        }
+        if (result.error) {
+            setServerError(result.error);
             return;
         }
 

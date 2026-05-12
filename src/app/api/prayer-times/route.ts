@@ -7,10 +7,21 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { getPrayerTimes, getBlockedWindows, type PrayerWindow } from "@/lib/prayer-times";
+import { rateLimit } from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
 
 export async function GET(request: Request) {
+    // SAH-76: public endpoint that proxies to Aladhan — must throttle so a
+    // caller can't burn their fair share of our upstream budget.
+    const rl = await rateLimit("public_api");
+    if (!rl.success) {
+        return NextResponse.json(
+            { error: "Too many requests", retryAfter: rl.retryAfter },
+            { status: 429, headers: { "Retry-After": String(rl.retryAfter) } },
+        );
+    }
+
     const url = new URL(request.url);
     const facilityId = url.searchParams.get("facility_id");
     const date = url.searchParams.get("date");
