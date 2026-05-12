@@ -67,11 +67,19 @@ When that day comes, ship in this order: cookie banner → #1 → #3 → #2 → 
 
 ## Build sequence
 
-| Step | Effort | Trigger |
-|------|--------|---------|
-| Cookie consent banner | ~half day | Before any non-essential cookie ships |
-| #1 Welcome-back personalization | ~1 h | First return-visitor data |
-| #3 Resume abandoned booking | ~3 h | Once payment funnel has visible drop-off |
-| #2 Recently viewed | ~2 h | Once browse-funnel data justifies it |
-| #4 Onboarding tooltip | ~2 h | When player count makes onboarding noise worth optimizing |
-| #5 A/B bucketing | ~half day | When traffic supports statistical tests |
+| Step | Effort | Trigger | Status |
+|------|--------|---------|--------|
+| Cookie consent banner | ~half day | Before any non-essential cookie ships | **Done** — `src/components/ui/CookieBanner.tsx` writes `saha_cookie_consent`; root layout gates `<Analytics />` server-side. |
+| #1 Welcome-back personalization | ~1 h | First return-visitor data | Pending |
+| #3 Resume abandoned booking | ~3 h | Once payment funnel has visible drop-off | Pending |
+| #2 Recently viewed | ~2 h | Once browse-funnel data justifies it | Pending |
+| #4 Onboarding tooltip | ~2 h | When player count makes onboarding noise worth optimizing | Pending |
+| #5 A/B bucketing | ~half day | When traffic supports statistical tests | Pending |
+
+## How the consent banner works (as built)
+
+1. `<CookieBanner />` mounts in the locale layout and reads the `saha_cookie_consent` cookie on the client.
+2. If the cookie is missing, the banner appears with **Accept** / **Reject** buttons.
+3. Either choice writes `saha_cookie_consent=accepted|rejected` (12-month `Max-Age`, `Path=/`, `SameSite=Lax`, `Secure` on HTTPS) and reloads the page.
+4. The root `app/layout.tsx` reads that cookie server-side and renders `<Analytics />` only when the value is `accepted`. Strictly-necessary cookies (Supabase auth, facility switcher) are untouched.
+5. Users can clear the cookie to re-prompt; a "manage preferences" link can be added if/when feedback requires it.
