@@ -107,6 +107,12 @@ export default async function WalletPage() {
             <div className="bg-emerald-50/50 dark:bg-emerald-900/10 border border-emerald-200/50 dark:border-emerald-800/50 rounded-xl p-4 text-sm text-emerald-900 dark:text-emerald-200 space-y-1">
                 <p className="font-semibold">{t("how_it_works_title")}</p>
                 <p className="text-emerald-800 dark:text-emerald-300 text-xs">{t("how_it_works_body")}</p>
+                {/* SAH-149: explicit no-interest note linking to the public Shariah statement. */}
+                <p className="text-emerald-800 dark:text-emerald-300 text-xs pt-1">
+                    <Link href={`/${locale}/shariah`} className="underline hover:no-underline">
+                        {t("no_interest_note")}
+                    </Link>
+                </p>
             </div>
 
             {/* Ledger */}
