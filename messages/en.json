@@ -852,5 +852,131 @@
         "title": "Community Guidelines",
         "intro": "Saha is a UAE-first racket sports community. These guidelines keep it respectful, family-friendly, and focused on play.",
         "see_also": "See also:"
+    },
+    "booking_checkout": {
+        "description": "{date} · {start}–{end}",
+        "description_with_credit": "{date} · {start}–{end} ({credit} {currency} wallet credit applied)"
+    },
+    "errors": {
+        "common": {
+            "not_authenticated": "Not authenticated",
+            "unauthorized": "Unauthorized",
+            "access_denied": "Access denied",
+            "forbidden": "Forbidden",
+            "facility_not_found": "Facility not found",
+            "facility_id_missing": "Facility id missing",
+            "no_facility": "No facility found",
+            "no_facility_onboard": "No facility found. Complete onboarding first.",
+            "facility_not_found_or_denied": "Facility not found or access denied"
+        },
+        "events": {
+            "name_too_short": "Event name must be at least 3 characters.",
+            "date_required": "Please select an event date.",
+            "not_found": "Event not found"
+        },
+        "courts": {
+            "not_found": "Court not found",
+            "not_found_or_inactive": "Court not found or inactive.",
+            "slot_not_found": "Slot not found",
+            "cannot_delete_booked": "Cannot delete a booked slot",
+            "time_inverted": "From time must be before to time",
+            "time_range_too_short": "Time range is shorter than the slot duration",
+            "slot_exists": "A slot already exists at that time",
+            "missing_court_or_date": "Missing court or date.",
+            "could_not_load_slots": "Could not load slots. Please try again.",
+            "no_slots_published": "No time slots are published for this date yet.",
+            "all_slots_booked": "All slots are booked for this date.",
+            "pick_future_date": "Pick today or a future date."
+        },
+        "booking": {
+            "not_found": "Booking not found",
+            "cannot_cancel": "This booking cannot be cancelled",
+            "already_moved": "This booking has already been moved once",
+            "move_window": "Bookings can only be moved at least 24 hours in advance",
+            "only_confirmed_move": "Only confirmed bookings can be moved",
+            "only_confirmed_split": "Only confirmed bookings can be split",
+            "already_split": "This booking has already been split.",
+            "cross_facility": "This booking is at a different facility",
+            "cross_court": "Cross-court moves are not yet supported",
+            "different_duration": "Selected slot must be the same duration as your booking",
+            "invalid_slot": "Invalid slot",
+            "pick_different_slot": "Pick a different slot",
+            "slot_unavailable": "Selected slot is no longer available",
+            "slot_just_taken": "Selected slot was just taken — please pick another",
+            "slot_unlocked": "Slot is no longer available",
+            "weekly_slot_taken": "One of the weekly slots was just taken — please try again.",
+            "facility_not_ready": "This facility is not yet ready to receive payments.",
+            "verify_facility_payment_failed": "Could not verify the facility's payment account. Please try again.",
+            "invalid_players": "Invalid number of players",
+            "invalid_recurrence": "Invalid recurrence length",
+            "could_not_create_series": "Failed to create booking series",
+            "could_not_move": "Could not move booking — please try again",
+            "could_not_start_payment": "Could not start payment. Please try again.",
+            "payment_record_not_found": "Payment record not found",
+            "payment_expired": "Your payment session has expired. The slot has been released — please book again.",
+            "no_pending": "Booking is no longer pending",
+            "series_no_bookings": "Series has no bookings",
+            "nothing_to_cancel_series": "Nothing to cancel — every future week is already past or cancelled.",
+            "not_recurring": "This isn't a recurring booking",
+            "qr_invalid": "Invalid QR code",
+            "qr_not_found": "Booking not found for this QR code",
+            "checkin_failed": "Could not check in — please try again",
+            "too_many_attempts": "Too many booking attempts. Try again in {seconds}s.",
+            "weeks_unavailable": "Some weeks are unavailable at this time: week {weeks}. Pick a different time or fewer weeks.",
+            "checkin_wrong_date": "This booking is for {date}, not today",
+            "checkin_wrong_status": "Booking status is \"{status}\" — cannot check in"
+        },
+        "split_payment": {
+            "invite_range": "Invite between 1 and 7 friends.",
+            "could_not_create_guests": "Could not create guest records"
+        },
+        "review": {
+            "already_reviewed": "You have already reviewed this facility.",
+            "needs_completed_booking": "You can leave a review after your first completed booking here."
+        },
+        "profile": {
+            "phone_invalid": "Enter a valid number with country code (e.g. +971501234567).",
+            "phone_format_invalid": "Phone number is invalid.",
+            "phone_already_verified": "This number is already verified.",
+            "phone_must_verify": "Verify the new phone number via WhatsApp first.",
+            "otp_enter_code": "Enter the code from WhatsApp.",
+            "otp_expired": "Code expired — request a new one.",
+            "otp_incorrect": "Incorrect code. Try again.",
+            "otp_failed": "Verification failed.",
+            "otp_pending": "Verification still pending.",
+            "otp_rate_phone": "Too many codes sent to this number. Try again in {minutes} min.",
+            "otp_rate_user": "Daily verification limit reached. Try again in {hours} h."
+        },
+        "auth": {
+            "invalid_credentials": "Invalid email or password.",
+            "email_in_use": "This email is already in use.",
+            "invalid_role": "Invalid role."
+        },
+        "ai": {
+            "missing_inputs": "Need facility name, at least one sport, and city",
+            "needs_sport": "Pick at least one sport first",
+            "generation_failed": "Could not generate a description right now.",
+            "save_failed": "Could not save the description.",
+            "query_too_short": "Query is too short",
+            "parse_failed": "Could not parse query",
+            "unavailable": "Search assistant is unavailable right now."
+        },
+        "admin": {
+            "audit_reason_required": "Please provide a reason for the admin edit (required for the audit log).",
+            "no_self_ban": "You can't ban yourself.",
+            "no_self_role": "You can't change your own role.",
+            "no_self_delete": "You can't delete yourself.",
+            "already_banned": "User is already banned.",
+            "not_banned": "User is not banned.",
+            "no_self_unban": "Nothing to unban for yourself.",
+            "user_not_found": "User not found.",
+            "no_map_coords": "This facility has no map coordinates yet. Ask the owner to re-save their address from the dashboard, then try approving again.",
+            "address_not_found": "We couldn't locate that address on the map. Double-check the street and city, then try again."
+        },
+        "messages": {
+            "cannot_self": "Cannot message yourself",
+            "empty": "Message cannot be empty",
+            "too_long": "Message too long (max 2000 chars)"
+        }
     }
 }

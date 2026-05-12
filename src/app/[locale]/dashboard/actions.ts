@@ -18,6 +18,7 @@ import { getStripe } from "@/lib/stripe";
 import { getPlatformFeePercent } from "@/lib/platform-settings";
 import { logAuditEvent } from "@/lib/audit";
 import { captureRouteError } from "@/lib/sentry-helpers";
+import { tr } from "@/lib/i18n-errors";
 import {
     FACILITY_COOKIE_NAME,
     FACILITY_COOKIE_MAX_AGE,
@@ -34,7 +35,7 @@ type FacilityInsert = Database["public"]["Tables"]["facility_sports"]["Insert"];
 export async function setActiveFacilityAction(facilityId: string) {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return { error: "Not authenticated" };
+    if (!user) return { error: await tr("common.not_authenticated") };
 
     // Verify the caller owns this facility before trusting the cookie value.
     const { data: facility } = await supabase
@@ -43,7 +44,7 @@ export async function setActiveFacilityAction(facilityId: string) {
         .eq("id", facilityId)
         .eq("owner_id", user.id)
         .single();
-    if (!facility) return { error: "Access denied" };
+    if (!facility) return { error: await tr("common.access_denied") };
 
     const cookieStore = await cookies();
     cookieStore.set(FACILITY_COOKIE_NAME, facilityId, {
@@ -67,10 +68,10 @@ export async function updateFacilityAction(formData: FormData) {
     const supabase = await createClient();
     const locale = await getLocale();
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return { error: "Not authenticated" };
+    if (!user) return { error: await tr("common.not_authenticated") };
 
     const facilityId = formData.get("facility_id") as string;
-    if (!facilityId) return { error: "Facility id missing" };
+    if (!facilityId) return { error: await tr("common.facility_id_missing") };
 
     // Verify ownership before updating.
     const { data: own } = await supabase
@@ -79,7 +80,7 @@ export async function updateFacilityAction(formData: FormData) {
         .eq("id", facilityId)
         .eq("owner_id", user.id)
         .single();
-    if (!own) return { error: "Access denied" };
+    if (!own) return { error: await tr("common.access_denied") };
 
     // SAH-120: normalize free-text inputs before validation/storage so the API
     // doesn't surface Windows line endings or trailing whitespace from form
@@ -108,7 +109,7 @@ export async function updateFacilityAction(formData: FormData) {
     const geo = await geocodeAddress(parsed.data.address, parsed.data.city);
     if (geo.status === "no_match") {
         return {
-            error: "We couldn't locate that address on the map. Double-check the street and city, then try again.",
+            error: await tr("admin.address_not_found"),
         };
     }
 
@@ -140,7 +141,7 @@ export async function updateFacilitySportsAction(facilityId: string, sportIds: n
     const supabase = await createClient();
     const locale = await getLocale();
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return { error: "Not authenticated" };
+    if (!user) return { error: await tr("common.not_authenticated") };
 
     // Verify ownership
     const { data: facility } = await supabase
@@ -149,7 +150,7 @@ export async function updateFacilitySportsAction(facilityId: string, sportIds: n
         .eq("id", facilityId)
         .eq("owner_id", user.id)
         .single();
-    if (!facility) return { error: "Facility not found or access denied" };
+    if (!facility) return { error: await tr("common.facility_not_found_or_denied") };
 
     // Replace all sports: delete existing, then insert selected
     const { error: deleteError } = await supabase
@@ -177,7 +178,7 @@ export async function updateFacilitySportsAction(facilityId: string, sportIds: n
 export async function submitEventAction(formData: FormData) {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return { error: "Not authenticated" };
+    if (!user) return { error: await tr("common.not_authenticated") };
 
     const name = (formData.get("name") as string)?.trim();
     const description = (formData.get("description") as string)?.trim();
@@ -185,9 +186,9 @@ export async function submitEventAction(formData: FormData) {
     const facilityId = formData.get("facility_id") as string;
     const tags = sanitizeEventTags(formData.getAll("tags"));
 
-    if (!name || name.length < 3) return { error: "Event name must be at least 3 characters." };
-    if (!eventDate) return { error: "Please select an event date." };
-    if (!facilityId) return { error: "No facility found. Complete onboarding first." };
+    if (!name || name.length < 3) return { error: await tr("events.name_too_short") };
+    if (!eventDate) return { error: await tr("events.date_required") };
+    if (!facilityId) return { error: await tr("common.no_facility_onboard") };
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { error } = await (supabase as any).from("events").insert({
@@ -218,14 +219,14 @@ export async function updateEventAction(
     const supabase = await createClient();
     const locale = await getLocale();
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return { error: "Not authenticated" };
+    if (!user) return { error: await tr("common.not_authenticated") };
 
     const name = sanitizeTextInput(raw.name ?? "");
     const description = sanitizeTextInput(raw.description ?? "");
     const eventDate = raw.event_date;
 
-    if (!name || name.length < 3) return { error: "Event name must be at least 3 characters." };
-    if (!eventDate) return { error: "Please select an event date." };
+    if (!name || name.length < 3) return { error: await tr("events.name_too_short") };
+    if (!eventDate) return { error: await tr("events.date_required") };
 
     // Ownership check: the event must belong to a facility owned by the caller.
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -234,8 +235,8 @@ export async function updateEventAction(
         .select("id, facility_id, status, facilities!inner(owner_id)")
         .eq("id", eventId)
         .single();
-    if (!existing) return { error: "Event not found" };
-    if (existing.facilities?.owner_id !== user.id) return { error: "Access denied" };
+    if (!existing) return { error: await tr("events.not_found") };
+    if (existing.facilities?.owner_id !== user.id) return { error: await tr("common.access_denied") };
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { error } = await (supabase as any)
@@ -271,7 +272,7 @@ export async function deleteEventAction(eventId: string) {
     const supabase = await createClient();
     const locale = await getLocale();
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return { error: "Not authenticated" };
+    if (!user) return { error: await tr("common.not_authenticated") };
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data: existing } = await (supabase as any)
@@ -279,8 +280,8 @@ export async function deleteEventAction(eventId: string) {
         .select("id, name, facility_id, status, facilities!inner(owner_id)")
         .eq("id", eventId)
         .single();
-    if (!existing) return { error: "Event not found" };
-    if (existing.facilities?.owner_id !== user.id) return { error: "Access denied" };
+    if (!existing) return { error: await tr("events.not_found") };
+    if (existing.facilities?.owner_id !== user.id) return { error: await tr("common.access_denied") };
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { error } = await (supabase as any)
@@ -316,16 +317,16 @@ export async function createAvailabilitySlotAction(
     const supabase = await createClient();
     const locale = await getLocale();
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return { error: "Not authenticated" };
+    if (!user) return { error: await tr("common.not_authenticated") };
 
     const parsed = availabilitySlotSchema.safeParse({ court_id: courtId, date, start_time: startTime, end_time: endTime, session_type: sessionType });
     if (!parsed.success) return { error: parsed.error.issues[0].message };
 
     const { data: courtRow } = await supabase.from("courts").select("facility_id").eq("id", courtId).single();
-    if (!courtRow) return { error: "Court not found" };
+    if (!courtRow) return { error: await tr("courts.not_found") };
 
     const { data: facility } = await supabase.from("facilities").select("id").eq("id", courtRow.facility_id).eq("owner_id", user.id).single();
-    if (!facility) return { error: "Access denied" };
+    if (!facility) return { error: await tr("common.access_denied") };
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { error } = await (supabase as any).from("court_availability").insert({
@@ -365,18 +366,18 @@ export async function generateAvailabilitySlotsAction(
     const supabase = await createClient();
     const locale = await getLocale();
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return { error: "Not authenticated" };
+    if (!user) return { error: await tr("common.not_authenticated") };
 
     const { data: courtRow } = await supabase.from("courts").select("facility_id").eq("id", courtId).single();
-    if (!courtRow) return { error: "Court not found" };
+    if (!courtRow) return { error: await tr("courts.not_found") };
 
     const { data: facility } = await supabase.from("facilities").select("id").eq("id", courtRow.facility_id).eq("owner_id", user.id).single();
-    if (!facility) return { error: "Access denied" };
+    if (!facility) return { error: await tr("common.access_denied") };
 
     const start = timeToMinutes(fromTime);
     const end = timeToMinutes(toTime);
-    if (start >= end) return { error: "From time must be before to time" };
-    if (end - start < durationMinutes) return { error: "Time range is shorter than the slot duration" };
+    if (start >= end) return { error: await tr("courts.time_inverted") };
+    if (end - start < durationMinutes) return { error: await tr("courts.time_range_too_short") };
 
     const rows = [];
     for (let cur = start; cur + durationMinutes <= end; cur += durationMinutes) {
@@ -408,17 +409,17 @@ export async function deleteAvailabilitySlotAction(slotId: string) {
     const supabase = await createClient();
     const locale = await getLocale();
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return { error: "Not authenticated" };
+    if (!user) return { error: await tr("common.not_authenticated") };
 
     const { data: slot } = await supabase.from("court_availability").select("id, is_booked, court_id").eq("id", slotId).single();
-    if (!slot) return { error: "Slot not found" };
-    if (slot.is_booked) return { error: "Cannot delete a booked slot" };
+    if (!slot) return { error: await tr("courts.slot_not_found") };
+    if (slot.is_booked) return { error: await tr("courts.cannot_delete_booked") };
 
     const { data: courtRow } = await supabase.from("courts").select("facility_id").eq("id", slot.court_id).single();
-    if (!courtRow) return { error: "Court not found" };
+    if (!courtRow) return { error: await tr("courts.not_found") };
 
     const { data: facility } = await supabase.from("facilities").select("id").eq("id", courtRow.facility_id).eq("owner_id", user.id).single();
-    if (!facility) return { error: "Access denied" };
+    if (!facility) return { error: await tr("common.access_denied") };
 
     const { error } = await supabase.from("court_availability").delete().eq("id", slotId);
     if (error) return { error: error.message };
@@ -442,10 +443,10 @@ export async function splitBookingAction(
 ) {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return { error: "Not authenticated" };
+    if (!user) return { error: await tr("common.not_authenticated") };
 
     if (!Array.isArray(guests) || guests.length < 1 || guests.length > 7) {
-        return { error: "Invite between 1 and 7 friends." };
+        return { error: await tr("split_payment.invite_range") };
     }
 
     const { data: booking } = await supabase
@@ -454,8 +455,8 @@ export async function splitBookingAction(
         .eq("id", bookingId)
         .eq("player_id", user.id)
         .single();
-    if (!booking) return { error: "Booking not found" };
-    if (booking.status !== "confirmed") return { error: "Only confirmed bookings can be split" };
+    if (!booking) return { error: await tr("booking.not_found") };
+    if (booking.status !== "confirmed") return { error: await tr("booking.only_confirmed_split") };
 
     // Existing splits? Don't double-create.
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -465,7 +466,7 @@ export async function splitBookingAction(
         .eq("booking_id", bookingId)
         .limit(1);
     if (existing && existing.length > 0) {
-        return { error: "This booking has already been split." };
+        return { error: await tr("booking.already_split") };
     }
 
     // Booker is one of the players, so split the total across (guests + 1).
@@ -495,7 +496,7 @@ export async function splitBookingAction(
         )
         .select("id, name, email, share_amount");
     if (insertError || !insertedGuests) {
-        return { error: "Could not create guest records" };
+        return { error: await tr("split_payment.could_not_create_guests") };
     }
 
     // Create one Stripe Payment Link per guest. Each link is platform-only
@@ -579,14 +580,14 @@ export async function generateFacilityDescriptionAction(input: {
 }) {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return { error: "Not authenticated" };
+    if (!user) return { error: await tr("common.not_authenticated") };
 
     const { getAnthropic, HAIKU_MODEL, textFromMessage } = await import("@/lib/anthropic");
     const client = getAnthropic();
     if (!client) return { notConfigured: true as const };
 
     if (!input.facilityName || input.sports.length === 0 || !input.city) {
-        return { error: "Need facility name, at least one sport, and city" };
+        return { error: await tr("ai.missing_inputs") };
     }
 
     const sportsList = input.sports.join(", ");
@@ -611,7 +612,7 @@ export async function generateFacilityDescriptionAction(input: {
         return { description: textFromMessage(message) };
     } catch (err) {
         captureRouteError(err, { route: "actions:generateFacilityDescription" });
-        return { error: "Could not generate a description right now." };
+        return { error: await tr("ai.generation_failed") };
     }
 }
 
@@ -627,10 +628,10 @@ export async function generateOnboardingDescriptionAction(
 ): Promise<{ description: string } | { error: string } | { notConfigured: true }> {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return { error: "Not authenticated" };
+    if (!user) return { error: await tr("common.not_authenticated") };
 
     if (sportNames.length === 0) {
-        return { error: "Pick at least one sport first" };
+        return { error: await tr("ai.needs_sport") };
     }
 
     const { data: facility } = await supabase
@@ -639,7 +640,7 @@ export async function generateOnboardingDescriptionAction(
         .eq("id", facilityId)
         .single();
     if (!facility || facility.owner_id !== user.id) {
-        return { error: "Facility not found" };
+        return { error: await tr("common.facility_not_found") };
     }
 
     const { getAnthropic, HAIKU_MODEL, textFromMessage } = await import("@/lib/anthropic");
@@ -666,14 +667,14 @@ export async function generateOnboardingDescriptionAction(
             .from("facilities")
             .update({ description })
             .eq("id", facilityId);
-        if (updateErr) return { error: "Could not save the description." };
+        if (updateErr) return { error: await tr("ai.save_failed") };
         return { description };
     } catch (err) {
         captureRouteError(err, {
             route: "actions:generateOnboardingDescription",
             extra: { facility_id: facilityId },
         });
-        return { error: "Could not generate a description right now." };
+        return { error: await tr("ai.generation_failed") };
     }
 }
 
@@ -684,7 +685,7 @@ export async function generateOnboardingDescriptionAction(
 // ---------------------------------------------------------------------------
 export async function parseSearchQueryAction(query: string) {
     if (!query || query.trim().length < 4) {
-        return { error: "Query is too short" };
+        return { error: await tr("ai.query_too_short") };
     }
 
     const { getAnthropic, HAIKU_MODEL, textFromMessage } = await import("@/lib/anthropic");
@@ -709,7 +710,7 @@ export async function parseSearchQueryAction(query: string) {
         );
         const raw = textFromMessage(message);
         const json = raw.match(/\{[\s\S]*\}/)?.[0];
-        if (!json) return { error: "Could not parse query" };
+        if (!json) return { error: await tr("ai.parse_failed") };
         try {
             const parsed = JSON.parse(json) as {
                 sport?: string | null;
@@ -719,11 +720,11 @@ export async function parseSearchQueryAction(query: string) {
             };
             return { filters: parsed };
         } catch {
-            return { error: "Could not parse query" };
+            return { error: await tr("ai.parse_failed") };
         }
     } catch (err) {
         captureRouteError(err, { route: "actions:parseSearchQuery" });
-        return { error: "Search assistant is unavailable right now." };
+        return { error: await tr("ai.unavailable") };
     }
 }
 
@@ -734,7 +735,7 @@ export async function createCourtAction(facilityId: string, input: CourtInput) {
     const supabase = await createClient();
     const locale = await getLocale();
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return { error: "Not authenticated" };
+    if (!user) return { error: await tr("common.not_authenticated") };
 
     const { data: facility } = await supabase
         .from("facilities")
@@ -742,7 +743,7 @@ export async function createCourtAction(facilityId: string, input: CourtInput) {
         .eq("id", facilityId)
         .eq("owner_id", user.id)
         .single();
-    if (!facility) return { error: "Facility not found or access denied" };
+    if (!facility) return { error: await tr("common.facility_not_found_or_denied") };
 
     const parsed = courtSchema.safeParse(input);
     if (!parsed.success) return { error: parsed.error.issues[0].message };
@@ -789,7 +790,7 @@ export async function updateCourtAction(courtId: string, input: CourtInput) {
     const supabase = await createClient();
     const locale = await getLocale();
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return { error: "Not authenticated" };
+    if (!user) return { error: await tr("common.not_authenticated") };
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data: courtRow } = await (supabase as any)
@@ -797,7 +798,7 @@ export async function updateCourtAction(courtId: string, input: CourtInput) {
         .select("facility_id, name, sport_id, capacity, price_per_hour")
         .eq("id", courtId)
         .single();
-    if (!courtRow) return { error: "Court not found" };
+    if (!courtRow) return { error: await tr("courts.not_found") };
 
     const { data: facility } = await supabase
         .from("facilities")
@@ -805,7 +806,7 @@ export async function updateCourtAction(courtId: string, input: CourtInput) {
         .eq("id", courtRow.facility_id)
         .eq("owner_id", user.id)
         .single();
-    if (!facility) return { error: "Access denied" };
+    if (!facility) return { error: await tr("common.access_denied") };
 
     const parsed = courtSchema.safeParse(input);
     if (!parsed.success) return { error: parsed.error.issues[0].message };
@@ -859,14 +860,14 @@ export async function toggleCourtActiveAction(courtId: string, isActive: boolean
     const supabase = await createClient();
     const locale = await getLocale();
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return { error: "Not authenticated" };
+    if (!user) return { error: await tr("common.not_authenticated") };
 
     const { data: courtRow } = await supabase
         .from("courts")
         .select("facility_id")
         .eq("id", courtId)
         .single();
-    if (!courtRow) return { error: "Court not found" };
+    if (!courtRow) return { error: await tr("courts.not_found") };
 
     const { data: facility } = await supabase
         .from("facilities")
@@ -874,7 +875,7 @@ export async function toggleCourtActiveAction(courtId: string, isActive: boolean
         .eq("id", courtRow.facility_id)
         .eq("owner_id", user.id)
         .single();
-    if (!facility) return { error: "Access denied" };
+    if (!facility) return { error: await tr("common.access_denied") };
 
     const { error } = await supabase
         .from("courts")
@@ -905,7 +906,7 @@ export async function deleteCourtAction(courtId: string) {
     const supabase = await createClient();
     const locale = await getLocale();
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return { error: "Not authenticated" };
+    if (!user) return { error: await tr("common.not_authenticated") };
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data: courtRow } = await (supabase as any)
@@ -913,7 +914,7 @@ export async function deleteCourtAction(courtId: string) {
         .select("facility_id, name, sport_id, capacity, price_per_hour, is_active")
         .eq("id", courtId)
         .single();
-    if (!courtRow) return { error: "Court not found" };
+    if (!courtRow) return { error: await tr("courts.not_found") };
 
     const { data: facility } = await supabase
         .from("facilities")
@@ -921,7 +922,7 @@ export async function deleteCourtAction(courtId: string) {
         .eq("id", courtRow.facility_id)
         .eq("owner_id", user.id)
         .single();
-    if (!facility) return { error: "Access denied" };
+    if (!facility) return { error: await tr("common.access_denied") };
 
     const { error } = await supabase
         .from("courts")
@@ -964,7 +965,7 @@ export async function saveFacilityHoursAction(
     const supabase = await createClient();
     const locale = await getLocale();
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return { error: "Not authenticated" };
+    if (!user) return { error: await tr("common.not_authenticated") };
 
     const { data: facility } = await supabase
         .from("facilities")
@@ -972,7 +973,7 @@ export async function saveFacilityHoursAction(
         .eq("id", facilityId)
         .eq("owner_id", user.id)
         .single();
-    if (!facility) return { error: "Access denied" };
+    if (!facility) return { error: await tr("common.access_denied") };
 
     const parsed = facilityHoursSchema.safeParse({ hours });
     if (!parsed.success) return { error: parsed.error.issues[0].message };
@@ -1028,13 +1029,13 @@ export type GetSlotsResult =
 
 export async function getAvailableSlotsAction(courtId: string, date: string): Promise<GetSlotsResult> {
     if (!courtId || !date) {
-        return { ok: false, code: "error", error: "Missing court or date." };
+        return { ok: false, code: "error", error: await tr("courts.missing_court_or_date") };
     }
 
     // Past-date guard. Compare in YYYY-MM-DD strings to avoid timezone drift.
     const today = new Date().toISOString().slice(0, 10);
     if (date < today) {
-        return { ok: false, code: "past_date", error: "Pick today or a future date." };
+        return { ok: false, code: "past_date", error: await tr("courts.pick_future_date") };
     }
 
     const supabase = await createClient();
@@ -1049,7 +1050,7 @@ export async function getAvailableSlotsAction(courtId: string, date: string): Pr
         .eq("id", courtId)
         .maybeSingle();
     if (!court || !court.is_active) {
-        return { ok: false, code: "no_court", error: "Court not found or inactive." };
+        return { ok: false, code: "no_court", error: await tr("courts.not_found_or_inactive") };
     }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -1061,17 +1062,17 @@ export async function getAvailableSlotsAction(courtId: string, date: string): Pr
         .order("start_time");
 
     if (error) {
-        return { ok: false, code: "error", error: "Could not load slots. Please try again." };
+        return { ok: false, code: "error", error: await tr("courts.could_not_load_slots") };
     }
 
     const allRows = (data ?? []) as { id: string; start_time: string; end_time: string; is_booked: boolean; session_type: string | null }[];
     if (allRows.length === 0) {
-        return { ok: false, code: "no_slots_defined", error: "No time slots are published for this date yet." };
+        return { ok: false, code: "no_slots_defined", error: await tr("courts.no_slots_published") };
     }
 
     const open = allRows.filter((r) => !r.is_booked);
     if (open.length === 0) {
-        return { ok: false, code: "all_booked", error: "All slots are booked for this date." };
+        return { ok: false, code: "all_booked", error: await tr("courts.all_slots_booked") };
     }
 
     return {
@@ -1103,12 +1104,12 @@ export async function createBookingAndCheckoutAction(
     const supabase = await createClient();
     const locale = await getLocale();
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return { error: "Not authenticated" };
+    if (!user) return { error: await tr("common.not_authenticated") };
 
     // SAH-76: 20 bookings / 1h / IP — slot squatting / booking spam guard.
     const rl = await rateLimit("booking_create", user.id);
     if (!rl.success) {
-        return { error: `Too many booking attempts. Try again in ${rl.retryAfter}s.` };
+        return { error: await tr("booking.too_many_attempts", { seconds: rl.retryAfter }) };
     }
 
     const headersList = await headers();
@@ -1152,13 +1153,13 @@ export async function createRecurringBookingAndCheckoutAction(
         return createBookingAndCheckoutAction(availabilityId, numPlayers);
     }
     if (![2, 4, 8, 12].includes(weeks)) {
-        return { error: "Invalid recurrence length" };
+        return { error: await tr("booking.invalid_recurrence") };
     }
 
     const supabase = await createClient();
     const locale = await getLocale();
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return { error: "Not authenticated" };
+    if (!user) return { error: await tr("common.not_authenticated") };
 
     // Authoritative slot data — never trust client times.
     const { data: firstSlot } = await supabase
@@ -1166,18 +1167,18 @@ export async function createRecurringBookingAndCheckoutAction(
         .select("id, court_id, date, start_time, end_time, is_booked")
         .eq("id", availabilityId)
         .single();
-    if (!firstSlot) return { error: "Slot not found" };
-    if (firstSlot.is_booked) return { error: "Slot is no longer available" };
+    if (!firstSlot) return { error: await tr("courts.slot_not_found") };
+    if (firstSlot.is_booked) return { error: await tr("booking.slot_unlocked") };
 
     const { data: court } = await supabase
         .from("courts")
         .select("id, name, price_per_hour, capacity, facility_id, facilities(id, name, stripe_account_id, currency)")
         .eq("id", firstSlot.court_id)
         .single();
-    if (!court) return { error: "Court not found" };
+    if (!court) return { error: await tr("courts.not_found") };
 
     if (numPlayers < 1 || numPlayers > (court.capacity ?? 1)) {
-        return { error: "Invalid number of players" };
+        return { error: await tr("booking.invalid_players") };
     }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -1186,21 +1187,21 @@ export async function createRecurringBookingAndCheckoutAction(
     const currency = (facilityData?.currency as string) ?? "AED";
 
     if (!stripeAccountId) {
-        return { error: "This facility is not yet ready to receive payments." };
+        return { error: await tr("booking.facility_not_ready") };
     }
     try {
         const account = await getStripe().accounts.retrieve(stripeAccountId);
         if (!account.charges_enabled || !account.details_submitted) {
-            return { error: "This facility is not yet ready to receive payments." };
+            return { error: await tr("booking.facility_not_ready") };
         }
     } catch {
-        return { error: "Could not verify the facility's payment account. Please try again." };
+        return { error: await tr("booking.verify_facility_payment_failed") };
     }
 
     const [sh, sm] = firstSlot.start_time.split(":").map(Number);
     const [eh, em] = firstSlot.end_time.split(":").map(Number);
     const durationHours = ((eh * 60 + em) - (sh * 60 + sm)) / 60;
-    if (durationHours <= 0) return { error: "Invalid slot" };
+    if (durationHours <= 0) return { error: await tr("booking.invalid_slot") };
     const perWeekPrice = Math.round(court.price_per_hour * durationHours * 100) / 100;
 
     // Look up the matching slot for each subsequent week. A slot must be
@@ -1234,7 +1235,7 @@ export async function createRecurringBookingAndCheckoutAction(
 
     if (missingWeeks.length > 0) {
         return {
-            error: `Some weeks are unavailable at this time: week ${missingWeeks.join(", ")}. Pick a different time or fewer weeks.`,
+            error: await tr("booking.weeks_unavailable", { weeks: missingWeeks.join(", ") }),
         };
     }
 
@@ -1256,7 +1257,7 @@ export async function createRecurringBookingAndCheckoutAction(
                     .update({ is_booked: false } as never)
                     .eq("id", lockedId);
             }
-            return { error: "One of the weekly slots was just taken — please try again." };
+            return { error: await tr("booking.weekly_slot_taken") };
         }
         lockedIds.push(id);
     }
@@ -1292,7 +1293,7 @@ export async function createRecurringBookingAndCheckoutAction(
         for (const id of lockedIds) {
             await supabase.from("court_availability").update({ is_booked: false } as never).eq("id", id);
         }
-        return { error: "Failed to create booking series" };
+        return { error: await tr("booking.could_not_create_series") };
     }
 
     const firstBookingId = insertedBookings[0].id;
@@ -1352,7 +1353,7 @@ export async function createRecurringBookingAndCheckoutAction(
         for (const id of lockedIds) {
             await supabase.from("court_availability").update({ is_booked: false } as never).eq("id", id);
         }
-        return { error: "Could not start payment. Please try again." };
+        return { error: await tr("booking.could_not_start_payment") };
     }
 
     return { checkoutUrl: session.url };
@@ -1364,7 +1365,7 @@ export async function createRecurringBookingAndCheckoutAction(
 export async function updateAvatarAction(avatarUrl: string) {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return { error: "Not authenticated" };
+    if (!user) return { error: await tr("common.not_authenticated") };
 
     const { error } = await supabase
         .from("profiles")
@@ -1382,7 +1383,7 @@ export async function updateAvatarAction(avatarUrl: string) {
 export async function removeAvatarAction() {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return { error: "Not authenticated" };
+    if (!user) return { error: await tr("common.not_authenticated") };
 
     // Delete from storage (ignore errors — file may not exist)
     await supabase.storage.from("avatars").remove([`${user.id}/avatar.jpg`]);
@@ -1403,7 +1404,7 @@ export async function removeAvatarAction() {
 export async function updateProfileAction(formData: FormData) {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return { error: "Not authenticated" };
+    if (!user) return { error: await tr("common.not_authenticated") };
 
     const rawPhone = (formData.get("phone") as string)?.trim();
     const rawTrn = (formData.get("trn") as string)?.trim();
@@ -1431,7 +1432,7 @@ export async function updateProfileAction(formData: FormData) {
     const phoneChanged = nextPhone !== previousPhone;
 
     if (phoneChanged && nextPhone !== null) {
-        return { error: "Verify the new phone number via WhatsApp first." };
+        return { error: await tr("profile.phone_must_verify") };
     }
 
     const update: Record<string, unknown> = {
@@ -1474,11 +1475,11 @@ const PHONE_E164 = /^\+[1-9]\d{6,14}$/;
 export async function startPhoneVerificationAction(phone: string) {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return { error: "Not authenticated" };
+    if (!user) return { error: await tr("common.not_authenticated") };
 
     const normalized = (phone ?? "").trim();
     if (!PHONE_E164.test(normalized)) {
-        return { error: "Enter a valid number with country code (e.g. +971501234567)." };
+        return { error: await tr("profile.phone_invalid") };
     }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -1488,17 +1489,17 @@ export async function startPhoneVerificationAction(phone: string) {
         .eq("id", user.id)
         .single();
     if (existing && existing.phone === normalized && existing.phone_verified) {
-        return { error: "This number is already verified." };
+        return { error: await tr("profile.phone_already_verified") };
     }
 
     const { rateLimitByOwnerKey } = await import("@/lib/rate-limit");
     const phoneRl = await rateLimitByOwnerKey("phone_otp_per_phone", normalized);
     if (!phoneRl.success) {
-        return { error: `Too many codes sent to this number. Try again in ${Math.ceil(phoneRl.retryAfter / 60)} min.`, retryAfter: phoneRl.retryAfter };
+        return { error: await tr("profile.otp_rate_phone", { minutes: Math.ceil(phoneRl.retryAfter / 60) }), retryAfter: phoneRl.retryAfter };
     }
     const userRl = await rateLimitByOwnerKey("phone_otp_per_user", user.id);
     if (!userRl.success) {
-        return { error: `Daily verification limit reached. Try again in ${Math.ceil(userRl.retryAfter / 3600)} h.`, retryAfter: userRl.retryAfter };
+        return { error: await tr("profile.otp_rate_user", { hours: Math.ceil(userRl.retryAfter / 3600) }), retryAfter: userRl.retryAfter };
     }
 
     const { startWhatsAppVerification } = await import("@/lib/twilio");
@@ -1513,21 +1514,21 @@ export async function startPhoneVerificationAction(phone: string) {
 export async function checkPhoneVerificationAction(phone: string, code: string) {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return { error: "Not authenticated" };
+    if (!user) return { error: await tr("common.not_authenticated") };
 
     const normalized = (phone ?? "").trim();
     if (!PHONE_E164.test(normalized)) {
-        return { error: "Phone number is invalid." };
+        return { error: await tr("profile.phone_format_invalid") };
     }
-    if (!code || code.length < 4) return { error: "Enter the code from WhatsApp." };
+    if (!code || code.length < 4) return { error: await tr("profile.otp_enter_code") };
 
     const { checkWhatsAppVerification } = await import("@/lib/twilio");
     const result = await checkWhatsAppVerification(normalized, code);
 
     if (result.status === "not_configured") return { notConfigured: true };
-    if (result.status === "incorrect") return { error: "Incorrect code. Try again." };
-    if (result.status === "expired") return { error: "Code expired — request a new one." };
-    if (result.status === "pending") return { error: "Verification still pending." };
+    if (result.status === "incorrect") return { error: await tr("profile.otp_incorrect") };
+    if (result.status === "expired") return { error: await tr("profile.otp_expired") };
+    if (result.status === "pending") return { error: await tr("profile.otp_pending") };
     if (result.status === "error") return { error: result.message ?? "Verification failed." };
 
     if (result.status === "approved") {
@@ -1547,7 +1548,7 @@ export async function checkPhoneVerificationAction(phone: string, code: string) 
         revalidatePath("/", "layout");
         return { success: true };
     }
-    return { error: "Verification failed." };
+    return { error: await tr("profile.otp_failed") };
 }
 
 // ---------------------------------------------------------------------------
@@ -1556,7 +1557,7 @@ export async function checkPhoneVerificationAction(phone: string, code: string) 
 export async function retryPaymentAction(bookingId: string) {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return { error: "Not authenticated" };
+    if (!user) return { error: await tr("common.not_authenticated") };
 
     // Confirm this booking belongs to the user and is still pending
     const { data: booking } = await supabase
@@ -1566,8 +1567,8 @@ export async function retryPaymentAction(bookingId: string) {
         .eq("player_id", user.id)
         .single();
 
-    if (!booking) return { error: "Booking not found" };
-    if (booking.status !== "pending") return { error: "Booking is no longer pending" };
+    if (!booking) return { error: await tr("booking.not_found") };
+    if (booking.status !== "pending") return { error: await tr("booking.no_pending") };
 
     // Get the Stripe session ID from the payments record
     const { data: payment } = await supabase
@@ -1576,13 +1577,13 @@ export async function retryPaymentAction(bookingId: string) {
         .eq("booking_id", bookingId)
         .single();
 
-    if (!payment?.stripe_checkout_session_id) return { error: "Payment record not found" };
+    if (!payment?.stripe_checkout_session_id) return { error: await tr("booking.payment_record_not_found") };
 
     // Retrieve the Stripe session — if still open, return its URL
     const session = await getStripe().checkout.sessions.retrieve(payment.stripe_checkout_session_id);
     if (session.status === "open" && session.url) return { checkoutUrl: session.url };
 
-    return { error: "Your payment session has expired. The slot has been released — please book again." };
+    return { error: await tr("booking.payment_expired") };
 }
 
 // ---------------------------------------------------------------------------
@@ -1602,7 +1603,7 @@ export async function moveBookingAction(bookingId: string, newAvailabilityId: st
     const supabase = await createClient();
     const locale = await getLocale();
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return { error: "Not authenticated" };
+    if (!user) return { error: await tr("common.not_authenticated") };
 
     // Load booking with the source court id so we can validate same-court rule.
     const { data: booking } = await supabase
@@ -1612,16 +1613,16 @@ export async function moveBookingAction(bookingId: string, newAvailabilityId: st
         .eq("player_id", user.id)
         .single();
 
-    if (!booking) return { error: "Booking not found" };
-    if (booking.status !== "confirmed") return { error: "Only confirmed bookings can be moved" };
-    if ((booking.move_count ?? 0) >= 1) return { error: "This booking has already been moved once" };
+    if (!booking) return { error: await tr("booking.not_found") };
+    if (booking.status !== "confirmed") return { error: await tr("booking.only_confirmed_move") };
+    if ((booking.move_count ?? 0) >= 1) return { error: await tr("booking.already_moved") };
 
     const originalStart = new Date(`${booking.date}T${booking.start_time}`);
     const hoursUntil = (originalStart.getTime() - Date.now()) / 3_600_000;
-    if (hoursUntil <= 24) return { error: "Bookings can only be moved at least 24 hours in advance" };
+    if (hoursUntil <= 24) return { error: await tr("booking.move_window") };
 
     if (newAvailabilityId === booking.availability_id) {
-        return { error: "Pick a different slot" };
+        return { error: await tr("booking.pick_different_slot") };
     }
 
     // Validate the target slot: same court, free, same duration as original.
@@ -1631,11 +1632,11 @@ export async function moveBookingAction(bookingId: string, newAvailabilityId: st
         .eq("id", newAvailabilityId)
         .single();
 
-    if (!newSlot) return { error: "Selected slot is no longer available" };
+    if (!newSlot) return { error: await tr("booking.slot_unavailable") };
     if (newSlot.court_id !== booking.court_id) {
-        return { error: "Cross-court moves are not yet supported" };
+        return { error: await tr("booking.cross_court") };
     }
-    if (newSlot.is_booked) return { error: "Selected slot is no longer available" };
+    if (newSlot.is_booked) return { error: await tr("booking.slot_unavailable") };
 
     // Same duration → same price tier (same court_id already implies same price_per_hour).
     const oldDur =
@@ -1645,7 +1646,7 @@ export async function moveBookingAction(bookingId: string, newAvailabilityId: st
         (new Date(`1970-01-01T${newSlot.end_time}`).getTime() -
             new Date(`1970-01-01T${newSlot.start_time}`).getTime()) / 60_000;
     if (oldDur !== newDur) {
-        return { error: "Selected slot must be the same duration as your booking" };
+        return { error: await tr("booking.different_duration") };
     }
 
     // Lock new slot via CAS — concurrent caller would race here.
@@ -1657,7 +1658,7 @@ export async function moveBookingAction(bookingId: string, newAvailabilityId: st
         .select("id");
 
     if (!lockedRows || lockedRows.length === 0) {
-        return { error: "Selected slot was just taken — please pick another" };
+        return { error: await tr("booking.slot_just_taken") };
     }
 
     // Release the old slot and update booking row in two updates. If the
@@ -1680,7 +1681,7 @@ export async function moveBookingAction(bookingId: string, newAvailabilityId: st
             .from("court_availability")
             .update({ is_booked: false } as never)
             .eq("id", newAvailabilityId);
-        return { error: "Could not move booking — please try again" };
+        return { error: await tr("booking.could_not_move") };
     }
 
     await supabase
@@ -1716,7 +1717,7 @@ export async function cancelBookingAction(bookingId: string) {
     const supabase = await createClient();
     const locale = await getLocale();
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return { error: "Not authenticated" };
+    if (!user) return { error: await tr("common.not_authenticated") };
 
     const { data: booking } = await supabase
         .from("bookings")
@@ -1725,8 +1726,8 @@ export async function cancelBookingAction(bookingId: string) {
         .eq("player_id", user.id)
         .single();
 
-    if (!booking) return { error: "Booking not found" };
-    if (!["confirmed", "pending"].includes(booking.status)) return { error: "This booking cannot be cancelled" };
+    if (!booking) return { error: await tr("booking.not_found") };
+    if (!["confirmed", "pending"].includes(booking.status)) return { error: await tr("booking.cannot_cancel") };
 
     // Check cancellation window: must be >24h before the booking start
     const bookingStart = new Date(`${booking.date}T${booking.start_time}`);
@@ -1793,7 +1794,7 @@ export async function cancelBookingSeriesAction(bookingId: string) {
     const supabase = await createClient();
     const locale = await getLocale();
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return { error: "Not authenticated" };
+    if (!user) return { error: await tr("common.not_authenticated") };
 
     // Anchor: caller proves ownership via one row in the group.
     const { data: anchor } = await supabase
@@ -1802,8 +1803,8 @@ export async function cancelBookingSeriesAction(bookingId: string) {
         .eq("id", bookingId)
         .eq("player_id", user.id)
         .single();
-    if (!anchor) return { error: "Booking not found" };
-    if (!anchor.recurring_group_id) return { error: "This isn't a recurring booking" };
+    if (!anchor) return { error: await tr("booking.not_found") };
+    if (!anchor.recurring_group_id) return { error: await tr("booking.not_recurring") };
 
     const groupId = anchor.recurring_group_id;
 
@@ -1816,7 +1817,7 @@ export async function cancelBookingSeriesAction(bookingId: string) {
         .eq("recurring_group_id", groupId)
         .eq("player_id", user.id);
 
-    if (!siblings || siblings.length === 0) return { error: "Series has no bookings" };
+    if (!siblings || siblings.length === 0) return { error: await tr("booking.series_no_bookings") };
 
     const now = Date.now();
     const cancellable = siblings.filter((s: { status: string; date: string; start_time: string }) => {
@@ -1824,7 +1825,7 @@ export async function cancelBookingSeriesAction(bookingId: string) {
         const start = new Date(`${s.date}T${s.start_time}`).getTime();
         return start > now;
     });
-    if (cancellable.length === 0) return { error: "Nothing to cancel — every future week is already past or cancelled." };
+    if (cancellable.length === 0) return { error: await tr("booking.nothing_to_cancel_series") };
 
     // Split into refundable (>24h out) and lapsed (within 24h — cancel
     // the slot but no money back).
@@ -1965,7 +1966,7 @@ export async function ownerCancelBookingAction(bookingId: string, reason: string
     const supabase = await createClient();
     const locale = await getLocale();
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return { error: "Not authenticated" };
+    if (!user) return { error: await tr("common.not_authenticated") };
 
     // Verify caller owns the facility containing the court for this booking.
     const { data: booking } = await supabase
@@ -1977,13 +1978,13 @@ export async function ownerCancelBookingAction(bookingId: string, reason: string
         .eq("id", bookingId)
         .single();
 
-    if (!booking) return { error: "Booking not found" };
+    if (!booking) return { error: await tr("booking.not_found") };
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const ownerId = (booking as any).courts?.facilities?.owner_id;
-    if (ownerId !== user.id) return { error: "Access denied" };
+    if (ownerId !== user.id) return { error: await tr("common.access_denied") };
 
     if (!["confirmed", "pending"].includes(booking.status)) {
-        return { error: "This booking cannot be cancelled" };
+        return { error: await tr("booking.cannot_cancel") };
     }
 
     // Issue full refund regardless of window — owner-initiated cancellations
@@ -2042,14 +2043,14 @@ export async function ownerCancelBookingAction(bookingId: string, reason: string
 export async function markCheckedInAction(bookingId: string) {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return { error: "Unauthorized" };
+    if (!user) return { error: await tr("common.unauthorized") };
 
     const { data: facility } = await supabase
         .from("facilities")
         .select("id")
         .eq("owner_id", user.id)
         .single();
-    if (!facility) return { error: "No facility found" };
+    if (!facility) return { error: await tr("common.no_facility") };
 
     // Find the player so we can run the loyalty milestone check after the
     // status flip — this is the canonical "completed" trigger.
@@ -2093,7 +2094,7 @@ export async function markCheckedInAction(bookingId: string) {
 export async function getWalletAction() {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return { error: "Unauthorized" as const };
+    if (!user) return { error: await tr("common.unauthorized") };
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data: balanceRow } = await (supabase as any)
@@ -2131,9 +2132,9 @@ export async function getWalletAction() {
 export async function checkInByQrTokenAction(token: string) {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return { error: "Unauthorized" };
+    if (!user) return { error: await tr("common.unauthorized") };
 
-    if (!token || token.length < 8) return { error: "Invalid QR code" };
+    if (!token || token.length < 8) return { error: await tr("booking.qr_invalid") };
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data: booking } = await (supabase as any)
@@ -2146,14 +2147,14 @@ export async function checkInByQrTokenAction(token: string) {
         .eq("qr_code_token", token)
         .single();
 
-    if (!booking) return { error: "Booking not found for this QR code" };
+    if (!booking) return { error: await tr("booking.qr_not_found") };
 
     const ownerId = booking.courts?.facilities?.owner_id;
-    if (ownerId !== user.id) return { error: "This booking is at a different facility" };
+    if (ownerId !== user.id) return { error: await tr("booking.cross_facility") };
 
     const today = new Date().toISOString().split("T")[0];
     if (booking.date !== today) {
-        return { error: `This booking is for ${booking.date}, not today` };
+        return { error: await tr("booking.checkin_wrong_date", { date: booking.date }) };
     }
 
     if (booking.status === "completed") {
@@ -2170,7 +2171,7 @@ export async function checkInByQrTokenAction(token: string) {
         };
     }
     if (booking.status !== "confirmed") {
-        return { error: `Booking status is "${booking.status}" — cannot check in` };
+        return { error: await tr("booking.checkin_wrong_status", { status: booking.status }) };
     }
 
     const { error } = await supabase
@@ -2179,7 +2180,7 @@ export async function checkInByQrTokenAction(token: string) {
         .eq("id", booking.id)
         .eq("status", "confirmed");
 
-    if (error) return { error: "Could not check in — please try again" };
+    if (error) return { error: await tr("booking.checkin_failed") };
 
     revalidatePath("/dashboard/checkin");
 

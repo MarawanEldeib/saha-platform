@@ -10,6 +10,7 @@ import { sanitizeTextInput } from "@/lib/utils";
 import { sanitizeEventTags } from "@/lib/event-tags";
 import { geocodeAddress } from "@/lib/geocoding";
 import { facilityUpdateSchema } from "@/lib/validations";
+import { tr } from "@/lib/i18n-errors";
 
 type FacilityUpdate = Database["public"]["Tables"]["facilities"]["Update"];
 type EventUpdate = Database["public"]["Tables"]["events"]["Update"];
@@ -112,10 +113,10 @@ export async function approveFacilityAction(facilityId: string) {
             .select("location")
             .eq("id", facilityId)
             .single();
-        if (!existing) return { error: "Facility not found" };
+        if (!existing) return { error: await tr("common.facility_not_found") };
         if ((existing as { location: unknown }).location === null) {
             return {
-                error: "This facility has no map coordinates yet. Ask the owner to re-save their address from the dashboard, then try approving again.",
+                error: await tr("admin.no_map_coords"),
             };
         }
 
@@ -196,7 +197,7 @@ export async function adminUpdateFacilityAction(
 
         const trimmedReason = (reason ?? "").trim();
         if (!trimmedReason) {
-            return { error: "Please provide a reason for the admin edit (required for the audit log)." };
+            return { error: await tr("admin.audit_reason_required") };
         }
 
         const sanitized = {
@@ -219,7 +220,7 @@ export async function adminUpdateFacilityAction(
             .select("name, description, address, city, postal_code, phone, website, trn, owner_id")
             .eq("id", facilityId)
             .single();
-        if (!existing) return { error: "Facility not found" };
+        if (!existing) return { error: await tr("common.facility_not_found") };
 
         // Only re-geocode when the address or city actually changed — saves
         // a Mapbox call and keeps the location stable for typo-only edits.
@@ -231,7 +232,7 @@ export async function adminUpdateFacilityAction(
             const geo = await geocodeAddress(parsed.data.address, parsed.data.city);
             if (geo.status === "no_match") {
                 return {
-                    error: "We couldn't locate that address on the map. Double-check the street and city, then try again.",
+                    error: await tr("admin.address_not_found"),
                 };
             }
             if (geo.status === "ok") {
@@ -354,8 +355,8 @@ export async function adminUpdateEventAction(
         const eventDate = raw.event_date;
         const tags = sanitizeEventTags(raw.tags);
 
-        if (!name || name.length < 3) return { error: "Event name must be at least 3 characters." };
-        if (!eventDate) return { error: "Please select an event date." };
+        if (!name || name.length < 3) return { error: await tr("events.name_too_short") };
+        if (!eventDate) return { error: await tr("events.date_required") };
 
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const { data: existing } = await (adminClient as any)
@@ -363,7 +364,7 @@ export async function adminUpdateEventAction(
             .select("name, description, event_date, tags")
             .eq("id", eventId)
             .single();
-        if (!existing) return { error: "Event not found" };
+        if (!existing) return { error: await tr("events.not_found") };
 
         const update: EventUpdate = {
             name,
@@ -517,7 +518,7 @@ const VALID_ROLES = ["user", "business", "admin"] as const;
 export async function adminBanUserAction(targetUserId: string, reason: string) {
     try {
         const { adminClient, userId, role } = await assertAdmin();
-        if (targetUserId === userId) return { error: "You can't ban yourself." };
+        if (targetUserId === userId) return { error: await tr("admin.no_self_ban") };
 
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const { data: existing } = await (adminClient as any)
@@ -525,8 +526,8 @@ export async function adminBanUserAction(targetUserId: string, reason: string) {
             .select("display_name, role, deletion_requested_at")
             .eq("id", targetUserId)
             .single();
-        if (!existing) return { error: "User not found." };
-        if (existing.deletion_requested_at) return { error: "User is already banned." };
+        if (!existing) return { error: await tr("admin.user_not_found") };
+        if (existing.deletion_requested_at) return { error: await tr("admin.already_banned") };
 
         const update: ProfileUpdate = { deletion_requested_at: new Date().toISOString() };
         const { error } = await adminClient
@@ -561,7 +562,7 @@ export async function adminBanUserAction(targetUserId: string, reason: string) {
 export async function adminUnbanUserAction(targetUserId: string) {
     try {
         const { adminClient, userId, role } = await assertAdmin();
-        if (targetUserId === userId) return { error: "Nothing to unban for yourself." };
+        if (targetUserId === userId) return { error: await tr("admin.no_self_unban") };
 
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const { data: existing } = await (adminClient as any)
@@ -569,8 +570,8 @@ export async function adminUnbanUserAction(targetUserId: string) {
             .select("display_name, deletion_requested_at")
             .eq("id", targetUserId)
             .single();
-        if (!existing) return { error: "User not found." };
-        if (!existing.deletion_requested_at) return { error: "User is not banned." };
+        if (!existing) return { error: await tr("admin.user_not_found") };
+        if (!existing.deletion_requested_at) return { error: await tr("admin.not_banned") };
 
         const update: ProfileUpdate = { deletion_requested_at: null };
         const { error } = await adminClient
@@ -599,9 +600,9 @@ export async function adminChangeUserRoleAction(targetUserId: string, newRole: s
     try {
         const { adminClient, userId, role } = await assertAdmin();
         if (!(VALID_ROLES as readonly string[]).includes(newRole)) {
-            return { error: "Invalid role." };
+            return { error: await tr("auth.invalid_role") };
         }
-        if (targetUserId === userId) return { error: "You can't change your own role." };
+        if (targetUserId === userId) return { error: await tr("admin.no_self_role") };
 
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const { data: existing } = await (adminClient as any)
@@ -609,7 +610,7 @@ export async function adminChangeUserRoleAction(targetUserId: string, newRole: s
             .select("display_name, role")
             .eq("id", targetUserId)
             .single();
-        if (!existing) return { error: "User not found." };
+        if (!existing) return { error: await tr("admin.user_not_found") };
         if (existing.role === newRole) return { error: `User is already ${newRole}.` };
 
         const update: ProfileUpdate = { role: newRole as UserRole };
@@ -642,7 +643,7 @@ export async function adminChangeUserRoleAction(targetUserId: string, newRole: s
 export async function adminDeleteUserAction(targetUserId: string, confirmText: string) {
     try {
         const { adminClient, userId, role } = await assertAdmin();
-        if (targetUserId === userId) return { error: "You can't delete yourself." };
+        if (targetUserId === userId) return { error: await tr("admin.no_self_delete") };
 
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const { data: existing } = await (adminClient as any)
@@ -650,7 +651,7 @@ export async function adminDeleteUserAction(targetUserId: string, confirmText: s
             .select("display_name, role")
             .eq("id", targetUserId)
             .single();
-        if (!existing) return { error: "User not found." };
+        if (!existing) return { error: await tr("admin.user_not_found") };
 
         // Friction guard: admin must type the display name to confirm. If the
         // profile has no display_name, fall back to the UUID prefix.
