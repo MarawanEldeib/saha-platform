@@ -130,6 +130,13 @@
         "level_beginner": "مبتدئ",
         "level_intermediate": "متوسط",
         "level_advanced": "متقدم",
+        "level_competitive": "تنافسي",
+        "time_morning": "صباحًا",
+        "time_afternoon": "ظهرًا",
+        "time_evening": "مساءً",
+        "preferred_times_label": "أي وقت يناسبك؟ (اختياري)",
+        "filter_city": "تصفية حسب المدينة",
+        "filter_all_cities": "كل المدن",
         "submit": "نشر",
         "login_prompt": "سجّل الدخول للنشر",
         "no_posts": "لا توجد منشورات بعد. كن أول من ينشر!",
@@ -862,6 +869,12 @@
         "contact": "اتصل بنا",
         "copyright": "© {year} صحة. جميع الحقوق محفوظة.",
         "business_login": "تسجيل الدخول لحساب الأعمال"
+    },
+    "player_profile": {
+        "back_to_community": "العودة إلى المجتمع",
+        "joined_on": "انضم في {date}",
+        "active_posts_title": "طلبات شريك مفتوحة",
+        "no_active_posts": "لا توجد طلبات مفتوحة حاليًا."
     },
     "community_guidelines": {
         "title": "إرشادات المجتمع",

@@ -140,10 +140,18 @@ export type EventInput = z.infer<typeof eventSchema>;
 // ---------------------------------------------------------------------------
 export const matchmakingSchema = z.object({
     sport_id: z.number().nullable(),
-    skill_level: z.enum(["beginner", "intermediate", "advanced"]),
+    // SAH-152 round 3: added `competitive` tier for ranked/league players.
+    skill_level: z.enum(["beginner", "intermediate", "advanced", "competitive"]),
     post_date: z.string().min(1, "Date is required"),
     message: z.string().min(10, "Message must be at least 10 characters"),
     location_text: z.string().optional(),
+    // SAH-152 round 3: 1–3 of morning|afternoon|evening. CHECK constraint
+    // on matchmaking_posts mirrors the allowed set.
+    preferred_times: z
+        .array(z.enum(["morning", "afternoon", "evening"]))
+        .min(0)
+        .max(3)
+        .optional(),
 });
 export type MatchmakingInput = z.infer<typeof matchmakingSchema>;
 
