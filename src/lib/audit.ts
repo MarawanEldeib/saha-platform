@@ -38,6 +38,12 @@ export async function logAuditEvent(event: AuditEvent): Promise<void> {
             user_agent: userAgent,
         });
     } catch (err) {
-        console.error("audit_log insert failed", err);
+        // SAH-157: compliance trail breaks silently if we don't surface this.
+        const { captureRouteError } = await import("@/lib/sentry-helpers");
+        captureRouteError(err, {
+            route: "audit_log",
+            level: "error",
+            extra: { action: event.action, target_type: event.targetType, target_id: event.targetId },
+        });
     }
 }

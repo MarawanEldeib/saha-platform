@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { logAuditEvent } from "@/lib/audit";
+import { captureRouteError } from "@/lib/sentry-helpers";
 import { GET as runReviewPrompts } from "../review-prompts/route";
+
+const ROUTE = "cron/mark-no-shows";
 
 /**
  * SAH-86: Mark yesterday's confirmed bookings as no_show and increment the
@@ -34,6 +37,7 @@ export async function GET(req: NextRequest) {
         .eq("date", yesterday);
 
     let marked = 0;
+    let failed = 0;
     const playerCounts = new Map<string, number>();
 
     for (const booking of (bookings ?? []) as Array<{ id: string; player_id: string }>) {
@@ -44,7 +48,11 @@ export async function GET(req: NextRequest) {
             .eq("status", "confirmed");
 
         if (error) {
-            console.error("[mark-no-shows] failed to update", booking.id, error);
+            captureRouteError(error, {
+                route: ROUTE,
+                extra: { booking_id: booking.id, player_id: booking.player_id },
+            });
+            failed++;
             continue;
         }
 
@@ -84,9 +92,14 @@ export async function GET(req: NextRequest) {
         const res = await runReviewPrompts(req);
         reviewPrompts = await res.json();
     } catch (err) {
-        console.error("[mark-no-shows] chained review-prompts failed", err);
+        captureRouteError(err, { route: ROUTE, extra: { phase: "chained_review_prompts" } });
         reviewPrompts = { error: "review_prompts_failed" };
     }
 
-    return NextResponse.json({ marked, players_affected: playerCounts.size, review_prompts: reviewPrompts });
+    // SAH-157: surface bulk failure as non-200 so Vercel cron monitor alerts.
+    const status = marked === 0 && failed > 0 ? 500 : 200;
+    return NextResponse.json(
+        { marked, failed, players_affected: playerCounts.size, review_prompts: reviewPrompts },
+        { status },
+    );
 }

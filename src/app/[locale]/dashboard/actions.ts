@@ -17,6 +17,7 @@ import type Stripe from "stripe";
 import { getStripe } from "@/lib/stripe";
 import { getPlatformFeePercent } from "@/lib/platform-settings";
 import { logAuditEvent } from "@/lib/audit";
+import { captureRouteError } from "@/lib/sentry-helpers";
 import {
     FACILITY_COOKIE_NAME,
     FACILITY_COOKIE_MAX_AGE,
@@ -538,7 +539,11 @@ export async function splitBookingAction(
                 url: link.url,
             });
         } catch (err) {
-            console.error("[split] payment link failed for guest", guest.id, err);
+            captureRouteError(err, {
+                route: "actions:createSplitPaymentLink",
+                level: "error",
+                extra: { guest_id: guest.id, booking_id: bookingId },
+            });
             await admin
                 .from("booking_guests")
                 .update({ payment_status: "failed" } as never)
@@ -605,7 +610,7 @@ export async function generateFacilityDescriptionAction(input: {
         );
         return { description: textFromMessage(message) };
     } catch (err) {
-        console.error("[ai] description generation failed", err);
+        captureRouteError(err, { route: "actions:generateFacilityDescription" });
         return { error: "Could not generate a description right now." };
     }
 }
@@ -664,7 +669,10 @@ export async function generateOnboardingDescriptionAction(
         if (updateErr) return { error: "Could not save the description." };
         return { description };
     } catch (err) {
-        console.error("[ai] onboarding description failed", err);
+        captureRouteError(err, {
+            route: "actions:generateOnboardingDescription",
+            extra: { facility_id: facilityId },
+        });
         return { error: "Could not generate a description right now." };
     }
 }
@@ -714,7 +722,7 @@ export async function parseSearchQueryAction(query: string) {
             return { error: "Could not parse query" };
         }
     } catch (err) {
-        console.error("[ai] query parse failed", err);
+        captureRouteError(err, { route: "actions:parseSearchQuery" });
         return { error: "Search assistant is unavailable right now." };
     }
 }
@@ -1853,7 +1861,11 @@ export async function cancelBookingSeriesAction(bookingId: string) {
                     stripeRefunded = true;
                 }
             } catch (err) {
-                console.error("[series-cancel] Stripe refund failed", err);
+                captureRouteError(err, {
+                    route: "actions:cancelBookingSeries",
+                    level: "error",
+                    extra: { booking_id: bookingId, refund_amount_aed: refundAmountAed },
+                });
                 // Continue — better to cancel + log the failure than leave
                 // the player stuck with a confirmed-but-unwanted booking.
             }
@@ -1934,7 +1946,11 @@ async function refundWalletCreditForBooking(userId: string, bookingId: string): 
             return refundAmount;
         }
     } catch (err) {
-        console.error("[loyalty] cancel-time wallet refund failed", err);
+        captureRouteError(err, {
+            route: "actions:walletRefundOnCancel",
+            user_id: userId,
+            extra: { booking_id: bookingId },
+        });
     }
     return 0;
 }
@@ -1985,7 +2001,11 @@ export async function ownerCancelBookingAction(bookingId: string, reason: string
             await supabase.from("payments").update({ status: "refunded" } as never).eq("booking_id", bookingId);
             refunded = true;
         } catch (err) {
-            console.error("[ownerCancel] refund failed for", bookingId, err);
+            captureRouteError(err, {
+                route: "actions:ownerCancelBooking",
+                level: "error",
+                extra: { booking_id: bookingId, payment_intent_id: payment.stripe_payment_intent_id },
+            });
             // Continue cancelling so the slot is released. Refund will be
             // retried via the audit trail / Stripe dashboard.
         }
@@ -2054,7 +2074,11 @@ export async function markCheckedInAction(bookingId: string) {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             await (admin as any).rpc("award_loyalty_credit_if_due", { p_user_id: playerId });
         } catch (err) {
-            console.error("[loyalty] award_if_due failed", err);
+            captureRouteError(err, {
+                route: "actions:checkInBooking",
+                user_id: playerId,
+                extra: { phase: "loyalty_award_if_due" },
+            });
         }
     }
 

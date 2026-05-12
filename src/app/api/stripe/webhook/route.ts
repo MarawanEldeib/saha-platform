@@ -4,8 +4,11 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { sendWhatsApp } from "@/lib/twilio";
 import { sendBookingConfirmationEmail } from "@/lib/emails/booking-confirmation-email";
 import { logAuditEvent } from "@/lib/audit";
+import { captureRouteError, captureRouteMessage } from "@/lib/sentry-helpers";
 import { format } from "date-fns";
 import Stripe from "stripe";
+
+const ROUTE = "stripe/webhook";
 
 export async function POST(req: NextRequest) {
     const body = await req.text();
@@ -71,7 +74,16 @@ export async function POST(req: NextRequest) {
                             p_booking_id: guest.booking_id,
                         });
                     } catch (err) {
-                        console.error("[split] wallet credit award failed", err);
+                        captureRouteError(err, {
+                            route: ROUTE,
+                            extra: {
+                                event_id: event.id,
+                                booking_guest_id: bookingGuestId,
+                                booker_id: bookerId,
+                                share_amount: guest.share_amount,
+                                phase: "split_wallet_credit_award",
+                            },
+                        });
                     }
                 }
             }
@@ -107,10 +119,21 @@ export async function POST(req: NextRequest) {
                 .update({ status: "confirmed" } as never)
                 .eq("id", bookingId);
 
-            await supabase
-                .from("court_availability")
-                .update({ is_booked: true } as never)
-                .eq("id", session.metadata?.availability_id ?? "");
+            const availabilityId = session.metadata?.availability_id;
+            if (!availabilityId) {
+                // Without an availability_id we silently update no row and
+                // the slot stays in an inconsistent state. Flag it loudly.
+                captureRouteMessage("checkout.session.completed missing availability_id", {
+                    route: ROUTE,
+                    level: "error",
+                    extra: { event_id: event.id, booking_id: bookingId, session_id: session.id },
+                });
+            } else {
+                await supabase
+                    .from("court_availability")
+                    .update({ is_booked: true } as never)
+                    .eq("id", availabilityId);
+            }
 
             await supabase
                 .from("payments")
@@ -173,7 +196,14 @@ export async function POST(req: NextRequest) {
                             };
                         }
                     } catch (err) {
-                        console.error("[webhook] invoice PDF render failed", err);
+                        captureRouteError(err, {
+                            route: ROUTE,
+                            extra: {
+                                event_id: event.id,
+                                booking_id: booking.id,
+                                phase: "invoice_pdf_render",
+                            },
+                        });
                     }
 
                     await sendBookingConfirmationEmail({
@@ -193,13 +223,17 @@ export async function POST(req: NextRequest) {
                         appUrl: process.env.NEXT_PUBLIC_APP_URL ?? "",
                         invoicePdf,
                     }).catch((error) => {
-                        console.error("Error sending booking confirmation email:", error);
-                        /* Email not blocking — fire and forget */
+                        captureRouteError(error, {
+                            route: ROUTE,
+                            extra: { event_id: event.id, booking_id: booking.id, phase: "confirmation_email_send" },
+                        });
                     });
                 }
             } catch (error) {
-                console.error("Error in booking confirmation email flow:", error);
-                /* Continue webhook processing */
+                captureRouteError(error, {
+                    route: ROUTE,
+                    extra: { event_id: event.id, booking_id: booking.id, phase: "confirmation_email_flow" },
+                });
             }
         }
     }
@@ -234,10 +268,19 @@ export async function POST(req: NextRequest) {
                     .in("id", slotIds);
             }
         } else {
-            await supabase
-                .from("court_availability")
-                .update({ is_booked: false } as never)
-                .eq("id", availabilityId ?? "");
+            if (!availabilityId) {
+                // Same silent-no-op risk as in the completed branch — flag it.
+                captureRouteMessage("checkout.session.expired missing availability_id", {
+                    route: ROUTE,
+                    level: "warning",
+                    extra: { event_id: event.id, booking_id: bookingId, session_id: session.id },
+                });
+            } else {
+                await supabase
+                    .from("court_availability")
+                    .update({ is_booked: false } as never)
+                    .eq("id", availabilityId);
+            }
 
             await supabase
                 .from("bookings")
@@ -442,7 +485,15 @@ export async function POST(req: NextRequest) {
                 failure_message: payout.failure_message,
             },
         });
-        console.error("[stripe] payout failed", payout.id, payout.failure_code, payout.failure_message);
+        captureRouteMessage("stripe payout failed", {
+            route: ROUTE,
+            level: "error",
+            extra: {
+                payout_id: payout.id,
+                failure_code: payout.failure_code,
+                failure_message: payout.failure_message,
+            },
+        });
     }
 
     // ---------------------------------------------------------------------
@@ -482,7 +533,11 @@ export async function POST(req: NextRequest) {
                 stripe_payment_intent_id: intentId,
             },
         });
-        console.error("[stripe] dispute created", dispute.id, dispute.reason, "facility:", facilityId);
+        captureRouteMessage("stripe dispute created", {
+            route: ROUTE,
+            level: "error",
+            extra: { dispute_id: dispute.id, reason: dispute.reason, facility_id: facilityId },
+        });
     }
 
     return NextResponse.json({ received: true });

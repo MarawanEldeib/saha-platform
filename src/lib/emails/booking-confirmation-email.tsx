@@ -392,13 +392,23 @@ export async function sendBookingConfirmationEmail(
     });
 
     if (result.error) {
-      console.error("Resend error:", result.error);
+      const { captureRouteError } = await import("@/lib/sentry-helpers");
+      captureRouteError(result.error, {
+        route: "emails:booking-confirmation",
+        level: "error",
+        extra: { booking_id: props.bookingId, recipient: props.playerEmail },
+      });
       return { success: false, error: result.error.message };
     }
 
     return { success: true };
   } catch (error) {
-    console.error("Error sending booking confirmation email:", error);
+    const { captureRouteError } = await import("@/lib/sentry-helpers");
+    captureRouteError(error, {
+      route: "emails:booking-confirmation",
+      level: "error",
+      extra: { booking_id: props.bookingId, recipient: props.playerEmail },
+    });
     return {
       success: false,
       error: error instanceof Error ? error.message : "Unknown error",

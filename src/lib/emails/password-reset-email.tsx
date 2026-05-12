@@ -114,6 +114,7 @@ export function generatePasswordResetEmail(props: PasswordResetEmailProps): stri
 export async function sendPasswordResetEmail(
     props: PasswordResetEmailProps & { resendApiKey?: string }
 ): Promise<{ success: boolean; error?: string }> {
+    const { captureRouteError } = await import("@/lib/sentry-helpers");
     try {
         const { resendApiKey, ...emailProps } = props;
         const html = generatePasswordResetEmail(emailProps);
@@ -132,12 +133,20 @@ export async function sendPasswordResetEmail(
         });
 
         if (result.error) {
-            console.error("[reset-email] Resend error", result.error);
+            captureRouteError(result.error, {
+                route: "emails:password-reset",
+                level: "error",
+                extra: { recipient: props.recipientEmail },
+            });
             return { success: false, error: result.error.message };
         }
         return { success: true };
     } catch (err) {
-        console.error("[reset-email] failed to send", err);
+        captureRouteError(err, {
+            route: "emails:password-reset",
+            level: "error",
+            extra: { recipient: props.recipientEmail },
+        });
         return { success: false, error: err instanceof Error ? err.message : "Unknown error" };
     }
 }
