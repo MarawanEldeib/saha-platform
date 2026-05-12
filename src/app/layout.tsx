@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Cairo } from "next/font/google";
 import { getLocale } from "next-intl/server";
+import { cookies } from "next/headers";
 import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 
@@ -43,9 +44,20 @@ export default async function RootLayout({
     locale = "en";
   }
 
+  // SAH-122: only mount Vercel Analytics after the user accepts non-essential
+  // cookies. <CookieBanner /> (mounted in the locale layout) writes the
+  // `saha_cookie_consent` cookie and reloads, after which this branch flips
+  // and Analytics renders for the rest of the session. Strictly-necessary
+  // cookies (Supabase auth, facility-switcher) don't require consent.
+  const cookieStore = await cookies();
+  const analyticsConsent = cookieStore.get("saha_cookie_consent")?.value === "accepted";
+
   return (
     <html lang={locale} dir={locale === "ar" ? "rtl" : "ltr"} suppressHydrationWarning>
-      <body suppressHydrationWarning className={`${cairo.className} antialiased`}>{children}<Analytics /></body>
+      <body suppressHydrationWarning className={`${cairo.className} antialiased`}>
+        {children}
+        {analyticsConsent && <Analytics />}
+      </body>
     </html>
   );
 }
