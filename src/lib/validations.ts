@@ -157,6 +157,24 @@ export const matchmakingSchema = z.object({
 export type MatchmakingInput = z.infer<typeof matchmakingSchema>;
 
 // ---------------------------------------------------------------------------
+// SAH-152 Phase 2: Match (post-a-game) creation schema. Drives /matches/new.
+// ---------------------------------------------------------------------------
+export const matchCreateSchema = z.object({
+    title: z.string().min(3, "Title must be at least 3 characters").max(100),
+    sport_id: z.number().int().nullable().optional(),
+    court_id: z.string().uuid().nullable().optional(),
+    location_text: z.string().max(120).optional().or(z.literal("")),
+    /** ISO 8601 timestamp, must be in the future. */
+    scheduled_for: z.string().min(1, "Date and time are required"),
+    skill_level: z.enum(["beginner", "intermediate", "advanced", "competitive"]),
+    format: z.string().min(1).max(20),
+    capacity: z.number().int().min(1).max(50),
+    gate: z.enum(["open", "request", "invite_only"]),
+    description: z.string().max(500).optional().or(z.literal("")),
+});
+export type MatchCreateInput = z.infer<typeof matchCreateSchema>;
+
+// ---------------------------------------------------------------------------
 // Admin Schemas
 // ---------------------------------------------------------------------------
 export const declineReasonSchema = z.object({

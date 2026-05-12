@@ -125,11 +125,9 @@
         "subtitle": "Find your next game. High intensity, local courts.",
         "post_a_game": "Post a Game",
         "join_game": "Join Game",
-        "join_disabled_tooltip": "Joining ships in the next release",
         "empty": "No open games right now — be the first to post one.",
         "sport_unspecified": "Sport TBD",
         "format_casual": "Casual",
-        "phase_note": "Phase 1: read-only feed. Posting still uses the existing Community form; joining ships in Phase 2.",
         "skill": {
             "beginner": "Beginner",
             "intermediate": "Intermediate",
@@ -145,6 +143,80 @@
             "today": "Today",
             "tomorrow": "Tomorrow"
         }
+    },
+    "matches_new": {
+        "title": "Post a Game",
+        "subtitle": "Set the details and pick how players can join.",
+        "title_label": "Game title",
+        "title_placeholder": "e.g. Friday night padel doubles",
+        "sport_label": "Sport",
+        "sport_any": "Any sport",
+        "scheduled_label": "Date & time",
+        "location_label": "Location (optional)",
+        "location_placeholder": "e.g. Dubai Padel Academy",
+        "skill_label": "Skill level",
+        "format_label": "Format",
+        "capacity_label": "Capacity (1–50)",
+        "gate_label": "Who can join",
+        "gate": {
+            "open": {
+                "title": "Open — anyone can join",
+                "desc": "Players see the match in the feed and tap Join."
+            },
+            "request": {
+                "title": "Request to join",
+                "desc": "Players send a request; you approve before they're in."
+            },
+            "invite_only": {
+                "title": "Invite-only",
+                "desc": "Only people you invite directly can join."
+            }
+        },
+        "description_label": "Notes (optional)",
+        "description_placeholder": "Anything else players should know — e.g. bring your own paddle.",
+        "submit": "Post game",
+        "submitting": "Posting…",
+        "cancel": "Cancel",
+        "non_player_title": "Player accounts only",
+        "non_player_body": "Posting a game is a player feature. Your account is signed in as a facility owner or admin. Sign out and create a separate player account to post a game.",
+        "back_to_feed": "Back to matches"
+    },
+    "match_detail": {
+        "back": "Back to matches",
+        "hosted_by": "Hosted by",
+        "anonymous_host": "Player",
+        "anonymous_player": "Player",
+        "when": "When",
+        "where": "Where",
+        "sport": "Sport",
+        "skill_format": "Skill · Format",
+        "gate_label": "Joining",
+        "gate": {
+            "open": "Open — anyone can join",
+            "request": "Request to join",
+            "invite_only": "Invite-only",
+            "request_blurb": "This match requires a join request — the host approves before you're in. Ships in the next release.",
+            "invite_only_blurb": "This match is invite-only — wait for the host to invite you."
+        },
+        "status": {
+            "live": "Live",
+            "cancelled": "Cancelled",
+            "completed": "Completed",
+            "cancelled_explain": "This match was cancelled by the host.",
+            "completed_explain": "This match has already finished."
+        },
+        "join_match": "Join match",
+        "leave_match": "Leave match",
+        "cancel_match": "Cancel match",
+        "sign_in_to_join": "Sign in to join",
+        "working": "Working…",
+        "full": "Match is full",
+        "confirm_cancel": "Cancel this match? Other players will be notified.",
+        "confirm_leave": "Leave this match?",
+        "participants_heading": "Players ({count})",
+        "no_participants": "No one has joined yet.",
+        "host_chip": "Host",
+        "phase_note": "Phase 2: open-gate join works. Invites, request-to-join, and per-match chat ship in Phase 3 / 4."
     },
     "community": {
         "title": "Player Matchmaking",
@@ -1052,7 +1124,22 @@
             "facility_id_missing": "Facility id missing",
             "no_facility": "No facility found",
             "no_facility_onboard": "No facility found. Complete onboarding first.",
-            "facility_not_found_or_denied": "Facility not found or access denied"
+            "facility_not_found_or_denied": "Facility not found or access denied",
+            "rate_limited": "Too many requests — please slow down and try again later.",
+            "invalid_input": "Some of the values you entered aren't valid.",
+            "unexpected_error": "Something went wrong. Please try again."
+        },
+        "matches": {
+            "scheduled_for_past": "Pick a future date and time for the match.",
+            "not_found": "Match not found",
+            "not_open": "This match isn't open to new players.",
+            "cannot_join_own": "You're already the host of this match.",
+            "already_started": "This match has already started.",
+            "invite_only": "This match is invite-only.",
+            "request_only": "This match requires a join request — the host will approve.",
+            "full": "This match is already full.",
+            "already_joined": "You've already joined this match.",
+            "host_cannot_leave": "Hosts can't leave — cancel the match instead."
         },
         "events": {
             "name_too_short": "Event name must be at least 3 characters.",
