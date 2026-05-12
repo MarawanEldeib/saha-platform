@@ -10,6 +10,8 @@ import { BookingShareActions } from "@/components/booking/BookingShareActions";
 import { BookingStatusWatcher } from "@/components/booking/BookingStatusWatcher";
 import { CompletePaymentButton } from "@/components/booking/CompletePaymentButton";
 import { MoveBookingPanel } from "@/components/booking/MoveBookingPanel";
+import { CancelButton } from "../CancelButton";
+import { CancelSeriesButton } from "../CancelSeriesButton";
 
 export const metadata = { title: "Booking – Saha" };
 
@@ -63,18 +65,28 @@ export default async function BookingPage({
         !booking.recurring_group_id;
 
     let seriesPosition: { index: number; total: number } | null = null;
+    let remainingInSeries = 0;
     if (booking.recurring_group_id) {
-        const { data: siblings } = await supabase
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { data: siblings } = await (supabase as any)
             .from("bookings")
-            .select("id, date, start_time")
+            .select("id, date, start_time, status")
             .eq("recurring_group_id", booking.recurring_group_id)
             .order("date", { ascending: true })
             .order("start_time", { ascending: true });
         if (siblings && siblings.length > 0) {
-            const idx = siblings.findIndex((b) => b.id === booking.id);
+            const idx = siblings.findIndex((b: { id: string }) => b.id === booking.id);
             if (idx >= 0) seriesPosition = { index: idx + 1, total: siblings.length };
+            // Count cancellable future siblings — drives the "Cancel remaining N weeks" button copy.
+            // Reusing nowMs from above keeps the timestamp consistent across the page render.
+            remainingInSeries = siblings.filter((s: { status: string; date: string; start_time: string }) => {
+                if (!["confirmed", "pending"].includes(s.status)) return false;
+                return new Date(`${s.date}T${s.start_time}`).getTime() > nowMs;
+            }).length;
         }
     }
+    const canCancelSingle = ["confirmed", "pending"].includes(booking.status) && hoursUntil > 0;
+    const canCancelSeries = !!booking.recurring_group_id && remainingInSeries > 0;
 
     const headersList = await headers();
     const host = headersList.get("host") ?? "localhost:3000";
@@ -195,6 +207,29 @@ export default async function BookingPage({
                     >
                         Download invoice
                     </Link>
+                )}
+
+                {/* SAH-91: per-occurrence vs whole-series cancel choices. */}
+                {(canCancelSingle || canCancelSeries) && (
+                    <div className="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4 space-y-3">
+                        <h3 className="text-sm font-semibold text-gray-900 dark:text-white">{t("cancel_section_title")}</h3>
+                        <div className="flex flex-wrap items-center gap-2">
+                            {canCancelSingle && (
+                                <CancelButton bookingId={booking.id} />
+                            )}
+                            {canCancelSeries && (
+                                <CancelSeriesButton
+                                    bookingId={booking.id}
+                                    remainingCount={remainingInSeries}
+                                />
+                            )}
+                        </div>
+                        {canCancelSeries && (
+                            <p className="text-xs text-gray-500 dark:text-gray-400">
+                                {t("cancel_series_hint")}
+                            </p>
+                        )}
+                    </div>
                 )}
 
                 <div className="flex gap-3">

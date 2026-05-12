@@ -1702,6 +1702,138 @@ export async function cancelBookingAction(bookingId: string) {
 }
 
 // ---------------------------------------------------------------------------
+// SAH-91: Cancel an entire weekly series.
+//
+// One Stripe payment covers all N occurrences (see
+// createRecurringBookingAndCheckoutAction), so a series cancel is one
+// pro-rata Stripe refund + a status flip on every future cancellable
+// row + slot release. We only refund occurrences whose date is still
+// >24h away — anything within the window cancels without a refund (slot
+// is released but the player gave up the money for the imminent week).
+//
+// Past occurrences are left alone — the session already happened.
+// ---------------------------------------------------------------------------
+export async function cancelBookingSeriesAction(bookingId: string) {
+    const supabase = await createClient();
+    const locale = await getLocale();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { error: "Not authenticated" };
+
+    // Anchor: caller proves ownership via one row in the group.
+    const { data: anchor } = await supabase
+        .from("bookings")
+        .select("id, recurring_group_id, status")
+        .eq("id", bookingId)
+        .eq("player_id", user.id)
+        .single();
+    if (!anchor) return { error: "Booking not found" };
+    if (!anchor.recurring_group_id) return { error: "This isn't a recurring booking" };
+
+    const groupId = anchor.recurring_group_id;
+
+    // Pull every sibling. We need every row to compute refund + release
+    // slots, even past ones (for the audit metadata count).
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: siblings } = await (supabase as any)
+        .from("bookings")
+        .select("id, date, start_time, status, total_price, currency, availability_id")
+        .eq("recurring_group_id", groupId)
+        .eq("player_id", user.id);
+
+    if (!siblings || siblings.length === 0) return { error: "Series has no bookings" };
+
+    const now = Date.now();
+    const cancellable = siblings.filter((s: { status: string; date: string; start_time: string }) => {
+        if (!["confirmed", "pending"].includes(s.status)) return false;
+        const start = new Date(`${s.date}T${s.start_time}`).getTime();
+        return start > now;
+    });
+    if (cancellable.length === 0) return { error: "Nothing to cancel — every future week is already past or cancelled." };
+
+    // Split into refundable (>24h out) and lapsed (within 24h — cancel
+    // the slot but no money back).
+    type Sib = { id: string; date: string; start_time: string; total_price: number; availability_id: string };
+    const refundable = cancellable.filter((s: Sib) => {
+        const start = new Date(`${s.date}T${s.start_time}`).getTime();
+        return (start - now) / 3_600_000 > 24;
+    });
+    const refundAmountAed = refundable.reduce((sum: number, s: Sib) => sum + Number(s.total_price), 0);
+
+    // Stripe partial refund. The whole series shared one checkout session;
+    // pull payment_intent off any sibling's stripe_checkout_session_id then
+    // issue ONE refund for the pro-rata sum.
+    let stripeRefunded = false;
+    if (refundAmountAed > 0) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { data: anyPayment } = await (supabase as any)
+            .from("payments")
+            .select("stripe_checkout_session_id, currency")
+            .eq("booking_id", cancellable[0].id)
+            .single();
+        const sessionId = (anyPayment as { stripe_checkout_session_id: string | null } | null)?.stripe_checkout_session_id;
+        if (sessionId) {
+            try {
+                const session = await getStripe().checkout.sessions.retrieve(sessionId);
+                const intentId = typeof session.payment_intent === "string"
+                    ? session.payment_intent
+                    : session.payment_intent?.id;
+                if (intentId) {
+                    await getStripe().refunds.create({
+                        payment_intent: intentId,
+                        amount: Math.round(refundAmountAed * 100),
+                    });
+                    stripeRefunded = true;
+                }
+            } catch (err) {
+                console.error("[series-cancel] Stripe refund failed", err);
+                // Continue — better to cancel + log the failure than leave
+                // the player stuck with a confirmed-but-unwanted booking.
+            }
+        }
+    }
+
+    // Flip every cancellable booking to cancelled + release slots.
+    const cancellableIds = cancellable.map((s: Sib) => s.id);
+    await supabase.from("bookings").update({ status: "cancelled" } as never).in("id", cancellableIds);
+
+    const slotIds = cancellable.map((s: Sib) => s.availability_id).filter(Boolean);
+    if (slotIds.length > 0) {
+        await supabase.from("court_availability").update({ is_booked: false } as never).in("id", slotIds);
+    }
+
+    // Only the refundable weeks' payment rows get flipped to refunded;
+    // the lapsed weeks' payments stay 'succeeded' since no money came back.
+    if (refundable.length > 0) {
+        const refundedIds = refundable.map((s: Sib) => s.id);
+        await supabase.from("payments").update({ status: "refunded" } as never).in("booking_id", refundedIds);
+    }
+
+    await logAuditEvent({
+        actorId: user.id,
+        actorRole: "user",
+        action: "booking.cancel_series",
+        targetType: "booking",
+        targetId: bookingId,
+        metadata: {
+            recurring_group_id: groupId,
+            total_in_series: siblings.length,
+            cancelled_count: cancellable.length,
+            refunded_count: refundable.length,
+            refund_amount_aed: refundAmountAed,
+            stripe_refunded: stripeRefunded,
+        },
+    });
+
+    revalidatePath(`/${locale}/bookings`);
+    return {
+        success: true,
+        cancelled: cancellable.length,
+        refunded: refundable.length,
+        refundAmount: refundAmountAed,
+    };
+}
+
+// ---------------------------------------------------------------------------
 // SAH-93 helper: looks up the wallet 'spend' tied to a booking_id and refunds
 // it via refund_wallet_credit. Idempotent — checks for existing 'refund' rows
 // so a re-cancel doesn't double-refund. Returns the amount refunded.

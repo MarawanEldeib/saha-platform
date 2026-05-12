@@ -28,6 +28,7 @@ export default async function MyBookingsPage() {
         .from("bookings")
         .select(`
             id, date, start_time, end_time, status, total_price, currency, qr_code_token, num_players,
+            recurring_group_id,
             courts(name, facilities(name, address, city))
         `)
         .eq("player_id", user.id)

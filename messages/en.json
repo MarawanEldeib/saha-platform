@@ -466,7 +466,16 @@
         "cancel_confirm": "Cancel this booking? If it's more than 24 hours away, you'll get a full refund.",
         "cancelled_ok": "Booking cancelled.",
         "refunded": "Your payment has been refunded.",
-        "cancelling": "Cancelling…"
+        "cancelling": "Cancelling…",
+        "cancel_section_title": "Cancel",
+        "cancel_series_button": "Cancel remaining {count} weeks",
+        "cancel_series_confirm": "Cancel the remaining {count} weeks of this series? Refunds apply only to weeks more than 24 hours away.",
+        "cancel_series_hint": "Cancelling this week only releases this slot. Cancelling the series releases every future week — refunds go back to your card automatically.",
+        "series_cancelled": "Series cancelled ({count} weeks). No refund issued — all weeks were within 24 hours.",
+        "series_cancelled_with_refund": "Series cancelled ({count} weeks). {amount} AED refunded to your card.",
+        "series_count_chip": "{remaining}/{total} upcoming",
+        "series_next_card": "Next: {date}",
+        "series_total_card": "{count} weeks · {total} {currency} total"
     },
     "booking_detail": {
         "confirmed_heading": "Booking Confirmed",
