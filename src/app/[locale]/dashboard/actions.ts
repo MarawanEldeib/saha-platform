@@ -9,7 +9,6 @@ import { capWalletCredit, computeCheckoutAmounts } from "@/lib/booking-pricing";
 import { rateLimit } from "@/lib/rate-limit";
 import { facilityUpdateSchema, profileUpdateSchema, courtSchema, type CourtInput, availabilitySlotSchema, facilityHoursSchema } from "@/lib/validations";
 import { sanitizeTextInput } from "@/lib/utils";
-import { sanitizeEventTags } from "@/lib/event-tags";
 import { geocodeAddress } from "@/lib/geocoding";
 import { bookCourtCore } from "@/lib/booking-flow";
 import type { Database } from "@/types/database";
@@ -27,6 +26,12 @@ import {
 
 type FacilityUpdate = Database["public"]["Tables"]["facilities"]["Update"];
 type FacilityInsert = Database["public"]["Tables"]["facility_sports"]["Insert"];
+
+// SAH-156: incrementally splitting this god module by domain.
+// First out: owner-facing event lifecycle → dashboard/actions/events.ts.
+// Callers (NewEventForm, OwnerEventCard) import from the new path
+// directly. Re-exports through `"use server"` files don't work with
+// Turbopack, so this barrel intentionally stays slim.
 
 // ---------------------------------------------------------------------------
 // Facility selection: set the cookie that scopes dashboard pages to a
@@ -169,138 +174,6 @@ export async function updateFacilitySportsAction(facilityId: string, sportIds: n
     }
 
     revalidatePath(`/${locale}/dashboard/facility`);
-    return { success: true };
-}
-
-// ---------------------------------------------------------------------------
-// Events: submit a new event
-// ---------------------------------------------------------------------------
-export async function submitEventAction(formData: FormData) {
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return { error: await tr("common.not_authenticated") };
-
-    const name = (formData.get("name") as string)?.trim();
-    const description = (formData.get("description") as string)?.trim();
-    const eventDate = formData.get("event_date") as string;
-    const facilityId = formData.get("facility_id") as string;
-    const tags = sanitizeEventTags(formData.getAll("tags"));
-
-    if (!name || name.length < 3) return { error: await tr("events.name_too_short") };
-    if (!eventDate) return { error: await tr("events.date_required") };
-    if (!facilityId) return { error: await tr("common.no_facility_onboard") };
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { error } = await (supabase as any).from("events").insert({
-        facility_id: facilityId,
-        submitted_by: user.id,
-        name,
-        description: description || null,
-        event_date: eventDate,
-        status: "pending",
-        tags,
-    });
-
-    if (error) return { error: error.message };
-    return { success: true };
-}
-
-// ---------------------------------------------------------------------------
-// Events: update an existing event (SAH-123).
-// Owner can correct typos / change date. Resets status to 'pending' so the
-// edited content goes through admin review again — otherwise an owner could
-// approve a clean draft and swap content past review. Apply sanitizeTextInput
-// the same way updateFacilityAction does (SAH-120).
-// ---------------------------------------------------------------------------
-export async function updateEventAction(
-    eventId: string,
-    raw: { name: string; description: string; event_date: string },
-) {
-    const supabase = await createClient();
-    const locale = await getLocale();
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return { error: await tr("common.not_authenticated") };
-
-    const name = sanitizeTextInput(raw.name ?? "");
-    const description = sanitizeTextInput(raw.description ?? "");
-    const eventDate = raw.event_date;
-
-    if (!name || name.length < 3) return { error: await tr("events.name_too_short") };
-    if (!eventDate) return { error: await tr("events.date_required") };
-
-    // Ownership check: the event must belong to a facility owned by the caller.
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: existing } = await (supabase as any)
-        .from("events")
-        .select("id, facility_id, status, facilities!inner(owner_id)")
-        .eq("id", eventId)
-        .single();
-    if (!existing) return { error: await tr("events.not_found") };
-    if (existing.facilities?.owner_id !== user.id) return { error: await tr("common.access_denied") };
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { error } = await (supabase as any)
-        .from("events")
-        .update({
-            name,
-            description: description || null,
-            event_date: eventDate,
-            status: "pending", // re-review after any content change
-        })
-        .eq("id", eventId);
-
-    if (error) return { error: error.message };
-
-    await logAuditEvent({
-        actorId: user.id,
-        actorRole: "business",
-        action: "event.update",
-        targetType: "event",
-        targetId: eventId,
-        metadata: { facility_id: existing.facility_id, previous_status: existing.status },
-    });
-
-    revalidatePath(`/${locale}/dashboard/events`);
-    return { success: true };
-}
-
-// ---------------------------------------------------------------------------
-// Events: delete (SAH-123). Hard delete; owner-scoped. Audit log captures
-// what was removed in case we need to reverse-engineer a complaint.
-// ---------------------------------------------------------------------------
-export async function deleteEventAction(eventId: string) {
-    const supabase = await createClient();
-    const locale = await getLocale();
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return { error: await tr("common.not_authenticated") };
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: existing } = await (supabase as any)
-        .from("events")
-        .select("id, name, facility_id, status, facilities!inner(owner_id)")
-        .eq("id", eventId)
-        .single();
-    if (!existing) return { error: await tr("events.not_found") };
-    if (existing.facilities?.owner_id !== user.id) return { error: await tr("common.access_denied") };
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { error } = await (supabase as any)
-        .from("events")
-        .delete()
-        .eq("id", eventId);
-
-    if (error) return { error: error.message };
-
-    await logAuditEvent({
-        actorId: user.id,
-        actorRole: "business",
-        action: "event.delete",
-        targetType: "event",
-        targetId: eventId,
-        metadata: { facility_id: existing.facility_id, name: existing.name, status: existing.status },
-    });
-
-    revalidatePath(`/${locale}/dashboard/events`);
     return { success: true };
 }
 
