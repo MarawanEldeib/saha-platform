@@ -98,6 +98,7 @@ export function FacilityEditForm({
         handleSubmit,
         getValues,
         setValue,
+        watch,
         formState: { errors },
     } = useForm<FacilityUpdateInput>({
         resolver: zodResolver(facilityUpdateSchema),
@@ -120,8 +121,10 @@ export function FacilityEditForm({
     const [aiPending, setAiPending] = React.useState(false);
     const [aiHidden, setAiHidden] = React.useState(false);
     const [aiError, setAiError] = React.useState<string | null>(null);
+    const [aiSuccess, setAiSuccess] = React.useState(false);
     async function generateDescription() {
         setAiError(null);
+        setAiSuccess(false);
         setAiPending(true);
         try {
             const sportNames = sportIds
@@ -135,7 +138,10 @@ export function FacilityEditForm({
                 city,
             });
             if ("notConfigured" in result && result.notConfigured) {
-                setAiHidden(true);
+                // SAH-40 bounce-back: don't silently hide. bzo saw "button
+                // disappears and nothing happens" because the prod env doesn't
+                // have ANTHROPIC_API_KEY. Surface an explicit message instead.
+                setAiError("AI generator isn't enabled on this deployment. Write a description manually for now.");
                 return;
             }
             if ("error" in result && result.error) {
@@ -144,6 +150,7 @@ export function FacilityEditForm({
             }
             if ("description" in result && result.description) {
                 setValue("description", result.description, { shouldValidate: true, shouldDirty: true });
+                setAiSuccess(true);
             }
         } finally {
             setAiPending(false);
@@ -228,6 +235,11 @@ export function FacilityEditForm({
                                     {aiPending ? "Generating…" : "Generate with AI"}
                                 </button>
                                 {aiError && <span className="text-xs text-red-500">{aiError}</span>}
+                                {aiSuccess && !aiError && (
+                                    <span className="text-xs text-emerald-600 dark:text-emerald-400 inline-flex items-center gap-1">
+                                        <CheckCircle className="h-3 w-3" /> Description generated — edit if you&apos;d like.
+                                    </span>
+                                )}
                             </div>
                         )}
                     </div>
@@ -247,24 +259,22 @@ export function FacilityEditForm({
                 <div className="mt-6 pt-6 border-t border-gray-100 dark:border-gray-800">
                     <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-1">{t("prayer_section")}</h3>
                     <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">{t("prayer_hint")}</p>
-                    <div className="space-y-2">
-                        <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300 cursor-pointer">
-                            <input
-                                type="checkbox"
-                                className="h-4 w-4 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500"
-                                {...register("has_prayer_room")}
-                            />
-                            {t("has_prayer_room")}
-                        </label>
-                        <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300 cursor-pointer">
-                            <input
-                                type="checkbox"
-                                className="h-4 w-4 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500"
-                                {...register("has_wudu_area")}
-                            />
-                            {t("has_wudu_area")}
-                        </label>
-                    </div>
+                    {/* SAH-111 bounce-back: bzo asked for a single "Prayer-friendly"
+                        checkbox instead of two. Both DB columns are still updated
+                        in lockstep so existing reads (facility profile badge, map
+                        filter) keep working without a schema change. */}
+                    <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300 cursor-pointer">
+                        <input
+                            type="checkbox"
+                            className="h-4 w-4 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500"
+                            checked={watch("has_prayer_room") ?? false}
+                            onChange={(e) => {
+                                setValue("has_prayer_room", e.target.checked, { shouldDirty: true });
+                                setValue("has_wudu_area", e.target.checked, { shouldDirty: true });
+                            }}
+                        />
+                        {t("prayer_friendly_label")}
+                    </label>
                 </div>
             </div>
 
@@ -353,11 +363,20 @@ export function FacilityEditForm({
 
             {/* Single sticky save bar */}
             <div className="sticky bottom-4 z-10 bg-white/95 dark:bg-gray-900/95 backdrop-blur border border-gray-200 dark:border-gray-800 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center gap-3 shadow-sm">
-                <div className="flex-1 min-w-0">
+                <div className="flex-1 min-w-0 space-y-1">
                     {serverError && (
                         <p className="text-sm text-red-500" role="alert">{serverError}</p>
                     )}
-                    {saved && !serverError && (
+                    {/* SAH-111 bounce-back: surface form-level validation errors
+                        so the save button can't appear "broken" when there's an
+                        invalid value above the fold. */}
+                    {Object.keys(errors).length > 0 && !serverError && (
+                        <p className="text-sm text-red-500" role="alert">
+                            Please fix the highlighted fields above before saving
+                            ({Object.keys(errors).join(", ")}).
+                        </p>
+                    )}
+                    {saved && !serverError && Object.keys(errors).length === 0 && (
                         <p className="text-sm text-emerald-600 flex items-center gap-1">
                             <CheckCircle className="h-4 w-4" /> {t("saved")}
                         </p>

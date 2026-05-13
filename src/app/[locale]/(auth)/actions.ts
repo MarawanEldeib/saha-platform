@@ -174,15 +174,35 @@ export async function forgotPasswordAction(formData: FormData): Promise<ForgotPa
         return { ok: false, code: "error", message: "Could not generate reset link." };
     }
 
-    // Fire-and-forget so the user-facing response stays snappy. Failures
-    // are logged but not surfaced — Resend is reliable enough that we
-    // don't gate the UX on it.
-    void sendPasswordResetEmail({
+    // SAH-133 bounce-back: bzo reported "not receiving the reset email".
+    // The previous fire-and-forget pattern silently swallowed Resend errors
+    // (unverified domain, missing API key, throttling), so the action
+    // returned ok:sent while no email actually went out. Await + surface
+    // specific errors so deployment misconfig is visible immediately.
+    if (!process.env.RESEND_API_KEY) {
+        console.error("[forgotPassword] RESEND_API_KEY is not set on this deployment");
+        return {
+            ok: false,
+            code: "error",
+            message: "Email delivery isn't configured on this deployment. Add RESEND_API_KEY to the environment.",
+        };
+    }
+
+    const sendResult = await sendPasswordResetEmail({
         recipientEmail,
         recipientName,
         recoveryUrl,
         locale,
     });
+
+    if (!sendResult.success) {
+        console.error("[forgotPassword] Resend send failed:", sendResult.error);
+        return {
+            ok: false,
+            code: "error",
+            message: sendResult.error ?? "Could not send the reset email. Please try again later.",
+        };
+    }
 
     return { ok: true, code: "sent" };
 }

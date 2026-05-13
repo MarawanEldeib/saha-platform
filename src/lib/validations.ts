@@ -74,13 +74,16 @@ export const facilitySchema = z.object({
 export type FacilityInput = z.infer<typeof facilitySchema>;
 
 export const facilityUpdateSchema = z.object({
-    name: z.string().min(2),
-    description: z.string().min(20),
-    address: z.string().min(5),
-    city: z.string().min(2),
-    postal_code: z.string().min(4),
+    name: z.string().min(2, "Facility name must be at least 2 characters"),
+    description: z.string().min(20, "Description must be at least 20 characters"),
+    address: z.string().min(5, "Address must be at least 5 characters"),
+    city: z.string().min(2, "City is required"),
+    // SAH-111 bounce-back: postal codes aren't required in UAE — many
+    // facilities legitimately have no postal_code on file. Make optional
+    // so the save button can't silently fail on an empty value.
+    postal_code: z.string().optional().or(z.literal("")),
     phone: z.string().optional(),
-    website: z.string().url().optional().or(z.literal("")),
+    website: z.string().url("Enter a valid website URL").optional().or(z.literal("")),
     // SAH-90: UAE Tax Registration Number, 15 digits per FTA spec.
     trn: z.string().regex(/^\d{15}$/, "TRN must be 15 digits").optional().or(z.literal("")),
     // SAH-143: prayer-friendly amenity flags. Optional booleans (default false).
