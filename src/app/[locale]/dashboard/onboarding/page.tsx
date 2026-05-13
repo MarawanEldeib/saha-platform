@@ -42,7 +42,10 @@ export default function OnboardingPage() {
                 .filter(Boolean) as string[];
             const result = await generateOnboardingDescriptionAction(facilityId, sportNames);
             if ("notConfigured" in result && result.notConfigured) {
-                setAiHidden(true);
+                // SAH-40 bounce-back: don't silently hide the button. bzo
+                // reported "button disappears, nothing happens" when AI isn't
+                // configured. Show explicit copy instead.
+                setAiError("AI generator isn't enabled on this deployment. Write a description manually for now.");
                 return;
             }
             if ("error" in result && result.error) {
@@ -254,9 +257,15 @@ export default function OnboardingPage() {
                                 </button>
                             </div>
                             {aiDescription && (
-                                <div className="rounded-lg bg-white dark:bg-gray-900 border border-emerald-200 dark:border-emerald-900/40 px-3 py-2 text-sm text-gray-800 dark:text-gray-200">
-                                    {aiDescription}
-                                </div>
+                                <>
+                                    <div className="rounded-lg bg-white dark:bg-gray-900 border border-emerald-200 dark:border-emerald-900/40 px-3 py-2 text-sm text-gray-800 dark:text-gray-200">
+                                        {aiDescription}
+                                    </div>
+                                    <p className="text-xs text-emerald-700 dark:text-emerald-300 inline-flex items-center gap-1">
+                                        <CheckCircle className="h-3 w-3" />
+                                        Saved to your facility — you can edit it later from your dashboard.
+                                    </p>
+                                </>
                             )}
                             {aiError && (
                                 <p className="text-xs text-red-500" role="alert">{aiError}</p>

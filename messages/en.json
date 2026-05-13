@@ -888,6 +888,7 @@
         "prayer_hint": "Help Muslim players plan around prayer times. Shown as a \"Prayer-friendly\" badge on your facility profile and search results.",
         "has_prayer_room": "Has a prayer room",
         "has_wudu_area": "Has a wudu (ablution) area",
+        "prayer_friendly_label": "Prayer-friendly (has a prayer room and/or wudu area)",
         "prayer_friendly_badge": "🕌 Prayer-friendly"
     },
     "hours_form": {

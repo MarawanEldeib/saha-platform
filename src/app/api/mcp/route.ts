@@ -122,4 +122,78 @@ async function rateLimited(...args: Parameters<typeof handler>): Promise<Respons
     return handler(...args);
 }
 
-export { rateLimited as GET, rateLimited as POST, rateLimited as DELETE };
+// SAH-37 bounce-back: bzo opened the endpoint in a browser and got back
+// `{"jsonrpc":"2.0","error":{...},"id":null}`. The MCP Streamable HTTP
+// transport uses GET only for server-initiated SSE streams (requires
+// `Accept: text/event-stream` + an active session). A bare browser GET
+// is not a valid MCP call, but returning a JSON-RPC error reads as a
+// broken service. Detect "browser-like" GETs and serve a status page
+// instead; real MCP GETs (with the streaming Accept header) still pass
+// through to the handler.
+function isBrowserGet(req: Request): boolean {
+    const accept = req.headers.get("accept") ?? "";
+    return !accept.includes("text/event-stream");
+}
+
+function statusPageResponse(): Response {
+    const html = `<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Saha MCP Server</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; max-width: 720px; margin: 40px auto; padding: 0 16px; color: #111; }
+    h1 { margin: 0 0 4px; font-size: 24px; }
+    .ok { color: #059669; font-weight: 600; font-size: 14px; }
+    p { line-height: 1.5; color: #374151; }
+    code { background: #f3f4f6; padding: 2px 6px; border-radius: 4px; font-size: 13px; }
+    pre { background: #111827; color: #e5e7eb; padding: 16px; border-radius: 10px; overflow-x: auto; font-size: 13px; line-height: 1.5; }
+    ul { padding-left: 20px; line-height: 1.7; }
+    a { color: #059669; }
+    .small { font-size: 13px; color: #6b7280; }
+  </style>
+</head>
+<body>
+  <p class="ok">● Saha MCP server is live</p>
+  <h1>Model Context Protocol endpoint</h1>
+  <p>
+    This URL is not a regular web page — it's a Model Context Protocol server
+    designed to be consumed by AI assistants (Claude Desktop, Cursor, Cline, etc.)
+    over JSON-RPC. Hitting it in a browser shows this status page; clients connect
+    via the Streamable HTTP transport (POST + optional SSE).
+  </p>
+
+  <h2>Available tools</h2>
+  <ul>
+    <li><code>search_facilities</code> — sport / city / geo radius filters</li>
+    <li><code>get_facility</code> — by UUID or slug</li>
+    <li><code>get_availability</code> — open slots on a given date</li>
+  </ul>
+
+  <h2>Connect from Claude Desktop</h2>
+  <pre>{
+  "mcpServers": {
+    "saha": { "url": "${API_BASE}/api/mcp" }
+  }
+}</pre>
+  <p class="small">Add to <code>claude_desktop_config.json</code> and restart Claude. Then try:
+  <em>"Find a tennis court in Dubai"</em>.</p>
+
+  <p class="small">Setup walkthrough: <a href="https://github.com/MarawanEldeib/saha/blob/master/docs/MCP.md">docs/MCP.md</a></p>
+</body>
+</html>`;
+    return new Response(html, {
+        status: 200,
+        headers: { "Content-Type": "text/html; charset=utf-8" },
+    });
+}
+
+async function getRoute(req: Request): Promise<Response> {
+    if (isBrowserGet(req)) {
+        return statusPageResponse();
+    }
+    return rateLimited(req as Parameters<typeof handler>[0]);
+}
+
+export { getRoute as GET, rateLimited as POST, rateLimited as DELETE };
