@@ -89,9 +89,9 @@ export default async function ShariahPage() {
                             <p>
                                 هذه الصفحة ليست شهادة رسمية من هيئة شرعية. إذا كنت
                                 باحثاً شرعياً أو ممثلاً لهيئة وتودّ مراجعة أعمالنا،
-                                نُرحّب بذلك. تواصل معنا على{" "}
-                                <a href="mailto:hello@saha.ae" className="text-emerald-600 dark:text-emerald-400 hover:underline">
-                                    hello@saha.ae
+                                نُرحّب بذلك. تواصل معنا عبر{" "}
+                                <a href={`/${locale}/help`} className="text-emerald-600 dark:text-emerald-400 hover:underline">
+                                    مركز المساعدة
                                 </a>
                                 .
                             </p>
@@ -179,9 +179,9 @@ export default async function ShariahPage() {
                             <p>
                                 This page is not a formal certification from a Shariah
                                 board. If you are a scholar or represent a board and
-                                would like to review our flows, we welcome it. Contact{" "}
-                                <a href="mailto:hello@saha.ae" className="text-emerald-600 dark:text-emerald-400 hover:underline">
-                                    hello@saha.ae
+                                would like to review our flows, we welcome it. Reach us through the{" "}
+                                <a href={`/${locale}/help`} className="text-emerald-600 dark:text-emerald-400 hover:underline">
+                                    help center
                                 </a>
                                 .
                             </p>

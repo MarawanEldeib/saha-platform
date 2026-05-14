@@ -4,7 +4,7 @@
  * VAPID keys live in env vars:
  *   NEXT_PUBLIC_VAPID_PUBLIC_KEY  — browser uses to subscribe
  *   VAPID_PRIVATE_KEY             — server uses to sign push payloads
- *   VAPID_SUBJECT                 — mailto: URL or HTTPS URL (defaults to mailto:hello@saha.ae)
+ *   VAPID_SUBJECT                 — mailto: URL or HTTPS URL (defaults to https://sahasports.vercel.app)
  *
  * Generate a fresh VAPID keypair locally with:
  *   npx web-push generate-vapid-keys --json
@@ -27,7 +27,7 @@ function configure(): boolean {
         }
         return false;
     }
-    const subject = process.env.VAPID_SUBJECT ?? "mailto:hello@saha.ae";
+    const subject = process.env.VAPID_SUBJECT ?? "https://sahasports.vercel.app";
     webpush.setVapidDetails(subject, publicKey, privateKey);
     configured = true;
     return true;

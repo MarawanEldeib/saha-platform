@@ -40,7 +40,7 @@ export default async function TermsPage() {
                         </section>
                         <section>
                             <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-3">٧. التواصل</h2>
-                            <p>لأي استفسارات حول هذه الشروط، تواصل معنا على <a href="mailto:hello@saha.ae" className="text-emerald-600 dark:text-emerald-400 hover:underline">hello@saha.ae</a>.</p>
+                            <p>لأي استفسارات حول هذه الشروط، تواصل معنا عبر <a href={`/${locale}/help`} className="text-emerald-600 dark:text-emerald-400 hover:underline">مركز المساعدة</a>.</p>
                         </section>
                         <p className="text-sm text-gray-500 dark:text-gray-500 pt-4 border-t border-gray-200 dark:border-gray-800">آخر تحديث: مايو ٢٠٢٦</p>
                     </>
@@ -72,7 +72,7 @@ export default async function TermsPage() {
                         </section>
                         <section>
                             <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-3">7. Contact</h2>
-                            <p>Questions about these terms? Contact us at <a href="mailto:hello@saha.ae" className="text-emerald-600 dark:text-emerald-400 hover:underline">hello@saha.ae</a>.</p>
+                            <p>Questions about these terms? Reach us through the <a href={`/${locale}/help`} className="text-emerald-600 dark:text-emerald-400 hover:underline">help center</a>.</p>
                         </section>
                         <p className="text-sm text-gray-500 dark:text-gray-500 pt-4 border-t border-gray-200 dark:border-gray-800">Last updated: May 2026</p>
                     </>

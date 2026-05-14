@@ -18,7 +18,7 @@
 
 - Primary: [sahasports.vercel.app](https://sahasports.vercel.app)
 - Legacy alias (307 → primary): `saha-platform.vercel.app`
-- Custom domain `saha.ae` planned — not yet attached.
+- No custom domain yet (we do not own one).
 
 ## First Deploy to Vercel
 

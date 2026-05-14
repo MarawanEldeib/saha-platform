@@ -1104,7 +1104,7 @@
                 },
                 "delete_account": {
                     "q": "Can I delete my account?",
-                    "a": "Yes. Email hello@saha.ae from your registered address. We delete your profile, bookings history, and personal data within 30 days as required by UAE PDPL."
+                    "a": "Yes. Submit a deletion request through the help center from your registered account. We delete your profile, bookings history, and personal data within 30 days as required by UAE PDPL."
                 },
                 "phone_verification": {
                     "q": "Why do I need to verify my phone via WhatsApp?",
@@ -1162,7 +1162,7 @@
                 },
                 "data_export": {
                     "q": "Can I export my data?",
-                    "a": "Yes. Email hello@saha.ae and we'll send a JSON export of your profile and booking history within 30 days as required by UAE PDPL."
+                    "a": "Yes. Submit a data-export request through the help center and we'll send a JSON export of your profile and booking history within 30 days as required by UAE PDPL."
                 }
             }
         }

@@ -169,7 +169,7 @@ export function InvoiceDocument(props: InvoicePdfData): React.ReactElement {
                     </View>
                     <View style={{ alignItems: "flex-end" }}>
                         <Text style={styles.brandName}>{BRAND_NAME}</Text>
-                        <Text style={{ fontSize: 9, color: "#6b7280" }}>saha.ae</Text>
+                        <Text style={{ fontSize: 9, color: "#6b7280" }}>sahasports.vercel.app</Text>
                     </View>
                 </View>
 

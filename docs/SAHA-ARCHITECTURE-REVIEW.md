@@ -370,7 +370,7 @@ Decide: ship the half-feature properly or remove the table to reduce surface are
 | 4 | **Verified booking → review pipeline** | Kills fake-review risk; differentiates from Google Maps reviews. | 4 hours |
 | 5 | **Recurring bookings ("every Tuesday 8pm for 4 weeks")** | The #1 booking-tool feature for league players. Doubles bookings/user. | 3 days |
 | 6 | **Booking modifications** (player can move slot if both old + new are free, owner-allowed) | Reduces refunds + saves slot revenue. | 2 days |
-| 7 | **Branded booking pages per facility** (`/saha.ae/just-padel-jbr` style direct links) | Owners share to their Instagram → free user acquisition. | 1 day |
+| 7 | **Branded booking pages per facility** (`/facilities/just-padel-jbr` style direct links) | Owners share to their Instagram → free user acquisition. | 1 day |
 | 8 | **WhatsApp OTP for phone verification (Twilio Verify)** | Closes the WhatsApp-hijack hole. | 0.5 day |
 | 9 | **Group booking + cost-split via Stripe Payment Links per guest** | Real implementation of the half-built `booking_guests`. | 3 days |
 | 10 | **Loyalty / wallet credit** (10 bookings → 1 free hour) | Retention. Builds owner stickiness. | 2 days |
