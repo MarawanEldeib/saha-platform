@@ -77,11 +77,13 @@ export default async function AdminSettingsPage() {
                         </>
                     ) : (
                         <>
-                            <ShieldAlert className="h-5 w-5 text-red-500 shrink-0 mt-0.5" />
+                            <ShieldAlert className="h-5 w-5 text-amber-500 shrink-0 mt-0.5" />
                             <div className="text-sm">
-                                <div className="font-medium text-gray-900 dark:text-white">No second factor enrolled</div>
+                                <div className="font-medium text-gray-900 dark:text-white">No second factor enrolled (optional)</div>
                                 <div className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                                    Required for admin role. Mutating actions will be rejected until you finish enrolment.
+                                    You can browse admin pages without 2FA, but mutating actions
+                                    (approve / ban / refund / edit settings) require an aal2 session.
+                                    Enrol when you&apos;re ready.
                                 </div>
                             </div>
                         </>

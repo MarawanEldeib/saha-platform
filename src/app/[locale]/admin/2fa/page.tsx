@@ -48,8 +48,8 @@ export default async function AdminTwoFactorPage({
                 </h1>
                 <p className="text-sm text-gray-500 dark:text-gray-400">
                     {hasVerifiedFactor
-                        ? "Enter the 6-digit code from your authenticator app to continue to the admin panel."
-                        : "Admin accounts require TOTP. Scan the QR with Google Authenticator, 1Password, or any compatible app."}
+                        ? "Enter the 6-digit code from your authenticator app to lift this session to aal2 and unlock mutating actions."
+                        : "Optional but recommended. Scan the QR with Google Authenticator, 1Password, iCloud Keychain, or any compatible app. Once enrolled, you'll be asked for a 6-digit code each session before approving / banning / refunding."}
                 </p>
             </div>
 

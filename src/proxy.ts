@@ -133,28 +133,14 @@ export async function proxy(request: NextRequest) {
         return redirect;
     }
 
-    // SAH-80: admins must reach aal2 to enter /admin. The /admin/2fa route
-    // is excluded so the challenge/enrolment UI itself stays reachable on
-    // aal1 sessions.
-    //
-    // Three states from getAuthenticatorAssuranceLevel():
-    //   currentLevel=aal1 / nextLevel=aal2 → factor enrolled, not challenged → bounce to /admin/2fa challenge
-    //   currentLevel=aal1 / nextLevel=aal1 → NO factor enrolled at all      → bounce to /admin/2fa enrolment
-    //   currentLevel=aal2                  → fully authenticated             → pass through
-    if (
-        role === "admin" &&
-        matchesAny(pathname, ADMIN_ONLY) &&
-        !pathname.includes("/admin/2fa")
-    ) {
-        const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
-        if (aal && aal.currentLevel !== "aal2") {
-            const challengeUrl = new URL(`/${locale}/admin/2fa`, request.url);
-            challengeUrl.searchParams.set("next", pathname);
-            const redirect = NextResponse.redirect(challengeUrl);
-            attachCspHeaders(redirect, nonce, csp);
-            return redirect;
-        }
-    }
+    // SAH-80 bounce-back: admin 2FA is now OPT-IN, not forced at the door.
+    // bzo's complaint: "the admin should activate it in the setting not you
+    // force him by not letting him enter anywhere or have access till he
+    // activate it." Admins can browse /admin pages freely at aal1; the
+    // `/admin/settings` 2FA card surfaces the enrolment UI when they're
+    // ready. The safety net stays at the action layer — `assertAdmin()`
+    // still requires aal2 for every mutating server action, so a
+    // never-enrolled admin can read but cannot approve/ban/edit.
 
     if (matchesAny(pathname, BUSINESS_OR_ADMIN) && role !== "business" && role !== "admin") {
         const redirect = NextResponse.redirect(new URL(`/${locale}`, request.url));
