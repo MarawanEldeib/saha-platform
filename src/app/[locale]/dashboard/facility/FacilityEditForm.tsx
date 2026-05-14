@@ -8,11 +8,10 @@ import {
     updateFacilityAction,
     updateFacilitySportsAction,
     saveFacilityHoursAction,
-    generateFacilityDescriptionAction,
 } from "../actions";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
-import { CheckCircle, Sparkles, Loader2 } from "lucide-react";
+import { CheckCircle } from "lucide-react";
 import { ImageUploader } from "@/components/facility/ImageUploader";
 import type { FacilityImage } from "@/types/database";
 import { useTranslations } from "next-intl";
@@ -96,7 +95,6 @@ export function FacilityEditForm({
     const {
         register,
         handleSubmit,
-        getValues,
         setValue,
         watch,
         formState: { errors },
@@ -115,47 +113,6 @@ export function FacilityEditForm({
             has_wudu_area: facility.has_wudu_area ?? false,
         },
     });
-
-    // SAH-40: AI description generator. Hidden when ANTHROPIC_API_KEY isn't
-    // configured (server returns notConfigured: true).
-    const [aiPending, setAiPending] = React.useState(false);
-    const [aiHidden, setAiHidden] = React.useState(false);
-    const [aiError, setAiError] = React.useState<string | null>(null);
-    const [aiSuccess, setAiSuccess] = React.useState(false);
-    async function generateDescription() {
-        setAiError(null);
-        setAiSuccess(false);
-        setAiPending(true);
-        try {
-            const sportNames = sportIds
-                .map((id) => allSports.find((s) => s.id === id)?.name)
-                .filter(Boolean) as string[];
-            const facilityName = getValues("name") || facility.name;
-            const city = getValues("city") || facility.city;
-            const result = await generateFacilityDescriptionAction({
-                facilityName,
-                sports: sportNames,
-                city,
-            });
-            if ("notConfigured" in result && result.notConfigured) {
-                // SAH-40 bounce-back: don't silently hide. bzo saw "button
-                // disappears and nothing happens" because the prod env doesn't
-                // have ANTHROPIC_API_KEY. Surface an explicit message instead.
-                setAiError("AI generator isn't enabled on this deployment. Write a description manually for now.");
-                return;
-            }
-            if ("error" in result && result.error) {
-                setAiError(result.error);
-                return;
-            }
-            if ("description" in result && result.description) {
-                setValue("description", result.description, { shouldValidate: true, shouldDirty: true });
-                setAiSuccess(true);
-            }
-        } finally {
-            setAiPending(false);
-        }
-    }
 
     function updateHourRow(index: number, patch: Partial<HourRow>) {
         setHours((prev) => prev.map((h, i) => (i === index ? { ...h, ...patch } : h)));
@@ -222,26 +179,6 @@ export function FacilityEditForm({
                             placeholder={t("description_placeholder")}
                         />
                         {errors.description && <p className="text-xs text-red-500 mt-1">{errors.description.message}</p>}
-                        {!aiHidden && (
-                            <div className="mt-2 flex items-center gap-2">
-                                <button
-                                    type="button"
-                                    onClick={generateDescription}
-                                    disabled={aiPending || sportIds.length === 0}
-                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/30 disabled:opacity-50 transition-colors"
-                                    title={sportIds.length === 0 ? "Pick at least one sport first" : ""}
-                                >
-                                    {aiPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
-                                    {aiPending ? "Generating…" : "Generate with AI"}
-                                </button>
-                                {aiError && <span className="text-xs text-red-500">{aiError}</span>}
-                                {aiSuccess && !aiError && (
-                                    <span className="text-xs text-emerald-600 dark:text-emerald-400 inline-flex items-center gap-1">
-                                        <CheckCircle className="h-3 w-3" /> Description generated — edit if you&apos;d like.
-                                    </span>
-                                )}
-                            </div>
-                        )}
                     </div>
                     <div>
                         <Input
