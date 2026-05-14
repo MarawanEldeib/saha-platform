@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { captureRouteError } from "@/lib/sentry-helpers";
+import { GET as runSkipClosedBookings } from "../skip-closed-bookings/route";
 
 const ROUTE = "cron/auto-complete-matches";
 
@@ -51,7 +52,21 @@ export async function GET(req: NextRequest) {
             }
             marked++;
         }
-        return NextResponse.json({ marked }, { status: 200 });
+
+        // SAH-91: chain the daily closed-bookings sweep. Vercel Hobby caps
+        // daily crons at one per path, so we piggyback on this nightly run
+        // instead of declaring a second cron entry. Either result is fine —
+        // log on failure but never block the matches cron's 200.
+        let skipClosed: { cancelled?: number; refunded?: number; notified?: number; failed?: number; error?: string } = {};
+        try {
+            const res = await runSkipClosedBookings(req);
+            skipClosed = await res.json();
+        } catch (err) {
+            captureRouteError(err, { route: ROUTE, extra: { phase: "chained_skip_closed_bookings" } });
+            skipClosed = { error: "skip_closed_bookings_failed" };
+        }
+
+        return NextResponse.json({ marked, skip_closed: skipClosed }, { status: 200 });
     } catch (err) {
         captureRouteError(err, { route: ROUTE });
         return NextResponse.json({ error: "auto_complete_failed" }, { status: 500 });
