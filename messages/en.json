@@ -78,19 +78,6 @@
         "view_list": "List",
         "prayer_friendly_filter": "Prayer-friendly only",
         "prayer_friendly_chip": "🕌 Prayer-friendly",
-        "ai_search": "AI search",
-        "ai_thinking": "Thinking…",
-        "ai_clear": "Clear AI filters",
-        "ai_time_morning": "morning",
-        "ai_time_afternoon": "afternoon",
-        "ai_time_evening": "evening",
-        "ai_day_mon": "Mon",
-        "ai_day_tue": "Tue",
-        "ai_day_wed": "Wed",
-        "ai_day_thu": "Thu",
-        "ai_day_fri": "Fri",
-        "ai_day_sat": "Sat",
-        "ai_day_sun": "Sun",
         "onboarding_tooltip": "Tap a facility on the map or in the list to see courts and book a slot.",
         "onboarding_dismiss": "Dismiss tip"
     },
@@ -458,11 +445,7 @@
             "success_desc": "Our team will review your facility within 2 business days and get in touch with you.",
             "go_dashboard": "Go to Dashboard",
             "next": "Next",
-            "back": "Back",
-            "ai_heading": "Need help writing a description?",
-            "ai_hint": "Let AI draft a short description from your facility name, sports, and city. You can edit it later.",
-            "ai_generate": "Generate with AI",
-            "ai_generating": "Generating…"
+            "back": "Back"
         },
         "facility": {
             "title": "Manage Facility",
@@ -1320,15 +1303,6 @@
             "invalid_credentials": "Invalid email or password.",
             "email_in_use": "This email is already in use.",
             "invalid_role": "Invalid role."
-        },
-        "ai": {
-            "missing_inputs": "Need facility name, at least one sport, and city",
-            "needs_sport": "Pick at least one sport first",
-            "generation_failed": "Could not generate a description right now.",
-            "save_failed": "Could not save the description.",
-            "query_too_short": "Query is too short",
-            "parse_failed": "Could not parse query",
-            "unavailable": "Search assistant is unavailable right now."
         },
         "admin": {
             "audit_reason_required": "Please provide a reason for the admin edit (required for the audit log).",

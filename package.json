@@ -16,7 +16,6 @@
     "env:pull": "vercel env pull .env.local --environment=development --yes"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.95.1",
     "@hookform/resolvers": "^5.2.2",
     "@modelcontextprotocol/sdk": "^1.26.0",
     "@radix-ui/react-avatar": "^1.1.11",
