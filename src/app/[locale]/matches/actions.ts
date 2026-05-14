@@ -269,6 +269,46 @@ export async function respondToJoinRequestAction(
         return { ok: false, error: await tr("matches.not_open") };
     }
 
+    // SAH-152 bounce-back: previously we updated the request status FIRST
+    // and then attempted the participant insert. The insert was silently
+    // failing under the old RLS policy (which required user_id = auth.uid),
+    // leaving the request marked 'accepted' but the requester never seated.
+    //
+    // New order on accept: insert participant FIRST. Only update the
+    // request once seating succeeds. If anything fails, the request stays
+    // 'pending' and the host can retry. RLS was also widened in migration
+    // 20260514150000 to allow the host to insert participant rows.
+    if (decision === "accepted") {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { count } = await (supabase as any)
+            .from("match_participants")
+            .select("*", { count: "exact", head: true })
+            .eq("match_id", request.match_id);
+        if ((count ?? 0) >= (match.capacity as number)) {
+            return { ok: false, error: await tr("matches.full") };
+        }
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { error: seatErr } = await (supabase as any)
+            .from("match_participants")
+            .insert({
+                match_id: request.match_id,
+                user_id: request.requester_user_id,
+                role: "player",
+            });
+        if (seatErr) {
+            // Duplicate-key (e.g. requester is already a participant from a
+            // prior accept) is benign — fall through to update the request.
+            if (seatErr.code !== "23505") {
+                captureRouteError(seatErr, {
+                    route: ROUTE, user_id: user.id,
+                    extra: { requestId, requester: request.requester_user_id },
+                });
+                return { ok: false, error: await tr("common.unexpected_error") };
+            }
+        }
+    }
+
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { error: updErr } = await (supabase as any)
         .from("match_join_requests")
@@ -277,27 +317,6 @@ export async function respondToJoinRequestAction(
     if (updErr) {
         captureRouteError(updErr, { route: ROUTE, user_id: user.id, extra: { requestId } });
         return { ok: false, error: await tr("common.unexpected_error") };
-    }
-
-    if (decision === "accepted") {
-        // Capacity gate then seat the requester. We accept the race: if
-        // capacity slipped between check and insert, RLS still permits the
-        // row and the host can kick later.
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const { count } = await (supabase as any)
-            .from("match_participants")
-            .select("*", { count: "exact", head: true })
-            .eq("match_id", request.match_id);
-        if ((count ?? 0) < (match.capacity as number)) {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            await (supabase as any)
-                .from("match_participants")
-                .insert({
-                    match_id: request.match_id,
-                    user_id: request.requester_user_id,
-                    role: "player",
-                });
-        }
     }
 
     revalidatePath(`/matches/${request.match_id}`);
