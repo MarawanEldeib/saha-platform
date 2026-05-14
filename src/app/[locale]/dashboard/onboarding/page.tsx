@@ -12,6 +12,7 @@ import { useRouter } from "next/navigation";
 import { CheckCircle, Building2 } from "lucide-react";
 import type { Database } from "@/types/database";
 import { setActiveFacilityAction } from "../actions";
+import { MapboxAddressInput } from "@/components/facility/MapboxAddressInput";
 
 type FacilitySportsInsert = Database["public"]["Tables"]["facility_sports"]["Insert"];
 
@@ -39,6 +40,7 @@ export default function OnboardingPage() {
     const {
         register,
         handleSubmit,
+        setValue,
         formState: { errors, isSubmitting },
     } = useForm<FacilityInput>({
         resolver: zodResolver(facilitySchema),
@@ -48,6 +50,11 @@ export default function OnboardingPage() {
         },
     });
 
+    // SAH-119: WKT set by the MapboxAddressInput picker. When the owner
+    // picks a suggestion we have lat/lng up front, no need for a fallback
+    // forward-geocode here.
+    const [pickerWkt, setPickerWkt] = React.useState<string | null>(null);
+
     // Step 1: Create facility record
     const submitStep1 = async (data: FacilityInput) => {
         setServerError(null);
@@ -55,22 +62,27 @@ export default function OnboardingPage() {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) { router.push(`/${locale}/login`); return; }
 
-        // Geocode the address so the facility appears on the map immediately
-        let locationWkt: string | null = null;
-        try {
-            const token = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
-            if (token) {
-                const query = encodeURIComponent(`${data.address}, ${data.city}, UAE`);
-                const res = await fetch(
-                    `https://api.mapbox.com/geocoding/v5/mapbox.places/${query}.json?access_token=${token}&limit=1&country=ae`
-                );
-                if (res.ok) {
-                    const json = await res.json() as { features?: { geometry?: { type: string; coordinates: [number, number] } }[] };
-                    const coords = json.features?.[0]?.geometry?.coordinates;
-                    if (coords) locationWkt = `POINT(${coords[0]} ${coords[1]})`;
+        // SAH-119 bounce-back: only fall back to a server-side forward geocode
+        // when the autocomplete picker didn't run (e.g. owner pasted the
+        // address without picking a suggestion). On failure we save without
+        // a location — admin approval gate will catch ghost rows.
+        let locationWkt: string | null = pickerWkt;
+        if (!locationWkt) {
+            try {
+                const token = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
+                if (token) {
+                    const query = encodeURIComponent(`${data.address}, ${data.city}, UAE`);
+                    const res = await fetch(
+                        `https://api.mapbox.com/geocoding/v5/mapbox.places/${query}.json?access_token=${token}&limit=1&country=ae`
+                    );
+                    if (res.ok) {
+                        const json = await res.json() as { features?: { geometry?: { type: string; coordinates: [number, number] } }[] };
+                        const coords = json.features?.[0]?.geometry?.coordinates;
+                        if (coords) locationWkt = `POINT(${coords[0]} ${coords[1]})`;
+                    }
                 }
-            }
-        } catch { /* Geocoding failure is non-fatal */ }
+            } catch { /* Geocoding failure is non-fatal; save without location. */ }
+        }
 
         const { data: facility, error } = await supabase
             .from("facilities")
@@ -146,11 +158,22 @@ export default function OnboardingPage() {
                     </div>
                     <form onSubmit={handleSubmit(submitStep1)} className="space-y-4">
                         <Input label="Facility Name *" error={errors.name?.message} {...register("name")} />
-                        <Input label="Street Address *" error={errors.address?.message} {...register("address")} />
-                        <div className="grid grid-cols-2 gap-4">
-                            <Input label="City *" error={errors.city?.message} {...register("city")} />
-                            <Input label="Postal Code" {...register("postal_code")} />
-                        </div>
+                        {/* SAH-119: autocomplete address picker. Picks lat/lng
+                            up-front so we skip the legacy fallback geocode. */}
+                        <MapboxAddressInput
+                            onAddressChange={(v) => setValue("address", v, { shouldValidate: true })}
+                            onCityChange={(v) => setValue("city", v, { shouldValidate: true })}
+                            onSelect={(sel) => {
+                                setValue("address", sel.address, { shouldValidate: true });
+                                setValue("city", sel.city, { shouldValidate: true });
+                                setPickerWkt(sel.wkt);
+                            }}
+                            addressError={errors.address?.message}
+                            cityError={errors.city?.message}
+                        />
+                        <input type="hidden" {...register("address")} />
+                        <input type="hidden" {...register("city")} />
+                        <Input label="Postal Code" {...register("postal_code")} />
                         <Textarea label="Description" rows={3} {...register("description")} />
                         <div className="grid grid-cols-2 gap-4">
                             <Input label="Phone" type="tel" {...register("phone")} />
