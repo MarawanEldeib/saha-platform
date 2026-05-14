@@ -32,11 +32,11 @@ export default async function PrivacyPage() {
                         </section>
                         <section>
                             <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-3">٥. حقوقك</h2>
-                            <p>يمكنك في أي وقت طلب الاطلاع على بياناتك الشخصية أو تصحيحها أو حذفها عبر التواصل معنا على <a href="mailto:hello@saha.ae" className="text-emerald-600 dark:text-emerald-400 hover:underline">hello@saha.ae</a>.</p>
+                            <p>يمكنك في أي وقت طلب الاطلاع على بياناتك الشخصية أو تصحيحها أو حذفها عبر <a href={`/${locale}/help`} className="text-emerald-600 dark:text-emerald-400 hover:underline">مركز المساعدة</a>.</p>
                         </section>
                         <section>
                             <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-3">٦. التواصل</h2>
-                            <p>لأي استفسارات تتعلق بالخصوصية، يُرجى التواصل معنا على <a href="mailto:hello@saha.ae" className="text-emerald-600 dark:text-emerald-400 hover:underline">hello@saha.ae</a>.</p>
+                            <p>لأي استفسارات تتعلق بالخصوصية، يُرجى التواصل عبر <a href={`/${locale}/help`} className="text-emerald-600 dark:text-emerald-400 hover:underline">مركز المساعدة</a>.</p>
                         </section>
                         <p className="text-sm text-gray-500 dark:text-gray-500 pt-4 border-t border-gray-200 dark:border-gray-800">آخر تحديث: مايو ٢٠٢٦</p>
                     </>
@@ -60,11 +60,11 @@ export default async function PrivacyPage() {
                         </section>
                         <section>
                             <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-3">5. Your Rights</h2>
-                            <p>You may request access to, correction of, or deletion of your personal data at any time by contacting us at <a href="mailto:hello@saha.ae" className="text-emerald-600 dark:text-emerald-400 hover:underline">hello@saha.ae</a>.</p>
+                            <p>You may request access to, correction of, or deletion of your personal data at any time through the <a href={`/${locale}/help`} className="text-emerald-600 dark:text-emerald-400 hover:underline">help center</a>.</p>
                         </section>
                         <section>
                             <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-3">6. Contact</h2>
-                            <p>For any privacy-related questions, please contact us at <a href="mailto:hello@saha.ae" className="text-emerald-600 dark:text-emerald-400 hover:underline">hello@saha.ae</a>.</p>
+                            <p>For any privacy-related questions, please reach us through the <a href={`/${locale}/help`} className="text-emerald-600 dark:text-emerald-400 hover:underline">help center</a>.</p>
                         </section>
                         <p className="text-sm text-gray-500 dark:text-gray-500 pt-4 border-t border-gray-200 dark:border-gray-800">Last updated: May 2026</p>
                     </>

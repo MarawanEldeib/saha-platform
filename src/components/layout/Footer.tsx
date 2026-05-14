@@ -71,10 +71,10 @@ export function Footer({ isLoggedIn = false, role = null }: { isLoggedIn?: boole
                 <div className="mt-10 pt-6 border-t border-gray-200 dark:border-gray-800 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-gray-500 dark:text-gray-500">
                     <p>{tf("copyright", { year })}</p>
                     <div className="flex items-center gap-4">
-                        <a href="mailto:hello@saha.ae" className="flex items-center gap-1 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors">
+                        <Link href={`/${locale}/help`} className="flex items-center gap-1 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors">
                             <Mail className="h-3.5 w-3.5" />
                             {tf("contact")}
-                        </a>
+                        </Link>
                     </div>
                 </div>
             </div>

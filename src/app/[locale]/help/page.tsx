@@ -31,13 +31,9 @@ export default async function HelpPage() {
                     {t("contact_body")}
                 </p>
                 <div className="flex flex-col sm:flex-row gap-3">
-                    <a
-                        href="mailto:hello@saha.ae"
-                        className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-gray-900 dark:bg-white text-white dark:text-gray-900 text-sm font-medium hover:opacity-90 transition-opacity"
-                    >
-                        <Mail className="h-4 w-4" />
-                        {t("contact_email")}
-                    </a>
+                    {/* Email contact removed — domain not owned yet. WhatsApp
+                        remains as the primary channel until a real address
+                        exists. */}
                     <a
                         href="https://wa.me/971501234567"
                         target="_blank"

@@ -43,7 +43,7 @@ export default async function CommunityGuidelinesPage() {
                         <section>
                             <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-3">٥. الإبلاغ والتطبيق</h2>
                             <p>إذا واجهت سلوكاً يخالف هذه الإرشادات، أبلغنا فوراً بالضغط على زر &quot;إبلاغ&quot; على الملف الشخصي أو المنشور أو المراجعة. يراجع المشرفون البلاغات يومياً ونتخذ إجراءات تتراوح بين التحذير وحظر الحساب الدائم بحسب خطورة المخالفة.</p>
-                            <p className="mt-2">للحالات الخطيرة (تهديد، تحرّش، محتوى غير قانوني)، تواصل معنا مباشرة على <a href="mailto:hello@saha.ae" className="text-emerald-600 dark:text-emerald-400 hover:underline">hello@saha.ae</a>.</p>
+                            <p className="mt-2">للحالات الخطيرة (تهديد، تحرّش، محتوى غير قانوني)، أبلغ مباشرة عبر <a href={`/${locale}/help`} className="text-emerald-600 dark:text-emerald-400 hover:underline">مركز المساعدة</a>.</p>
                         </section>
                         <section>
                             <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-3">٦. تحديث الإرشادات</h2>
@@ -78,7 +78,7 @@ export default async function CommunityGuidelinesPage() {
                         <section>
                             <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-3">5. Reporting and Enforcement</h2>
                             <p>If you encounter behavior that violates these guidelines, please report it using the &quot;Report&quot; button on the profile, post, or review. Moderators review reports daily and take action ranging from a warning to permanent account ban depending on severity.</p>
-                            <p className="mt-2">For serious cases (threats, harassment, illegal content), email us directly at <a href="mailto:hello@saha.ae" className="text-emerald-600 dark:text-emerald-400 hover:underline">hello@saha.ae</a>.</p>
+                            <p className="mt-2">For serious cases (threats, harassment, illegal content), report directly through the <a href={`/${locale}/help`} className="text-emerald-600 dark:text-emerald-400 hover:underline">help center</a>.</p>
                         </section>
                         <section>
                             <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-3">6. Updates to These Guidelines</h2>

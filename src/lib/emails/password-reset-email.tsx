@@ -1,7 +1,8 @@
 /**
  * SAH-133: Saha-branded password reset email.
  *
- * Sent via Resend, FROM `Saha <noreply@saha.ae>` — no Supabase branding.
+ * Sent via Resend, FROM the address in `FROM_ADDRESS` (env-overridable) —
+ * no Supabase branding.
  * The recovery URL is generated server-side using
  * `auth.admin.generateLink({ type: 'recovery' })` so Supabase never sends
  * its own email.

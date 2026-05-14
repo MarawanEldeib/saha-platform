@@ -21,7 +21,7 @@ export default async function ImprintPage() {
                         </section>
                         <section>
                             <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-3">التواصل</h2>
-                            <p>البريد الإلكتروني: <a href="mailto:hello@saha.ae" className="text-emerald-600 dark:text-emerald-400 hover:underline" dir="ltr">hello@saha.ae</a></p>
+                            <p>للتواصل: <a href={`/${locale}/help`} className="text-emerald-600 dark:text-emerald-400 hover:underline">مركز المساعدة</a></p>
                         </section>
                         <section>
                             <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-3">إخلاء المسؤولية</h2>
@@ -38,7 +38,7 @@ export default async function ImprintPage() {
                         </section>
                         <section>
                             <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-3">Contact</h2>
-                            <p>Email: <a href="mailto:hello@saha.ae" className="text-emerald-600 dark:text-emerald-400 hover:underline">hello@saha.ae</a></p>
+                            <p>Reach us through the <a href={`/${locale}/help`} className="text-emerald-600 dark:text-emerald-400 hover:underline">help center</a>.</p>
                         </section>
                         <section>
                             <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-3">Disclaimer</h2>

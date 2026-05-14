@@ -17,7 +17,6 @@ our quota from their own apps.
 2. Open the public token used by `NEXT_PUBLIC_MAPBOX_TOKEN`.
 3. Under **URL restrictions**, add:
    - `https://sahasports.vercel.app`
-   - `https://saha.ae` (when DNS lands)
    - `http://localhost:3000` (dev)
 4. Save. Mapbox will reject any request from any other origin within
    minutes.
