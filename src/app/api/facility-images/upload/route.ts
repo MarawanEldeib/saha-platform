@@ -118,7 +118,18 @@ export async function POST(req: NextRequest) {
             tags: { route: "facility-images/upload" },
             extra: { facility_id: facilityId, user_id: user.id, byte_length: buffer.byteLength },
         });
-        return NextResponse.json({ error: "Upload failed" }, { status: 500 });
+        // SAH-160 bounce-back: surface specific Supabase Storage failure
+        // reasons so the user can act on them ("file too large", "duplicate",
+        // permission), instead of a generic "Upload failed".
+        const reason = (uploadError as { message?: string; statusCode?: string | number }).message ?? "Upload failed";
+        const statusCode = Number((uploadError as { statusCode?: string | number }).statusCode ?? 500);
+        const friendly =
+            /duplicate|already exists/i.test(reason) ? "An image with that name already exists. Try renaming or use a different file." :
+            /payload too large|file size/i.test(reason) ? "File is too large for the storage bucket. Compress it or upload a smaller image." :
+            /mime type|content-?type|not allowed/i.test(reason) ? "File type isn't allowed by the storage bucket. Use JPEG, PNG, or WebP." :
+            /jwt|auth|permission|policy/i.test(reason) ? "Session expired or permission denied. Refresh and try again." :
+            reason;
+        return NextResponse.json({ error: `Upload failed: ${friendly}` }, { status: statusCode >= 400 && statusCode < 600 ? statusCode : 500 });
     }
 
     const displayOrder = Number.isFinite(Number(displayOrderRaw)) ? Number(displayOrderRaw) : 0;
@@ -141,7 +152,7 @@ export async function POST(req: NextRequest) {
             tags: { route: "facility-images/upload" },
             extra: { facility_id: facilityId, path },
         });
-        return NextResponse.json({ error: "Could not save image" }, { status: 500 });
+        return NextResponse.json({ error: `Could not save image: ${insertError.message}` }, { status: 500 });
     }
 
     return NextResponse.json({ id: inserted.id, storage_path: path });

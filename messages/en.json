@@ -947,9 +947,11 @@
         "or_browse": "or click to browse",
         "format_hint": "JPEG, PNG, WebP. Up to {max} images.",
         "size_hint": "Recommended: 1200x800 or larger",
+        "queued": "Queued",
         "uploading": "Uploading",
         "uploaded": "Uploaded",
-        "failed": "Failed"
+        "failed": "Failed",
+        "retry": "Retry"
     },
     "events_form": {
         "name_label": "Event name",
