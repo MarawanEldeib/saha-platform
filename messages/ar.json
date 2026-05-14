@@ -947,9 +947,11 @@
         "or_browse": "أو انقر للتصفح",
         "format_hint": "JPEG، PNG، WebP. حتى {max} صور.",
         "size_hint": "موصى به: 1200×800 أو أكبر",
+        "queued": "في الانتظار",
         "uploading": "جارٍ الرفع",
         "uploaded": "تم الرفع",
-        "failed": "فشل"
+        "failed": "فشل",
+        "retry": "إعادة المحاولة"
     },
     "events_form": {
         "name_label": "اسم الفعالية",

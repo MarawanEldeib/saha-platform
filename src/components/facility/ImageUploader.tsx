@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { ArrowDown, ArrowUp, Trash2, UploadCloud, AlertTriangle } from "lucide-react";
+import { ArrowDown, ArrowUp, Trash2, UploadCloud, AlertTriangle, RotateCw } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { cn, getStorageUrl } from "@/lib/utils";
 import { Button } from "@/components/ui/Button";
@@ -15,7 +15,7 @@ const DEFAULT_MAX_IMAGES = 10;
 // can warn the user instantly before sending oversized payloads.
 const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
 
-type UploadStatus = "uploading" | "uploaded" | "error";
+type UploadStatus = "pending" | "uploading" | "uploaded" | "error";
 
 type ImageItem = {
     key: string;
@@ -74,6 +74,12 @@ export function ImageUploader({ facilityId, initialImages = [], maxImages = DEFA
     const [isDragging, setIsDragging] = React.useState(false);
     const inputRef = React.useRef<HTMLInputElement | null>(null);
     const itemsRef = React.useRef(items);
+    // SAH-160 bounce-back: serial upload queue. Parallel uploads were
+    // racing on display_order + on the cookie-bound Supabase server client,
+    // which produced sporadic "Upload failed" on the 2nd-Nth file. Each
+    // new file is enqueued; the queue processes one at a time.
+    const queueRef = React.useRef<string[]>([]);
+    const processingRef = React.useRef(false);
 
     React.useEffect(() => {
         itemsRef.current = items;
@@ -179,6 +185,7 @@ export function ImageUploader({ facilityId, initialImages = [], maxImages = DEFA
 
             try {
                 const displayOrder = getItemIndex(item.key);
+                updateItem(item.key, { status: "uploading", progress: 0 });
                 const { id, storage_path } = await uploadWithProgress(
                     item.file,
                     facilityId,
@@ -209,6 +216,32 @@ export function ImageUploader({ facilityId, initialImages = [], maxImages = DEFA
         [facilityId, getItemIndex, updateItem, uploadWithProgress]
     );
 
+    // SAH-160 bounce-back: drain the queue one upload at a time. Each item
+    // waits for the previous to finish (success or failure) before starting.
+    // Solves: parallel display_order collisions + cookie-bound server client
+    // contention + UI optimistic-state confusion when multiple progress
+    // events interleave.
+    const drainQueue = React.useCallback(async () => {
+        if (processingRef.current) return;
+        processingRef.current = true;
+        try {
+            while (queueRef.current.length > 0) {
+                const key = queueRef.current.shift();
+                if (!key) continue;
+                const target = itemsRef.current.find((i) => i.key === key);
+                if (!target || !target.file) continue;
+                await uploadItem(target);
+            }
+        } finally {
+            processingRef.current = false;
+        }
+    }, [uploadItem]);
+
+    const enqueueUpload = React.useCallback((key: string) => {
+        queueRef.current.push(key);
+        void drainQueue();
+    }, [drainQueue]);
+
     const addFiles = React.useCallback(
         (files: File[]) => {
             setError(null);
@@ -238,21 +271,23 @@ export function ImageUploader({ facilityId, initialImages = [], maxImages = DEFA
             }
             if (nextFiles.length === 0) return;
 
-            const newItems = nextFiles.map((file) => ({
+            const newItems: ImageItem[] = nextFiles.map((file) => ({
                 key: getRandomId(),
                 file,
                 previewUrl: URL.createObjectURL(file),
                 isLocal: true,
                 progress: 0,
-                status: "uploading" as const,
+                // SAH-160 bounce-back: start as "pending" so the queue can
+                // show "Queued…" until each item's turn arrives.
+                status: "pending" as const,
             }));
 
             setItems((prev) => [...prev, ...newItems]);
             newItems.forEach((nextItem) => {
-                void uploadItem(nextItem);
+                enqueueUpload(nextItem.key);
             });
         },
-        [maxImages, uploadItem, t]
+        [maxImages, enqueueUpload, t]
     );
 
     const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -272,6 +307,20 @@ export function ImageUploader({ facilityId, initialImages = [], maxImages = DEFA
         }
     };
 
+    // SAH-160 bounce-back: per-item retry. Re-enqueues a failed item so
+    // the user doesn't have to re-pick the file. We keep the File reference
+    // on the item across failures specifically to enable this.
+    const handleRetry = React.useCallback((item: ImageItem) => {
+        if (item.status !== "error") return;
+        if (!item.file) {
+            // Shouldn't happen — failed items keep their File. Defensive guard.
+            setError(t("failed"));
+            return;
+        }
+        updateItem(item.key, { status: "pending", error: undefined, progress: 0 });
+        enqueueUpload(item.key);
+    }, [enqueueUpload, updateItem, t]);
+
     const handleMove = (index: number, direction: "up" | "down") => {
         const nextIndex = direction === "up" ? index - 1 : index + 1;
         if (nextIndex < 0 || nextIndex >= itemsRef.current.length) return;
@@ -289,6 +338,12 @@ export function ImageUploader({ facilityId, initialImages = [], maxImages = DEFA
     const handleRemove = async (item: ImageItem) => {
         if (item.status === "uploading") return;
         setError(null);
+
+        // SAH-160 bounce-back: also drop queued items from the queue if
+        // the user changes their mind before the upload starts.
+        if (item.status === "pending") {
+            queueRef.current = queueRef.current.filter((k) => k !== item.key);
+        }
 
         if (!item.id || !item.storagePath) {
             if (item.isLocal) {
@@ -392,6 +447,11 @@ export function ImageUploader({ facilityId, initialImages = [], maxImages = DEFA
                                     alt={getReadableName(item)}
                                     className="h-full w-full object-cover"
                                 />
+                                {item.status === "pending" && (
+                                    <div className="absolute inset-0 flex items-center justify-center bg-black/40 text-[10px] uppercase tracking-wide font-semibold text-white">
+                                        {t("queued")}
+                                    </div>
+                                )}
                                 {item.status === "uploading" && (
                                     <div className="absolute inset-0 flex items-center justify-center bg-black/40 text-xs font-semibold text-white">
                                         {item.progress}%
@@ -405,6 +465,7 @@ export function ImageUploader({ facilityId, initialImages = [], maxImages = DEFA
                                         {getReadableName(item)}
                                     </p>
                                     <span className="text-xs text-gray-500 dark:text-gray-400">
+                                        {item.status === "pending" && t("queued")}
                                         {item.status === "uploading" && t("uploading")}
                                         {item.status === "uploaded" && t("uploaded")}
                                         {item.status === "error" && t("failed")}
@@ -421,7 +482,19 @@ export function ImageUploader({ facilityId, initialImages = [], maxImages = DEFA
                                 )}
 
                                 {item.status === "error" && item.error && (
-                                    <p className="text-xs text-red-600">{item.error}</p>
+                                    <div className="flex items-center gap-2">
+                                        <p className="text-xs text-red-600 flex-1">{item.error}</p>
+                                        <Button
+                                            type="button"
+                                            variant="ghost"
+                                            size="sm"
+                                            onClick={() => handleRetry(item)}
+                                            aria-label={t("retry") ?? "Retry"}
+                                        >
+                                            <RotateCw className="h-3.5 w-3.5 mr-1" />
+                                            {t("retry") ?? "Retry"}
+                                        </Button>
+                                    </div>
                                 )}
                             </div>
 
