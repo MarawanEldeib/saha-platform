@@ -106,16 +106,35 @@ export async function updateFacilityAction(formData: FormData) {
     const parsed = facilityUpdateSchema.safeParse(raw);
     if (!parsed.success) return { error: parsed.error.issues[0].message };
 
-    // SAH-119: if Mapbox is configured (it is in prod), require the address
-    // to resolve before letting the save through. We previously silently
-    // dropped the location update on no_match, which produced ghost
-    // facilities (e.g. CyberSport had status='active' with location IS NULL,
-    // so it didn't appear on the map).
-    const geo = await geocodeAddress(parsed.data.address, parsed.data.city);
-    if (geo.status === "no_match") {
-        return {
-            error: await tr("admin.address_not_found"),
-        };
+    // SAH-119 bounce-back: bzo complained the "couldn't locate address" error
+    // was hard-blocking the save for many real addresses. Soften the gate —
+    // save the row regardless, but only update `location` when Mapbox returns
+    // a match. Surface a non-blocking warning so the owner knows the map
+    // won't show their facility until they correct the address.
+    //
+    // Admin approval (`approveFacilityAction`) still refuses to set
+    // `status='active'` when `location IS NULL`, so ghost facilities can't
+    // go public — that's the safety net.
+    //
+    // Phase 2 (separate ticket): replace this server-side fallback path with
+    // a client-side Mapbox-places autocomplete so the owner picks from a list
+    // of real suggestions instead of free-typing.
+    //
+    // SAH-119 / SAH-152: the autocomplete-picker (built in this PR) can pass
+    // `location_wkt` directly, bypassing the server-side geocode entirely.
+    const clientWkt = ((formData.get("location_wkt") as string) || "").trim() || null;
+    let warning: string | null = null;
+    let locationWkt: string | null = clientWkt;
+
+    if (!clientWkt) {
+        const geo = await geocodeAddress(parsed.data.address, parsed.data.city);
+        if (geo.status === "ok") {
+            locationWkt = geo.wkt;
+        } else if (geo.status === "no_match") {
+            warning = await tr("admin.address_soft_warning");
+        }
+        // `not_configured` (no Mapbox key) silently leaves location untouched
+        // — same dev-environment behaviour as before.
     }
 
     const update: FacilityUpdate = {
@@ -126,7 +145,7 @@ export async function updateFacilityAction(formData: FormData) {
         has_prayer_room: parsed.data.has_prayer_room ?? false,
         has_wudu_area: parsed.data.has_wudu_area ?? false,
         updated_at: new Date().toISOString(),
-        ...(geo.status === "ok" ? { location: geo.wkt as never } : {}),
+        ...(locationWkt ? { location: locationWkt as never } : {}),
     };
 
     const { error } = await supabase
@@ -136,7 +155,7 @@ export async function updateFacilityAction(formData: FormData) {
 
     if (error) return { error: error.message };
     revalidatePath(`/${locale}/dashboard/facility`);
-    return { success: true };
+    return { success: true, warning };
 }
 
 // ---------------------------------------------------------------------------

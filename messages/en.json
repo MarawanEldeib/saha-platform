@@ -840,7 +840,11 @@
         "details_section": "Facility Details",
         "name_label": "Facility name",
         "city_label": "City",
+        "city_placeholder": "Dubai, Abu Dhabi, Sharjah…",
         "address_label": "Address",
+        "address_placeholder": "Type a street address — suggestions appear as you type",
+        "address_clear": "Clear address",
+        "address_autocomplete_disabled": "Address suggestions are unavailable on this deployment — you can still type and save.",
         "postal_label": "Postal code",
         "phone_label": "Phone",
         "website_label": "Website",
@@ -1314,7 +1318,8 @@
             "no_self_unban": "Nothing to unban for yourself.",
             "user_not_found": "User not found.",
             "no_map_coords": "This facility has no map coordinates yet. Ask the owner to re-save their address from the dashboard, then try approving again.",
-            "address_not_found": "We couldn't locate that address on the map. Double-check the street and city, then try again."
+            "address_not_found": "We couldn't locate that address on the map. Double-check the street and city, then try again.",
+            "address_soft_warning": "We couldn't auto-locate this address. Your changes are saved, but the facility won't show on the map until a more specific address is entered or picked from the suggestions."
         },
         "messages": {
             "cannot_self": "Cannot message yourself",
